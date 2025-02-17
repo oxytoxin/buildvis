@@ -4,6 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @mixin IdeHelperCityMunicipality
+ */
 class CityMunicipality extends Model
 {
     public function region()

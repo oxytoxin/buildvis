@@ -22,8 +22,8 @@ class RegionSeeder extends Seeder
         $regions = $regions->map(function ($r) use ($now) {
             return [
                 'code' => $r['code'],
-                'name' => $r['name'],
-                'description' => $r['regionName'],
+                'name' => $r['regionName'],
+                'description' => $r['name'],
                 'created_at' => $now,
                 'updated_at' => $now,
             ];
