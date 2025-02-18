@@ -19,7 +19,7 @@ class Login extends Component
 
         Session::regenerate();
 
-        $this->redirectIntended(default: route('welcome', absolute: false), navigate: true);
+        $this->redirectIntended(default: route('welcome', absolute: false));
     }
     public function render()
     {

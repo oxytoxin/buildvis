@@ -14,7 +14,7 @@
                     </ul>
                     <div class="flex items-center justify-end">
                         <div class="hidden md:block">
-                            <a href="#" class="inline-flex py-2.5 px-4 items-center justify-center text-sm font-medium text-teal-900 hover:text-white border border-teal-900 hover:bg-teal-900 rounded-full transition duration-200">Visit Store</a>
+                            <a href="/store" class="inline-flex py-2.5 px-4 items-center justify-center text-sm font-medium text-teal-900 hover:text-white border border-teal-900 hover:bg-teal-900 rounded-full transition duration-200">Visit Store</a>
                         </div>
                         <button x-on:click="mobileNavOpen = !mobileNavOpen" class="md:hidden navbar-burger text-teal-900 hover:text-teal-800">
                             <svg width="32" height="32" viewbox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
