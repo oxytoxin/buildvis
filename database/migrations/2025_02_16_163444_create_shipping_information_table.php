@@ -13,10 +13,10 @@ return new class extends Migration
     {
         Schema::create('shipping_information', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained();
-            $table->foreignId('region_id')->constrained();
-            $table->foreignId('province_id')->constrained();
-            $table->foreignId('city_municipality_id')->constrained();
+            $table->foreignId('customer_id')->constrained();
+            $table->string('region_code')->constrained('regions', 'code');
+            $table->string('province_code')->constrained('provinces', 'code');
+            $table->string('city_municipality_code')->constrained('city_municipalities', 'code');
             $table->string('address_line_1');
             $table->string('address_line_2')->nullable();
             $table->timestamps();

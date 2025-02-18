@@ -48,4 +48,24 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    protected static function booted(): void
+    {
+        static::updated(function (User $user) {
+            $user->customer?->update([
+                'name' => $user->name,
+            ]);
+        });
+
+        static::created(function (User $user) {
+            $user->customer()->create([
+                'name' => $user->name,
+            ]);
+        });
+    }
+
+    public function customer()
+    {
+        return $this->hasOne(Customer::class);
+    }
 }

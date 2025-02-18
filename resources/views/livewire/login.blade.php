@@ -5,12 +5,12 @@
             <div>
                 <x-input-label for="email" :value="__('Email')" />
                 <x-text-input wire:model="form.email" id="email" type="email" name="email" required />
-                <x-input-error :messages="$errors->get('email')" />
+                <x-input-error :messages="$errors->get('form.email')" />
             </div>
             <div>
                 <x-input-label for="password" :value="__('Password')" />
                 <x-text-input wire:model="form.password" id="password" type="password" name="password" required />
-                <x-input-error :messages="$errors->get('password')" />
+                <x-input-error :messages="$errors->get('form.email')" />
             </div>
             <div class="text-right mb-10">
                 <a href="{{ route('password.request') }}" class="inline-block text-sm underline font-medium">Forgot password?</a>
