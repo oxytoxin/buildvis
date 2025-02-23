@@ -37,10 +37,17 @@
                         <span class="ml-2 font-medium text-lg">3D Modeling + Real-Time Budgeting = Unstoppable Efficiency</span>
                     </div>
                     <p class="text-lg text-gray-700 mb-10">Why wait months for estimates? BuildVis delivers 3D models and material lists in minutes.</p>
+                    @guest
                     <div class="flex flex-col sm:flex-row justify-center">
                         <a href="{{ route('login') }}" class="inline-flex py-4 px-6 mb-3 sm:mb-0 sm:mr-4 items-center justify-center text-lg font-medium text-white hover:text-teal-900 border border-teal-900 hover:border-lime-500 bg-teal-900 hover:bg-lime-500 rounded-full transition duration-200">Start Building</a>
                         <a href="{{ route('register') }}" class="inline-flex py-4 px-6 items-center justify-center text-lg font-medium text-black hover:text-white border border-teal-900 hover:bg-teal-900 rounded-full transition duration-200">Sign Up for Free</a>
                     </div>
+                    @endguest
+                    @auth
+                    <div class="flex flex-col sm:flex-row justify-center">
+                        <a href="{{ route('filament.store.pages.store-index') }}" class="inline-flex py-4 px-6 items-center justify-center text-lg font-medium text-black hover:text-white border border-teal-900 hover:bg-teal-900 rounded-full transition duration-200">Visit Store</a>
+                    </div>
+                    @endauth
                 </div>
                 <div class="flex -mx-4 items-end relative">
                     <div class="w-1/3 xs:w-1/2 lg:w-auto px-4">

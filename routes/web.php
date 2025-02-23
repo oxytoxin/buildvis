@@ -10,10 +10,6 @@ use App\Http\Controllers\Auth\VerifyEmailController;
 
 Route::get('/', Welcome::class)->name('welcome');
 
-Route::view('dashboard', 'dashboard')
-    ->middleware(['auth', 'verified'])
-    ->name('dashboard');
-
 Route::middleware('guest')->group(function () {
     Route::get('register', Register::class)
         ->name('register');
