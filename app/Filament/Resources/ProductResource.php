@@ -66,6 +66,10 @@ class ProductResource extends Resource
                         ]),
                     Tab::make('Media')
                         ->schema([
+                            SpatieMediaLibraryFileUpload::make('model')
+                                ->collection('model')
+                                ->acceptedFileTypes(['model/gltf-binary'])
+                                ->columnSpanFull(),
                             SpatieMediaLibraryFileUpload::make('images')
                                 ->collection('images')
                                 ->multiple()
