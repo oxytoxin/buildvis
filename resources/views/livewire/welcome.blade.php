@@ -475,7 +475,7 @@
                             </div>
                         </div>
                         <div class="w-full lg:w-1/3 px-4 lg:text-right">
-                            <a href="#" class="inline-flex py-4 px-6 items-center justify-center text-lg font-medium text-teal-900 border border-lime-500 hover:border-white bg-lime-500 hover:bg-white rounded-full transition duration-200">Start Building</a>
+                            <a href="{{ route('login') }}" class="inline-flex py-4 px-6 items-center justify-center text-lg font-medium text-teal-900 border border-lime-500 hover:border-white bg-lime-500 hover:bg-white rounded-full transition duration-200">Start Building</a>
                         </div>
                     </div>
                 </div>
