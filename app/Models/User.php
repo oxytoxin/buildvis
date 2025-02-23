@@ -57,6 +57,10 @@ class User extends Authenticatable
             ]);
         });
 
+        static::deleted(function (User $user) {
+            $user->customer?->delete();
+        });
+
         static::created(function (User $user) {
             $user->customer()->create([
                 'name' => $user->name,

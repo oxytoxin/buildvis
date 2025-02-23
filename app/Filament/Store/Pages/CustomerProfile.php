@@ -24,9 +24,12 @@ class CustomerProfile extends Page implements HasTable, HasForms
 {
     use InteractsWithTable, InteractsWithForms;
 
-    protected static ?string $navigationIcon = 'heroicon-o-document-text';
+    protected static ?string $navigationIcon = 'heroicon-o-user-circle';
 
     protected static string $view = 'filament.store.pages.customer-profile';
+
+    protected static ?int $navigationSort = 2;
+
 
     public function table(Table $table)
     {
