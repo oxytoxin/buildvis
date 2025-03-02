@@ -5,10 +5,13 @@ namespace App\Filament\Store\Pages;
 use App\Models\Order;
 use App\Models\OrderItem;
 use Auth;
+use DB;
+use Filament\Actions\Action;
 use Filament\Tables\Actions\EditAction;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
+use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Tables\Actions\DeleteAction;
 use Filament\Tables\Columns\Summarizers\Sum;
@@ -31,6 +34,32 @@ class CartIndex extends Page implements HasForms, HasTable
     protected ?string $heading = "Cart Details";
 
     protected static ?int $navigationSort = 2;
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('checkout')
+                ->requiresConfirmation()
+                ->action(function () {
+                    DB::beginTransaction();
+                    $order = Order::query()->where('customer_id', Auth::user()->customer?->id)->where('status', 'pending')->with('items')->first();
+                    $order->update([
+                        'status' => 'processing',
+                    ]);
+                    $order->items()->with('product')->each(function (OrderItem $orderItem) {
+                        $orderItem->product->update([
+                            'stock_quantity' => $orderItem->product->stock_quantity - $orderItem->quantity,
+                        ]);
+                    });
+                    DB::commit();
+                    Notification::make()
+                        ->title('Order Placed')
+                        ->body('Your order has been placed successfully.')
+                        ->success()
+                        ->send();
+                }),
+        ];
+    }
 
     public function table(Table $table)
     {

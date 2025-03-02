@@ -106,6 +106,7 @@ class StoreIndex extends Page implements HasForms, HasTable
                     ->action(function ($data, Product $record) {
                         sleep(0.25);
                         $order = Order::find($data['order_id']);
+                        $product = Product::find($record->id);
                         $existing = $order->items()->where('product_id', $record->id)->first();
                         if ($existing) {
                             if ($existing->quantity + $data['quantity'] > $record->stock_quantity) {
