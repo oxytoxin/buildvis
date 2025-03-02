@@ -9,9 +9,9 @@ export default function ProductView() {
     const { product, model } = usePage().props;
     const gltf = model ? useLoader(GLTFLoader, model.original_url) : null;
     return (
-        <div className="h-screen px-16 py-8">
+        <div className="h-screen flex flex-col px-16 py-8">
             <h2 className="text-4xl font-semibold mb-4">View Product</h2>
-            <div className="flex gap-32 items-center">
+            <div className="flex gap-32 flex-1 items-center">
                 <div className="w-1/2 h-full p-8 border-2 border-black">
                     <Canvas>
                         <color attach="background" args={["#f5efe6"]} />
