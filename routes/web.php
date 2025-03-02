@@ -7,6 +7,8 @@ use App\Livewire\Welcome;
 use App\Livewire\Register;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\VerifyEmailController;
+use App\Models\Product;
+use Inertia\Inertia;
 
 Route::get('/', Welcome::class)->name('welcome');
 
@@ -33,4 +35,12 @@ Route::middleware('auth')->group(function () {
 
     Volt::route('confirm-password', 'pages.auth.confirm-password')
         ->name('password.confirm');
+
+    Route::get('product/{product}', function (Product $product) {
+        return Inertia::render('ProductView', [
+            'product' => $product,
+            'model' => $product->getFirstMedia('model')
+        ]);
+    })
+        ->name('product.view');
 });

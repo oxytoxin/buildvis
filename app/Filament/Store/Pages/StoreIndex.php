@@ -47,7 +47,6 @@ class StoreIndex extends Page implements HasForms, HasTable
                 Product::query()
                     ->with('featured_image')
             )
-            ->recordUrl(fn($record) => route('filament.store.resources.products.view', $record))
             ->columns([
                 Stack::make([
                     SpatieMediaLibraryImageColumn::make('featured_image')
@@ -73,6 +72,13 @@ class StoreIndex extends Page implements HasForms, HasTable
                     ->multiple(),
             ])
             ->actions([
+                Action::make('view')
+                    ->icon('heroicon-o-cube')
+                    ->label('View 3D')
+                    ->url(fn($record) => route('product.view', $record))
+                    ->button()
+                    ->outlined()
+                    ->openUrlInNewTab(),
                 Action::make('Add to Cart')
                     ->button()
                     ->icon('heroicon-o-shopping-cart')
@@ -122,6 +128,7 @@ class StoreIndex extends Page implements HasForms, HasTable
                             ->success()
                             ->send();
                     }),
+
             ])
             ->heading('All Products')
             ->filtersLayout(FiltersLayout::AboveContent)

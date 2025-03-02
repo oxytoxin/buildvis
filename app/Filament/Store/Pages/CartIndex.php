@@ -5,9 +5,12 @@ namespace App\Filament\Store\Pages;
 use App\Models\Order;
 use App\Models\OrderItem;
 use Auth;
+use Filament\Tables\Actions\EditAction;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Pages\Page;
+use Filament\Tables\Actions\DeleteAction;
 use Filament\Tables\Columns\Summarizers\Sum;
 use Filament\Tables\Columns\Summarizers\Summarizer;
 use Filament\Tables\Columns\TextColumn;
@@ -38,6 +41,15 @@ class CartIndex extends Page implements HasForms, HasTable
                 TextColumn::make('unit_price')->money('PHP')->sortable(),
                 TextColumn::make('quantity')->size('xs')->sortable(),
                 TextColumn::make('subtotal')->money('PHP')->sortable()->summarize(Sum::make('Grand Total')->money('PHP')->label('Grand Total')),
+            ])
+            ->actions([
+                EditAction::make()
+                    ->form([
+                        TextInput::make('quantity')
+                            ->label('Quantity')
+                            ->rules('required', 'numeric', 'min:1'),
+                    ]),
+                DeleteAction::make(),
             ]);
     }
 }
