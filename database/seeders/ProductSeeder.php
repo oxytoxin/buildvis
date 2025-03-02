@@ -6,38 +6,41 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\Supplier;
 use Illuminate\Database\Seeder;
+use Spatie\SimpleExcel\SimpleExcelReader;
 
 class ProductSeeder extends Seeder
 {
     public function run(): void
     {
-        // Create verified suppliers
-        $suppliers = Supplier::factory(5)->verified()->create();
+        $supplier = Supplier::create([
+            'name' => 'Uncategorized Supplier',
+        ]);
 
-        // Create a couple unverified suppliers
-        Supplier::factory(2)->unverified()->create();
-
-        // Create all categories first
-        Category::factory(10)->create();
-
-        // For each category, create 4 products (as defined in the factory)
-        Category::all()->each(function ($category) use ($suppliers) {
-            // Create active products (3 products per category)
-            Product::factory(3)->create([
-                'category_id' => $category->id,
-                'supplier_id' => $suppliers->random()->id,
-            ]);
-
-            // Create 1 out of stock product per category
-            Product::factory()->outOfStock()->create([
-                'category_id' => $category->id,
-                'supplier_id' => $suppliers->random()->id,
+        $now = now();
+        Category::insert([
+            ['name' => 'Electrical', 'slug' => 'electrical', 'created_at' => $now, 'updated_at' => $now],
+            ['name' => 'Paintings', 'slug' => 'paintings', 'created_at' => $now, 'updated_at' => $now],
+            ['name' => 'Plumbing', 'slug' => 'plumbing', 'created_at' => $now, 'updated_at' => $now],
+            ['name' => 'Steel', 'slug' => 'steel', 'created_at' => $now, 'updated_at' => $now],
+            ['name' => 'Others', 'slug' => 'others', 'created_at' => $now, 'updated_at' => $now],
+        ]);
+        $categories = Category::all()->mapWithKeys(fn($m) => [$m->name => $m->id])->toArray();
+        $reader = SimpleExcelReader::create(storage_path('imports/materials.xlsx'));
+        $rows = $reader->getRows();
+        $rows->each(function ($row) use ($supplier, $categories) {
+            $category = $categories[$row['Category']];
+            Product::create([
+                'name' => $row['Name'],
+                'category_id' => $category,
+                'supplier_id' => $supplier->id,
+                'price' => $row['Price'],
+                'unit' => $row['Unit'],
+                'stock_quantity' => 10,
+                'minimum_stock_quantity' => 10,
+                'minimum_order_quantity' => 1,
+                'status' => 'active',
             ]);
         });
-
-        // Create a few discontinued products randomly across categories
-        Product::factory(5)->discontinued()->create([
-            'supplier_id' => $suppliers->random()->id,
-        ]);
+        //
     }
 }

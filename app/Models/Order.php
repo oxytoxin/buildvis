@@ -24,4 +24,12 @@ class Order extends Model
     {
         return $this->hasMany(OrderItem::class);
     }
+
+    public static function booted()
+    {
+        static::creating(function ($order) {
+            $order->name ??= 'Default';
+            $order->status ??= 'pending';
+        });
+    }
 }

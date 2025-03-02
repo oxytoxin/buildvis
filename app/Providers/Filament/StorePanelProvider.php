@@ -53,6 +53,7 @@ class StorePanelProvider extends PanelProvider
             ])
             ->topNavigation()
             ->maxContentWidth(MaxWidth::Full)
+            ->breadcrumbs(false)
             ->authMiddleware([
                 Authenticate::class,
             ]);

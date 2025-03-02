@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -9,6 +10,19 @@ use Illuminate\Database\Eloquent\Model;
  */
 class ShippingInformation extends Model
 {
+
+    public function address(): Attribute
+    {
+        return new Attribute(get: function () {
+            return str(implode(',', [
+                $this->region->name,
+                $this->province->name,
+                $this->city_municipality->name,
+                $this->address_line_1,
+                $this->address_line_2,
+            ]))->trim(',')->toString();
+        });
+    }
 
     public function region()
     {

@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('city_municipality_code')->constrained('city_municipalities', 'code');
             $table->string('address_line_1');
             $table->string('address_line_2')->nullable();
+            $table->boolean('default')->default(false);
             $table->timestamps();
         });
     }

@@ -28,7 +28,9 @@ class CustomerProfile extends Page implements HasTable, HasForms
 
     protected static string $view = 'filament.store.pages.customer-profile';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?string $navigationLabel = "Profile";
+
+    protected static ?int $navigationSort = 10;
 
 
     public function table(Table $table)
