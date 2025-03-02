@@ -19,9 +19,9 @@ class DatabaseSeeder extends Seeder
             'password' => 'password'
         ]);
         $this->call([
-            // RegionSeeder::class,
-            // ProvinceSeeder::class,
-            // CityMunicipalitySeeder::class,
+            RegionSeeder::class,
+            ProvinceSeeder::class,
+            CityMunicipalitySeeder::class,
             ProductSeeder::class,
         ]);
     }
