@@ -92,7 +92,7 @@ class StoreIndex extends Page implements HasForms, HasTable
                         Placeholder::make('stock_remaining')
                             ->content(fn($record) => $record->stock_quantity),
                         Placeholder::make('in_cart')
-                            ->content(fn($record) => OrderItem::query()->whereRelation('order', 'customer_id', Auth::user()->customer?->id)->where('product_id', $record->id)->sum('quantity')),
+                            ->content(fn($record) => OrderItem::query()->whereRelation('order', 'customer_id', Auth::user()->customer?->id)->whereRelation('order', 'status', 'pending')->where('product_id', $record->id)->sum('quantity')),
                         TextInput::make('quantity')
                             ->default(1)
                             ->rules(fn($record) => ['required', 'numeric', 'min:1', 'max:' . $record->stock_quantity])
