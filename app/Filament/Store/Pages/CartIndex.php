@@ -51,6 +51,13 @@ class CartIndex extends Page implements HasForms, HasTable
                             'stock_quantity' => $orderItem->product->stock_quantity - $orderItem->quantity,
                         ]);
                     });
+                    $customer = $order->customer;
+                    Order::create([
+                        'name' => 'Default',
+                        'customer_id' => $customer->id,
+                        'shipping_address' => $customer->default_shipping_information?->address,
+                        'billing_address' => $customer->default_shipping_information?->address,
+                    ]);
                     DB::commit();
                     Notification::make()
                         ->title('Order Placed')

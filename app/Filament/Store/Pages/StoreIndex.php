@@ -85,8 +85,8 @@ class StoreIndex extends Page implements HasForms, HasTable
                     ->form([
                         Select::make('order_id')
                             ->label('Order')
-                            ->options(Order::whereCustomerId(Auth::user()->customer?->id)->pluck('name', 'id'))
-                            ->default(Order::whereCustomerId(Auth::user()->customer?->id)->first()?->id),
+                            ->options(Order::whereCustomerId(Auth::user()->customer?->id)->whereStatus('pending')->pluck('name', 'id'))
+                            ->default(Order::whereCustomerId(Auth::user()->customer?->id)->whereStatus('pending')->first()?->id),
                         Placeholder::make('product')
                             ->content(fn($record) => $record->name),
                         Placeholder::make('stock_remaining')
