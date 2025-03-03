@@ -41,29 +41,8 @@ class CartIndex extends Page implements HasForms, HasTable
             Action::make('checkout')
                 ->requiresConfirmation()
                 ->action(function () {
-                    DB::beginTransaction();
                     $order = Order::query()->where('customer_id', Auth::user()->customer?->id)->where('status', 'pending')->with('items')->first();
-                    $order->update([
-                        'status' => 'processing',
-                    ]);
-                    $order->items()->with('product')->each(function (OrderItem $orderItem) {
-                        $orderItem->product->update([
-                            'stock_quantity' => $orderItem->product->stock_quantity - $orderItem->quantity,
-                        ]);
-                    });
-                    $customer = $order->customer;
-                    Order::create([
-                        'name' => 'Default',
-                        'customer_id' => $customer->id,
-                        'shipping_address' => $customer->default_shipping_information?->address,
-                        'billing_address' => $customer->default_shipping_information?->address,
-                    ]);
-                    DB::commit();
-                    Notification::make()
-                        ->title('Order Placed')
-                        ->body('Your order has been placed successfully.')
-                        ->success()
-                        ->send();
+                    redirect()->route('stripe.checkout', ['order' => $order->id]);
                 }),
         ];
     }

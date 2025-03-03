@@ -7,6 +7,7 @@ use App\Livewire\Welcome;
 use App\Livewire\Register;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\VerifyEmailController;
+use App\Http\Controllers\StripeController;
 use App\Models\Product;
 use Inertia\Inertia;
 
@@ -43,4 +44,8 @@ Route::middleware('auth')->group(function () {
         ]);
     })
         ->name('product.view');
+
+    Route::get('/stripe-checkout/{order}', [StripeController::class, 'checkout'])->name('stripe.checkout');
+    Route::get('/stripe-cancel/{order}', [StripeController::class, 'cancel'])->name('stripe.cancel');
+    Route::get('/stripe-success/{order}', [StripeController::class, 'success'])->name('stripe.success');
 });
