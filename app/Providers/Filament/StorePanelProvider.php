@@ -9,14 +9,18 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
+use Filament\Support\Assets\Js;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\MaxWidth;
+use Filament\Support\Facades\FilamentAsset;
+use Filament\View\PanelsRenderHook;
 use Filament\Widgets;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class StorePanelProvider extends PanelProvider
@@ -26,6 +30,10 @@ class StorePanelProvider extends PanelProvider
         return $panel
             ->id('store')
             ->path('store')
+            ->renderHook(
+                PanelsRenderHook::HEAD_END,
+                fn(): string => Blade::render('<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>'),
+            )
             ->viteTheme('resources/css/filament/store/theme.css')
             ->colors([
                 'primary' => Color::Teal,
