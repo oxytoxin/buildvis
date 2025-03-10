@@ -35,8 +35,9 @@ return [
         ],
     ],
 
-    'deepseek' => [
-        'api_key' => env('DEEPSEEK_API_KEY')
+    'ai' => [
+        'base_uri' => env('AI_BASE_URI'),
+        'api_key' => env('AI_API_KEY'),
     ]
 
 ];

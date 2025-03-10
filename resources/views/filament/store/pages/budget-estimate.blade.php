@@ -16,7 +16,7 @@
             </div>
         </div>
         <div class="flex gap-2 items-center">
-            <x-filament::button wire:click="save" class="mt-8" color="primary">Calculate</x-filament::button>
+            <x-filament::button wire:click="calculate" class="mt-8" color="primary">Calculate</x-filament::button>
             <x-filament::button wire:click="format" class="mt-8" color="primary">Format</x-filament::button>
         </div>
     </div>
