@@ -28,6 +28,7 @@ class BudgetEstimate extends Page
 
     public function save()
     {
+        $this->content = "";
         $materials = Product::get()->map(function ($product) {
             return [
                 'name' => $product->name,
@@ -60,7 +61,6 @@ class BudgetEstimate extends Page
             if ($reasoning) {
                 $this->reasoning .= $reasoning;
                 $this->stream('reasoning', $reasoning);
-                info($reasoning);
             }
         }
     }
