@@ -44,16 +44,24 @@ class BudgetEstimate extends Page
         $client = OpenAI::factory()
             ->withApiKey(config('services.ai.api_key'))
             ->withBaseUri(config('services.ai.base_uri'))
-            // ->withBaseUri('https://api.deepseek.com/v1')
             ->make();
 
         $stream = $client->chat()->createStreamed([
-            'model' => 'gpt-4o-mini',
-            // 'model' => 'deepseek-reasoner',
+            'model' => 'o1-mini',
             'messages' => [
                 [
                     'role' => 'user',
-                    'content' => 'Given a list of materials: ' . $materials . ', suggest a house size and generate a bill of materials accounting for labor cost which is 50% of material cost. Try to exhaust the budget by creating a larger or multistorey house if necessary. The total cost should be at least 80% of the budget. I have a budget of ' . $this->budget . '.'
+                    'content' => $materials
+                ],
+                [
+                    'role' => 'user',
+                    'content' =>
+                    "
+                    Suggest a house size and generate a bill of materials accounting for labor cost which is 50% of material cost. 
+                    Try to exhaust the budget by creating a larger or multistorey house if necessary. All prices in the materials list is in PHP.
+                    The total cost should be at least 80% of the budget. I have a budget of {$this->budget}.
+                    Show subtotals of each material category and the grand total.
+                    "
                 ],
             ]
         ]);
