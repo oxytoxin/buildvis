@@ -30,10 +30,6 @@ class StorePanelProvider extends PanelProvider
         return $panel
             ->id('store')
             ->path('store')
-            ->renderHook(
-                PanelsRenderHook::HEAD_END,
-                fn(): string => Blade::render('<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>'),
-            )
             ->viteTheme('resources/css/filament/store/theme.css')
             ->colors([
                 'primary' => Color::Teal,
