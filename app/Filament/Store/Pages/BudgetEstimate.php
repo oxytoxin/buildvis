@@ -41,10 +41,6 @@ class BudgetEstimate extends Page
             [
                 'type' => 'text',
                 'text' => "
-                    List all the materials you have. Do not include the quantities, only the units. 
-                    Create categories, and group the materials accordingly. 
-                    Only include materials that can be bought in a store.
-                    Under each category should be all the items that belong to that category.
                     You are asked to generate an estimate or quotation for a {$this->description} 
                     with a budget of {$this->budget} pesos, using those materials and the sample quotation as reference. 
                     Format the quotation into a table, with each line item including a name, quantity, price and subtotal.
