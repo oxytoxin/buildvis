@@ -43,11 +43,13 @@ class BudgetEstimate extends Page
                 'type' => 'text',
                 'text' => "
                     You are asked to generate an estimate or quotation for a {$this->description} 
-                    with a budget of {$this->budget} pesos, using those materials and the sample quotation as reference. 
-                    Format the quotation into a table, with each line item including a name, quantity, price and subtotal.
-                    Maximize the budget with focus on concrete and painting materials.
-                    You should also include a grand total row, and use python to get the sum of all subtotals. 
-                    Do not show the python code, only the table in the output.
+                    with a budget of {$this->budget} pesos.
+                    1. Use the sample quotation as reference for the materials; 
+                    2. Mention the type of building first, then an estimate lot size if none was provided otherwise use what was provided;
+                    3. Format the quotation into a table, with each line item including a name, quantity, price and subtotal;
+                    4. Use up all the budget;
+                    5. Include a grand total row for the sum of all subtotals, calculated using python;
+                    6. Do not show the python code in the output;
                 "
             ]
         ];
