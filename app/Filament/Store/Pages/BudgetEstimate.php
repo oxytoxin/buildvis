@@ -28,8 +28,9 @@ class BudgetEstimate extends Page
     public $description = 'two-story residential building';
 
     public $messages = [];
+    public $additional = [];
 
-    public function mount()
+    public function resetMessages()
     {
         $this->messages = [
             [
@@ -52,9 +53,14 @@ class BudgetEstimate extends Page
         ];
     }
 
+    public function mount()
+    {
+        $this->resetMessages();
+    }
+
     public function sendChat()
     {
-        $this->messages[] = [
+        $this->additional[] = [
             'type' => 'text',
             'text' => $this->chat
         ];
@@ -67,12 +73,12 @@ class BudgetEstimate extends Page
         set_time_limit(120);
         $this->content = "";
         $this->stream('content', $this->content, true);
-
         $client = OpenAI::factory()
             ->withApiKey(config('services.ai.api_key'))
             ->withBaseUri(config('services.ai.base_uri'))
             ->make();
 
+        $this->resetMessages();
         $stream = $client->chat()->createStreamed([
             'model' => 'gpt-4o',
             'messages' => [
@@ -85,7 +91,8 @@ class BudgetEstimate extends Page
                                 'file_id' => 'file-9mCQuA2a9AQdWX191V8sHo'
                             ]
                         ],
-                        ...$this->messages
+                        ...$this->messages,
+                        ...$this->additional
                     ]
                 ],
             ]
