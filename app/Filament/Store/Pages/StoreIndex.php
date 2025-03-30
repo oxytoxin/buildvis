@@ -83,10 +83,6 @@ class StoreIndex extends Page implements HasForms, HasTable
                     ->button()
                     ->icon('heroicon-o-shopping-cart')
                     ->form([
-                        Select::make('order_id')
-                            ->label('Order')
-                            ->options(Order::whereCustomerId(Auth::user()->customer?->id)->whereStatus('pending')->pluck('name', 'id'))
-                            ->default(Order::whereCustomerId(Auth::user()->customer?->id)->whereStatus('pending')->first()?->id),
                         Placeholder::make('product')
                             ->content(fn($record) => $record->name),
                         Placeholder::make('stock_remaining')
@@ -105,8 +101,15 @@ class StoreIndex extends Page implements HasForms, HasTable
                     ])
                     ->action(function ($data, Product $record) {
                         sleep(0.25);
-                        $order = Order::find($data['order_id']);
-                        $product = Product::find($record->id);
+                        $customer = Auth::user();
+                        $order = Order::firstOrCreate([
+                            'status' => 'pending',
+                            'customer_id' => $customer->id
+                        ], [
+                            'name' => 'Default',
+                            'shipping_address' => $customer->default_shipping_information?->address,
+                            'billing_address' => $customer->default_shipping_information?->address,
+                        ]);
                         $existing = $order->items()->where('product_id', $record->id)->first();
                         if ($existing) {
                             if ($existing->quantity + $data['quantity'] > $record->stock_quantity) {

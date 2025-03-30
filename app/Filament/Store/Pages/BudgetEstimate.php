@@ -47,7 +47,7 @@ class BudgetEstimate extends Page
                     1. Use the sample quotation as reference for the materials; 
                     2. Mention the type of building first, then an estimate lot size if none was provided otherwise use what was provided;
                     3. Format the quotation into a table, with each line item including a name, quantity, price and subtotal;
-                    4. Use up all the budget;
+                    4. Use up all the budget.
                 "
             ]
         ];

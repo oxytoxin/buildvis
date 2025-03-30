@@ -45,6 +45,11 @@ Route::middleware('auth')->group(function () {
     })
         ->name('product.view');
 
+    Route::get('house-generator', function (Product $product) {
+        return Inertia::render('HouseGenerator', []);
+    })
+        ->name('house-generator.view');
+
     Route::get('/stripe-checkout/{order}', [StripeController::class, 'checkout'])->name('stripe.checkout');
     Route::get('/stripe-cancel/{order}', [StripeController::class, 'cancel'])->name('stripe.cancel');
     Route::get('/stripe-success/{order}', [StripeController::class, 'success'])->name('stripe.success');

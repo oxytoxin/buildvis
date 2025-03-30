@@ -6,6 +6,7 @@ use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationItem;
 use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -33,6 +34,12 @@ class StorePanelProvider extends PanelProvider
             ->viteTheme('resources/css/filament/store/theme.css')
             ->colors([
                 'primary' => Color::Teal,
+            ])
+            ->navigationItems([
+                NavigationItem::make('House Generator')
+                    ->url(fn() => route('house-generator.view'))
+                    ->icon('heroicon-o-home')
+                    ->sort(99),
             ])
             ->discoverResources(in: app_path('Filament/Store/Resources'), for: 'App\\Filament\\Store\\Resources')
             ->discoverPages(in: app_path('Filament/Store/Pages'), for: 'App\\Filament\\Store\\Pages')

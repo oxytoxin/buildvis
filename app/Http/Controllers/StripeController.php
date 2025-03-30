@@ -14,8 +14,6 @@ class StripeController extends Controller
     public function checkout(Request $request, Order $order)
     {
         Stripe::setApiKey(config('stripe.sk'));
-
-
         $session = Session::create([
             'line_items' => [
                 [
