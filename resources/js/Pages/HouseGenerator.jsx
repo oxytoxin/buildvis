@@ -103,6 +103,7 @@ const HollowHouse = ({ roofHeight, renderGrass, doorX, roomWidth, roomLength }) 
                 <Wall position={[-roomWidth, 0, 0]} rotation={[0, Math.PI / 2, 0]} width={roomLength} />
                 <Wall position={[0, 0, roomLength / 2]} rotation={[0, Math.PI / 2, 0]} width={roomLength / 2} />
                 <Wall hasDoor={true} doorX={0} position={[roomWidth / 2, 0, 0]} rotation={[0, 0, 0]} width={roomWidth / 2} />
+                <Wall hasDoor={true} doorX={0} position={[-roomWidth / 2, 0, 0]} rotation={[0, 0, 0]} width={roomWidth / 2} />
             </group>
             <Roof
                 width={roomWidth * 2}
