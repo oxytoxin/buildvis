@@ -1,17 +1,153 @@
-import React, { useMemo, useState } from "react";
-import { Canvas } from "@react-three/fiber";
+import React, { useMemo, useState, useEffect, useRef } from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, Sky } from "@react-three/drei";
 import * as THREE from "three";
 
 const WALL_HEIGHT = 1;
 const WALL_THICKNESS = 0.2;
-const DOOR_WIDTH = 1;
-const DOOR_HEIGHT = 1.5;
+const DOOR_WIDTH = 0.85;
+const DOOR_HEIGHT = 1.3;
 const DOOR_MARGIN = 0.2;
 const ROOF_OFFSET = 0.2;
 const NUM_STORIES = 2;
 
-const Wall = ({ hasDoor = false, position, rotation, doorX, width, color = 'white' }) => {
+// WASD Camera Controls Component
+const WASDControls = ({ moveSpeed = 0.15, lookSpeed = 0.005 }) => {
+    const { camera, gl } = useThree();
+    const keys = useRef({ w: false, a: false, s: false, d: false, shift: false, space: false, c: false });
+    const mousePos = useRef({ x: 0, y: 0 });
+
+    // Store Euler angles to prevent tilting
+    const euler = useRef(new THREE.Euler(0, 0, 0, 'YXZ'));
+
+    // Initialize camera rotation
+    useEffect(() => {
+        // Set initial rotation
+        euler.current.setFromQuaternion(camera.quaternion);
+
+        // Ensure camera is using the correct up vector
+        camera.up.set(0, 1, 0);
+    }, [camera]);
+
+    // Set up key listeners
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key.toLowerCase() === 'w') keys.current.w = true;
+            if (e.key.toLowerCase() === 'a') keys.current.a = true;
+            if (e.key.toLowerCase() === 's') keys.current.s = true;
+            if (e.key.toLowerCase() === 'd') keys.current.d = true;
+            if (e.key === 'Shift') keys.current.shift = true;
+            if (e.key === ' ') keys.current.space = true;
+            if (e.key.toLowerCase() === 'c') keys.current.c = true;
+        };
+
+        const handleKeyUp = (e) => {
+            if (e.key.toLowerCase() === 'w') keys.current.w = false;
+            if (e.key.toLowerCase() === 'a') keys.current.a = false;
+            if (e.key.toLowerCase() === 's') keys.current.s = false;
+            if (e.key.toLowerCase() === 'd') keys.current.d = false;
+            if (e.key === 'Shift') keys.current.shift = false;
+            if (e.key === ' ') keys.current.space = false;
+            if (e.key.toLowerCase() === 'c') keys.current.c = false;
+        };
+
+        // Lock pointer when canvas is clicked
+        const handleCanvasClick = () => {
+            if (!document.pointerLockElement) {
+                gl.domElement.requestPointerLock();
+            }
+        };
+
+        // Handle mouse movement for camera rotation
+        const handleMouseMove = (e) => {
+            if (document.pointerLockElement === gl.domElement) {
+                // Use movementX/Y for smooth camera rotation
+                mousePos.current.x = e.movementX;
+                mousePos.current.y = e.movementY;
+            }
+        };
+
+        // Prevent context menu on right-click
+        const handleContextMenu = (e) => {
+            e.preventDefault();
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
+        gl.domElement.addEventListener('click', handleCanvasClick);
+        window.addEventListener('mousemove', handleMouseMove);
+        gl.domElement.addEventListener('contextmenu', handleContextMenu);
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup', handleKeyUp);
+            gl.domElement.removeEventListener('click', handleCanvasClick);
+            window.removeEventListener('mousemove', handleMouseMove);
+            gl.domElement.removeEventListener('contextmenu', handleContextMenu);
+            if (document.pointerLockElement === gl.domElement) {
+                document.exitPointerLock();
+            }
+        };
+    }, [gl]);
+
+    // Update camera position and rotation on each frame
+    useFrame(() => {
+        // Movement speed (faster with shift)
+        const currentSpeed = keys.current.shift ? moveSpeed * 2 : moveSpeed;
+
+        // Get camera direction vectors
+        const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+        const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+
+        // Ensure movement is only on the horizontal plane (no vertical movement from looking up/down)
+        forward.y = 0;
+        forward.normalize();
+        right.y = 0;
+        right.normalize();
+
+        // WASD movement
+        if (keys.current.w) camera.position.addScaledVector(forward, currentSpeed);
+        if (keys.current.s) camera.position.addScaledVector(forward, -currentSpeed);
+        if (keys.current.a) camera.position.addScaledVector(right, -currentSpeed);
+        if (keys.current.d) camera.position.addScaledVector(right, currentSpeed);
+
+        // Vertical movement (Space to go up, C to go down)
+        if (keys.current.space) camera.position.y += currentSpeed;
+        if (keys.current.c) camera.position.y -= currentSpeed;
+
+        // Mouse look (when pointer is locked)
+        if (document.pointerLockElement === gl.domElement) {
+            // Get current Euler angles
+            euler.current.setFromQuaternion(camera.quaternion);
+
+            // Determine the dominant direction of mouse movement
+            const absX = Math.abs(mousePos.current.x);
+            const absY = Math.abs(mousePos.current.y);
+
+            if (absX > absY && absX > 1) {
+                // Horizontal movement is dominant - only rotate horizontally
+                euler.current.y -= mousePos.current.x * lookSpeed;
+            } else if (absY > absX && absY > 1) {
+                // Vertical movement is dominant - only rotate vertically
+                // Limit vertical rotation to avoid flipping
+                euler.current.x -= mousePos.current.y * lookSpeed;
+                euler.current.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, euler.current.x));
+            }
+
+            // Apply rotation while maintaining the up vector
+            camera.quaternion.setFromEuler(euler.current);
+            camera.up.set(0, 1, 0); // Ensure the up vector stays pointing up
+
+            // Reset mouse movement
+            mousePos.current.x = 0;
+            mousePos.current.y = 0;
+        }
+    });
+
+    return null; // This component doesn't render anything
+};
+
+const Wall = ({ hasDoor = false, position, rotation, doorX = 0, width, color = 'white' }) => {
     const wallShape = new THREE.Shape();
     wallShape.moveTo(-width, -WALL_HEIGHT);
     wallShape.lineTo(width, -WALL_HEIGHT);
@@ -86,8 +222,16 @@ const Roof = ({ width, length, height, rotation, y = WALL_HEIGHT }) => {
     );
 };
 
+const Room = ({ roomWidth, roomLength, quadrantX = 1, quadrantY = 1, doorSide = false, doorFront = false }) => {
+    return (
+        <group>
+            <Wall hasDoor={doorSide} position={[quadrantX > 0 ? 0 : -WALL_THICKNESS, 0, quadrantY * roomLength / 2]} rotation={[0, Math.PI / 2, 0]} width={roomLength / 2} />
+            <Wall hasDoor={doorFront} position={[quadrantX * roomWidth / 2, 0, 0]} rotation={[0, 0, 0]} width={roomWidth / 2} />
+        </group>
+    )
+}
 
-const House = ({ roofHeight, renderGrass, doorX, roomWidth, roomLength }) => {
+const House = ({ roofHeight, renderGrass, doorX, roomWidth, roomLength, numStories }) => {
     return (
         <group rotation={[0, Math.PI * 5 / 4, 0]}>
             {renderGrass && (
@@ -97,15 +241,14 @@ const House = ({ roofHeight, renderGrass, doorX, roomWidth, roomLength }) => {
                 </mesh>
             )}
             {
-                [...Array(NUM_STORIES)].map((_, i) =>
+                [...Array(numStories)].map((_, i) =>
                     <group key={i} position={[0, i * WALL_HEIGHT * 2, 0]}>
                         <Wall hasDoor={i == 0} position={[0, 0, -roomLength]} doorX={doorX} width={roomWidth} />
                         <Wall position={[0, 0, roomLength - WALL_THICKNESS]} width={roomWidth} />
                         <Wall position={[roomWidth - WALL_THICKNESS, 0, 0]} rotation={[0, Math.PI / 2, 0]} width={roomLength} />
                         <Wall position={[-roomWidth, 0, 0]} rotation={[0, Math.PI / 2, 0]} width={roomLength} />
-                        <Wall position={[0, 0, roomLength / 2]} rotation={[0, Math.PI / 2, 0]} width={roomLength / 2} />
-                        <Wall hasDoor={true} doorX={0} position={[roomWidth / 2, 0, 0]} rotation={[0, 0, 0]} width={roomWidth / 2} />
-                        <Wall hasDoor={true} doorX={0} position={[-roomWidth / 2, 0, 0]} rotation={[0, 0, 0]} width={roomWidth / 2} />
+                        <Room doorFront={true} roomWidth={roomWidth} roomLength={roomLength} quadrantX={-1} quadrantY={1} />
+                        <Room doorFront={true} roomWidth={roomWidth} roomLength={roomLength} quadrantX={1} quadrantY={1} />
                         <mesh position={[0, -1, 0]}>
                             <boxGeometry args={[roomWidth * 2.001, 0.2, roomLength * 2.001]} ></boxGeometry>
                             <meshStandardMaterial color="red" />
@@ -117,7 +260,7 @@ const House = ({ roofHeight, renderGrass, doorX, roomWidth, roomLength }) => {
                 width={roomWidth * 2}
                 length={roomLength * 2}
                 height={roofHeight}
-                y={WALL_HEIGHT * NUM_STORIES + 1}
+                y={1 + (numStories - 1) * 2}
             />
             <ambientLight intensity={0.5} />
             <directionalLight position={[5, 5, 5]} intensity={1} />
@@ -129,16 +272,20 @@ const HouseScene = () => {
     const [roofHeight, setRoofHeight] = useState(1);
     const [renderGrass, setRenderGrass] = useState(false);
     const [doorX, setDoorX] = useState(0);
-    const [roomWidth, setRoomWidth] = useState(Math.random() * 4 + 1);
-    const [roomLength, setRoomLength] = useState(Math.random() * 4 + 1);
+    const [roomWidth, setRoomWidth] = useState(Math.random() * 3 + 1);
+    const [roomLength, setRoomLength] = useState(Math.random() * 2 + 1);
+    const [numStories, setNumStories] = useState(1);
 
     const minDoorX = -roomWidth + DOOR_WIDTH / 2 + DOOR_MARGIN;
     const maxDoorX = roomWidth - DOOR_WIDTH / 2 - DOOR_MARGIN;
 
+    // State to toggle between control modes
+    const [useWASDControls, setUseWASDControls] = useState(false);
+
     return (
         <div className="h-screen w-full relative">
-            <Canvas camera={{ position: [6, 4, 6] }} fog={{ color: "green", near: 10, far: 50 }}>
-                <OrbitControls />
+            <Canvas camera={{ position: [6, 4, 6], fov: 60 }} fog={{ color: "green", near: 10, far: 50 }}>
+                {useWASDControls ? <WASDControls /> : <OrbitControls />}
                 <Sky sunPosition={[100, 20, 100]} />
                 <House
                     roofHeight={roofHeight}
@@ -146,10 +293,36 @@ const HouseScene = () => {
                     doorX={doorX}
                     roomWidth={roomWidth}
                     roomLength={roomLength}
+                    numStories={numStories}
                 />
             </Canvas>
 
             <div className="absolute bottom-5 right-32 transform bg-white p-3 rounded shadow-lg">
+                <div className="mb-4 p-2 bg-gray-100 rounded">
+                    <label className="block text-sm font-bold mb-2">Camera Controls</label>
+                    <div className="flex items-center">
+                        <button
+                            onClick={() => setUseWASDControls(false)}
+                            className={`px-3 py-1 mr-2 rounded ${!useWASDControls ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+                        >
+                            Orbit
+                        </button>
+                        <button
+                            onClick={() => setUseWASDControls(true)}
+                            className={`px-3 py-1 rounded ${useWASDControls ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+                        >
+                            WASD
+                        </button>
+                    </div>
+                    {useWASDControls && (
+                        <div className="mt-2 text-xs text-gray-600">
+                            <p>W,A,S,D: Move | Space/C: Up/Down</p>
+                            <p>Shift: Speed up | Click canvas to look around</p>
+                            <p className="text-xs italic">Click to lock cursor, ESC to release</p>
+                        </div>
+                    )}
+                </div>
+
                 <label className="block text-sm font-bold">Roof Height: {roofHeight.toFixed(1)}</label>
                 <input type="range" min="1" max="4" step="0.1" value={roofHeight} onChange={(e) => setRoofHeight(parseFloat(e.target.value))} className="w-40" />
 
@@ -166,6 +339,11 @@ const HouseScene = () => {
                 <div className="mt-3">
                     <label className="block text-sm font-bold">Room Length: {roomLength.toFixed(1)}</label>
                     <input type="range" min="2" max="6" step="0.1" value={roomLength} onChange={(e) => setRoomLength(parseFloat(e.target.value))} className="w-40" />
+                </div>
+
+                <div className="mt-3">
+                    <label className="block text-sm font-bold"># Stories: {numStories}</label>
+                    <input type="range" min="1" max="5" step="1" value={numStories} onChange={(e) => setNumStories(parseInt(e.target.value))} className="w-40" />
                 </div>
 
                 <div className="mt-3">
