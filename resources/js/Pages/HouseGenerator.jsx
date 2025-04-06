@@ -9,7 +9,7 @@ const DOOR_WIDTH = 1;
 const DOOR_HEIGHT = 1.5;
 const DOOR_MARGIN = 0.2;
 const ROOF_OFFSET = 0.2;
-
+const NUM_STORIES = 2;
 
 const Wall = ({ hasDoor = false, position, rotation, doorX, width, color = 'white' }) => {
     const wallShape = new THREE.Shape();
@@ -40,7 +40,7 @@ const Wall = ({ hasDoor = false, position, rotation, doorX, width, color = 'whit
 };
 
 // 🏠 Custom Roof with Rectangular Base
-const Roof = ({ width, length, height, rotation }) => {
+const Roof = ({ width, length, height, rotation, y = WALL_HEIGHT }) => {
     const BASE_OFFSET = 0.5; // Controls how much the peak is inset
 
     const geometry = useMemo(() => {
@@ -80,14 +80,14 @@ const Roof = ({ width, length, height, rotation }) => {
     }, [width, length, height]); // Rebuild when size updates
 
     return (
-        <mesh rotation={rotation} position={[0, WALL_HEIGHT, 0]} geometry={geometry}>
-            <meshStandardMaterial side={THREE.DoubleSide} color="brown" />
+        <mesh rotation={rotation} position={[0, y, 0]} geometry={geometry}>
+            <meshStandardMaterial side={THREE.DoubleSide} color="gray" />
         </mesh>
     );
 };
 
 
-const HollowHouse = ({ roofHeight, renderGrass, doorX, roomWidth, roomLength }) => {
+const House = ({ roofHeight, renderGrass, doorX, roomWidth, roomLength }) => {
     return (
         <group rotation={[0, Math.PI * 5 / 4, 0]}>
             {renderGrass && (
@@ -96,19 +96,28 @@ const HollowHouse = ({ roofHeight, renderGrass, doorX, roomWidth, roomLength }) 
                     <meshStandardMaterial color="green" />
                 </mesh>
             )}
-            <group>
-                <Wall hasDoor={true} position={[0, 0, -roomLength]} doorX={doorX} width={roomWidth} />
-                <Wall position={[0, 0, roomLength - WALL_THICKNESS]} width={roomWidth} />
-                <Wall position={[roomWidth - WALL_THICKNESS, 0, 0]} rotation={[0, Math.PI / 2, 0]} width={roomLength} />
-                <Wall position={[-roomWidth, 0, 0]} rotation={[0, Math.PI / 2, 0]} width={roomLength} />
-                <Wall position={[0, 0, roomLength / 2]} rotation={[0, Math.PI / 2, 0]} width={roomLength / 2} />
-                <Wall hasDoor={true} doorX={0} position={[roomWidth / 2, 0, 0]} rotation={[0, 0, 0]} width={roomWidth / 2} />
-                <Wall hasDoor={true} doorX={0} position={[-roomWidth / 2, 0, 0]} rotation={[0, 0, 0]} width={roomWidth / 2} />
-            </group>
+            {
+                [...Array(NUM_STORIES)].map((_, i) =>
+                    <group key={i} position={[0, i * WALL_HEIGHT * 2, 0]}>
+                        <Wall hasDoor={i == 0} position={[0, 0, -roomLength]} doorX={doorX} width={roomWidth} />
+                        <Wall position={[0, 0, roomLength - WALL_THICKNESS]} width={roomWidth} />
+                        <Wall position={[roomWidth - WALL_THICKNESS, 0, 0]} rotation={[0, Math.PI / 2, 0]} width={roomLength} />
+                        <Wall position={[-roomWidth, 0, 0]} rotation={[0, Math.PI / 2, 0]} width={roomLength} />
+                        <Wall position={[0, 0, roomLength / 2]} rotation={[0, Math.PI / 2, 0]} width={roomLength / 2} />
+                        <Wall hasDoor={true} doorX={0} position={[roomWidth / 2, 0, 0]} rotation={[0, 0, 0]} width={roomWidth / 2} />
+                        <Wall hasDoor={true} doorX={0} position={[-roomWidth / 2, 0, 0]} rotation={[0, 0, 0]} width={roomWidth / 2} />
+                        <mesh position={[0, -1, 0]}>
+                            <boxGeometry args={[roomWidth * 2.001, 0.2, roomLength * 2.001]} ></boxGeometry>
+                            <meshStandardMaterial color="red" />
+                        </mesh>
+                    </group>
+                )
+            }
             <Roof
                 width={roomWidth * 2}
                 length={roomLength * 2}
                 height={roofHeight}
+                y={WALL_HEIGHT * NUM_STORIES + 1}
             />
             <ambientLight intensity={0.5} />
             <directionalLight position={[5, 5, 5]} intensity={1} />
@@ -131,7 +140,7 @@ const HouseScene = () => {
             <Canvas camera={{ position: [6, 4, 6] }} fog={{ color: "green", near: 10, far: 50 }}>
                 <OrbitControls />
                 <Sky sunPosition={[100, 20, 100]} />
-                <HollowHouse
+                <House
                     roofHeight={roofHeight}
                     renderGrass={renderGrass}
                     doorX={doorX}
