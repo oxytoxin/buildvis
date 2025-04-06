@@ -9,7 +9,13 @@ const DOOR_WIDTH = 0.85;
 const DOOR_HEIGHT = 1.3;
 const DOOR_MARGIN = 0.2;
 const ROOF_OFFSET = 0.2;
-const NUM_STORIES = 2;
+// Default number of stories (now controlled by state)
+
+// Window properties
+const WINDOW_WIDTH = 0.5;  // Width of each pane (smaller for double-pane)
+const WINDOW_HEIGHT = 0.5;  // Height of window
+const WINDOW_MARGIN = 0.5;  // Margin between window sets
+const WINDOW_PANE_GAP = 0.05; // Gap between the two panes of a window
 
 // WASD Camera Controls Component
 const WASDControls = ({ moveSpeed = 0.15, lookSpeed = 0.005 }) => {
@@ -147,7 +153,7 @@ const WASDControls = ({ moveSpeed = 0.15, lookSpeed = 0.005 }) => {
     return null; // This component doesn't render anything
 };
 
-const Wall = ({ hasDoor = false, position, rotation, doorX = 0, width, color = 'white' }) => {
+const Wall = ({ hasDoor = false, position, rotation, doorX = 0, width, color = 'white', windows = [] }) => {
     const wallShape = new THREE.Shape();
     wallShape.moveTo(-width, -WALL_HEIGHT);
     wallShape.lineTo(width, -WALL_HEIGHT);
@@ -155,6 +161,7 @@ const Wall = ({ hasDoor = false, position, rotation, doorX = 0, width, color = '
     wallShape.lineTo(-width, WALL_HEIGHT);
     wallShape.lineTo(-width, -WALL_HEIGHT);
 
+    // Add door if needed
     if (hasDoor) {
         const doorHole = new THREE.Path();
         doorHole.moveTo(doorX - DOOR_WIDTH / 2, -WALL_HEIGHT);
@@ -165,14 +172,80 @@ const Wall = ({ hasDoor = false, position, rotation, doorX = 0, width, color = '
         wallShape.holes.push(doorHole);
     }
 
+    // Add windows
+    windows.forEach(window => {
+        const { x, y } = window;
+        // Create rectangular window hole for each pane
+        let windowHole = new THREE.Path();
+        windowHole.moveTo(x - WINDOW_WIDTH / 2, y - WINDOW_HEIGHT / 2);
+        windowHole.lineTo(x + WINDOW_WIDTH / 2, y - WINDOW_HEIGHT / 2);
+        windowHole.lineTo(x + WINDOW_WIDTH / 2, y + WINDOW_HEIGHT / 2);
+        windowHole.lineTo(x - WINDOW_WIDTH / 2, y + WINDOW_HEIGHT / 2);
+        windowHole.lineTo(x - WINDOW_WIDTH / 2, y - WINDOW_HEIGHT / 2);
+        wallShape.holes.push(windowHole);
+    });
+
     const extrudeSettings = { depth: WALL_THICKNESS, bevelEnabled: false };
 
+    // Create window glass and frames
+    const windowElements = windows.map((window, index) => {
+        const { x, y } = window;
+        const glassDepth = WALL_THICKNESS;
+
+        return (
+            <group key={index} position={[x, y, 0]}>
+                <mesh position={[0, 0, 0.1]}> {/* Slightly in front of frame */}
+                    <boxGeometry args={[WINDOW_WIDTH, WINDOW_HEIGHT, glassDepth]} />
+                    <meshPhysicalMaterial
+                        color='black'
+                        transparent={true}
+                        opacity={0.3}
+                        metalness={0.3}
+                        roughness={0.01}
+                        transmission={0.9} // Glass-like transparency
+                    />
+                </mesh>
+            </group>
+        );
+    });
+
     return (
-        <mesh position={position} rotation={rotation}>
-            <extrudeGeometry args={[wallShape, extrudeSettings]} />
-            <meshStandardMaterial color={color} />
-        </mesh>
+        <group position={position}>
+            {/* Wall with window holes */}
+            <mesh rotation={rotation}>
+                <extrudeGeometry args={[wallShape, extrudeSettings]} />
+                <meshStandardMaterial color={color} />
+            </mesh>
+
+            {/* Window glass elements - positioned relative to the wall */}
+            <group rotation={rotation}>
+                {windowElements}
+            </group>
+        </group>
     );
+};
+
+// Utility function to generate random windows for a wall
+const generateWindowPane = (x) => {
+    const windows = [];
+    const windowY = 0.2;
+    windows.push({
+        x: -x - (WINDOW_WIDTH / 2 + WINDOW_PANE_GAP / 2),
+        y: windowY,
+    });
+    windows.push({
+        x: -x + (WINDOW_WIDTH / 2 + WINDOW_PANE_GAP / 2),
+        y: windowY,
+    });
+    windows.push({
+        x: x - (WINDOW_WIDTH / 2 + WINDOW_PANE_GAP / 2),
+        y: windowY,
+    });
+    windows.push({
+        x: x + (WINDOW_WIDTH / 2 + WINDOW_PANE_GAP / 2),
+        y: windowY,
+    });
+    return windows;
 };
 
 // 🏠 Custom Roof with Rectangular Base
@@ -217,21 +290,31 @@ const Roof = ({ width, length, height, rotation, y = WALL_HEIGHT }) => {
 
     return (
         <mesh rotation={rotation} position={[0, y, 0]} geometry={geometry}>
-            <meshStandardMaterial side={THREE.DoubleSide} color="gray" />
+            <meshStandardMaterial side={THREE.DoubleSide} color="brown" />
         </mesh>
     );
 };
 
-const Room = ({ roomWidth, roomLength, quadrantX = 1, quadrantY = 1, doorSide = false, doorFront = false }) => {
+const Room = ({ roomWidth, roomLength, quadrantX = 1, quadrantY = 1, doorSide = false, doorFront = false, numWindows = 1 }) => {
     return (
         <group>
-            <Wall hasDoor={doorSide} position={[quadrantX > 0 ? 0 : -WALL_THICKNESS, 0, quadrantY * roomLength / 2]} rotation={[0, Math.PI / 2, 0]} width={roomLength / 2} />
-            <Wall hasDoor={doorFront} position={[quadrantX * roomWidth / 2, 0, 0]} rotation={[0, 0, 0]} width={roomWidth / 2} />
+            <Wall
+                hasDoor={doorSide}
+                position={[quadrantX > 0 ? 0 : -WALL_THICKNESS, 0, quadrantY * roomLength / 2]}
+                rotation={[0, Math.PI / 2, 0]}
+                width={roomLength / 2}
+            />
+            <Wall
+                hasDoor={doorFront}
+                position={[quadrantX * roomWidth / 2, 0, 0]}
+                rotation={[0, 0, 0]}
+                width={roomWidth / 2}
+            />
         </group>
     )
 }
 
-const House = ({ roofHeight, renderGrass, doorX, roomWidth, roomLength, numStories }) => {
+const House = ({ roofHeight, renderGrass, doorX, roomWidth, roomLength, numStories, numWindows = 2 }) => {
     return (
         <group rotation={[0, Math.PI * 5 / 4, 0]}>
             {renderGrass && (
@@ -243,15 +326,42 @@ const House = ({ roofHeight, renderGrass, doorX, roomWidth, roomLength, numStori
             {
                 [...Array(numStories)].map((_, i) =>
                     <group key={i} position={[0, i * WALL_HEIGHT * 2, 0]}>
-                        <Wall hasDoor={i == 0} position={[0, 0, -roomLength]} doorX={doorX} width={roomWidth} />
-                        <Wall position={[0, 0, roomLength - WALL_THICKNESS]} width={roomWidth} />
-                        <Wall position={[roomWidth - WALL_THICKNESS, 0, 0]} rotation={[0, Math.PI / 2, 0]} width={roomLength} />
-                        <Wall position={[-roomWidth, 0, 0]} rotation={[0, Math.PI / 2, 0]} width={roomLength} />
-                        <Room doorFront={true} roomWidth={roomWidth} roomLength={roomLength} quadrantX={-1} quadrantY={1} />
-                        <Room doorFront={true} roomWidth={roomWidth} roomLength={roomLength} quadrantX={1} quadrantY={1} />
+                        {/* Front wall with door and windows */}
+                        <Wall
+                            hasDoor={i == 0}
+                            position={[0, 0, -roomLength]}
+                            doorX={doorX}
+                            width={roomWidth}
+                            windows={i > 0 ? generateWindowPane(roomWidth / 2) : []}
+                        />
+
+                        {/* Back wall with windows */}
+                        <Wall
+                            position={[0, 0, roomLength - WALL_THICKNESS]}
+                            width={roomWidth}
+                            windows={generateWindowPane(roomWidth / 2)}
+                        />
+
+                        {/* Right wall with windows */}
+                        <Wall
+                            position={[roomWidth - WALL_THICKNESS, 0, 0]}
+                            rotation={[0, Math.PI / 2, 0]}
+                            width={roomLength}
+                            windows={generateWindowPane(roomLength / 2)}
+                        />
+
+                        {/* Left wall with windows */}
+                        <Wall
+                            position={[-roomWidth, 0, 0]}
+                            rotation={[0, Math.PI / 2, 0]}
+                            width={roomLength}
+                            windows={generateWindowPane(roomLength / 2)}
+                        />
+                        <Room doorFront={true} roomWidth={roomWidth} roomLength={roomLength} quadrantX={-1} quadrantY={1} numWindows={numWindows} />
+                        <Room doorFront={true} roomWidth={roomWidth} roomLength={roomLength} quadrantX={1} quadrantY={1} numWindows={numWindows} />
                         <mesh position={[0, -1, 0]}>
                             <boxGeometry args={[roomWidth * 2.001, 0.2, roomLength * 2.001]} ></boxGeometry>
-                            <meshStandardMaterial color="red" />
+                            <meshStandardMaterial color="gray" />
                         </mesh>
                     </group>
                 )
@@ -272,8 +382,8 @@ const HouseScene = () => {
     const [roofHeight, setRoofHeight] = useState(1);
     const [renderGrass, setRenderGrass] = useState(false);
     const [doorX, setDoorX] = useState(0);
-    const [roomWidth, setRoomWidth] = useState(Math.random() * 3 + 1);
-    const [roomLength, setRoomLength] = useState(Math.random() * 2 + 1);
+    const [roomWidth, setRoomWidth] = useState(Math.random() * 1 + 3);
+    const [roomLength, setRoomLength] = useState(Math.random() * 1 + 3);
     const [numStories, setNumStories] = useState(1);
 
     const minDoorX = -roomWidth + DOOR_WIDTH / 2 + DOOR_MARGIN;
@@ -325,27 +435,22 @@ const HouseScene = () => {
 
                 <label className="block text-sm font-bold">Roof Height: {roofHeight.toFixed(1)}</label>
                 <input type="range" min="1" max="4" step="0.1" value={roofHeight} onChange={(e) => setRoofHeight(parseFloat(e.target.value))} className="w-40" />
-
                 <div className="mt-3">
                     <label className="block text-sm font-bold">Door X Position: {doorX.toFixed(1)}</label>
                     <input type="range" min={minDoorX} max={maxDoorX} step="0.1" value={doorX} onChange={(e) => setDoorX(parseFloat(e.target.value))} className="w-40" />
                 </div>
-
                 <div className="mt-3">
                     <label className="block text-sm font-bold">Room Width: {roomWidth.toFixed(1)}</label>
-                    <input type="range" min="2" max="6" step="0.1" value={roomWidth} onChange={(e) => setRoomWidth(parseFloat(e.target.value))} className="w-40" />
+                    <input type="range" min="3" max="7" step="0.1" value={roomWidth} onChange={(e) => setRoomWidth(parseFloat(e.target.value))} className="w-40" />
                 </div>
-
                 <div className="mt-3">
                     <label className="block text-sm font-bold">Room Length: {roomLength.toFixed(1)}</label>
-                    <input type="range" min="2" max="6" step="0.1" value={roomLength} onChange={(e) => setRoomLength(parseFloat(e.target.value))} className="w-40" />
+                    <input type="range" min="3" max="7" step="0.1" value={roomLength} onChange={(e) => setRoomLength(parseFloat(e.target.value))} className="w-40" />
                 </div>
-
                 <div className="mt-3">
                     <label className="block text-sm font-bold"># Stories: {numStories}</label>
                     <input type="range" min="1" max="5" step="1" value={numStories} onChange={(e) => setNumStories(parseInt(e.target.value))} className="w-40" />
                 </div>
-
                 <div className="mt-3">
                     <label className="block text-sm font-bold">Render Grass</label>
                     <input type="checkbox" checked={renderGrass} onChange={() => setRenderGrass(!renderGrass)} className="ml-2" />
