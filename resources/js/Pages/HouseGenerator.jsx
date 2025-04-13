@@ -295,15 +295,18 @@ const Roof = ({ width, length, height, rotation, y = WALL_HEIGHT }) => {
     );
 };
 
-const Room = ({ roomWidth, roomLength, quadrantX = 1, quadrantY = 1, doorSide = false, doorFront = false, numWindows = 1 }) => {
+const Room = ({ roomWidth, roomLength, quadrantX = 1, quadrantY = 1, doorSide = false, doorFront = false, wallSide = true, numWindows = 1 }) => {
     return (
         <group>
-            <Wall
-                hasDoor={doorSide}
-                position={[quadrantX > 0 ? 0 : -WALL_THICKNESS, 0, quadrantY * roomLength / 2]}
-                rotation={[0, Math.PI / 2, 0]}
-                width={roomLength / 2}
-            />
+            {
+                wallSide &&
+                <Wall
+                    hasDoor={doorSide}
+                    position={[quadrantX > 0 ? 0 : -WALL_THICKNESS, 0, quadrantY * roomLength / 2]}
+                    rotation={[0, Math.PI / 2, 0]}
+                    width={roomLength / 2}
+                />
+            }
             <Wall
                 hasDoor={doorFront}
                 position={[quadrantX * roomWidth / 2, 0, 0]}
@@ -312,6 +315,20 @@ const Room = ({ roomWidth, roomLength, quadrantX = 1, quadrantY = 1, doorSide = 
             />
         </group>
     )
+}
+
+const ConnectedRooms = ({ roomWidth, roomLength, numWindows }) => {
+    return (<group>
+        <Room doorSide={true} roomWidth={roomWidth} doorFront={true} roomLength={roomLength} quadrantX={-1} quadrantY={1} numWindows={numWindows} />
+        <Room doorFront={true} wallSide={false} roomWidth={roomWidth} roomLength={roomLength} quadrantX={1} quadrantY={1} numWindows={numWindows} />
+    </group>)
+}
+
+const UnconnectedRooms = ({ roomWidth, roomLength, numWindows }) => {
+    return (<group>
+        <Room doorFront={true} roomWidth={roomWidth} roomLength={roomLength} quadrantX={-1} quadrantY={1} numWindows={numWindows} />
+        <Room doorFront={true} roomWidth={roomWidth} roomLength={roomLength} quadrantX={1} quadrantY={1} numWindows={numWindows} />
+    </group>)
 }
 
 const House = ({ roofHeight, renderGrass, doorX, roomWidth, roomLength, numStories, numWindows = 2 }) => {
@@ -357,8 +374,10 @@ const House = ({ roofHeight, renderGrass, doorX, roomWidth, roomLength, numStori
                             width={roomLength}
                             windows={generateWindowPane(roomLength / 2)}
                         />
-                        <Room doorFront={true} roomWidth={roomWidth} roomLength={roomLength} quadrantX={-1} quadrantY={1} numWindows={numWindows} />
-                        <Room doorFront={true} roomWidth={roomWidth} roomLength={roomLength} quadrantX={1} quadrantY={1} numWindows={numWindows} />
+                        {false && <UnconnectedRooms roomLength={roomLength} roomWidth={roomWidth} numWindows={numWindows} />}
+                        {false && <ConnectedRooms roomLength={roomLength} roomWidth={roomWidth} numWindows={numWindows} />}
+                        {true && <SoloRoom roomLength={roomLength} roomWidth={roomWidth} numWindows={numWindows} />}
+
                         <mesh position={[0, -1, 0]}>
                             <boxGeometry args={[roomWidth * 2.001, 0.2, roomLength * 2.001]} ></boxGeometry>
                             <meshStandardMaterial color="gray" />
