@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, Sky } from "@react-three/drei";
 import * as THREE from "three";
+import axios from "axios"; // Add axios for API requests
 
 const WALL_HEIGHT = 1;
 const WALL_THICKNESS = 0.2;
@@ -232,19 +233,21 @@ const Wall = ({ hasDoor = false, position, rotation, doorX = 0, width, color = '
     );
 };
 
-// Utility function to generate pairs of windows for multiple x positions
+// Utility function to generate pairs of windows for an array of x positions
 const generateWindowPane = (xValues) => {
     const windowY = 0.2; // Fixed vertical position for windows
     return xValues.flatMap((x) => [
-        {
-            x: x - (WINDOW_WIDTH / 2 + WINDOW_PANE_GAP / 2),
-            y: windowY,
-        },
-        {
-            x: x + (WINDOW_WIDTH / 2 + WINDOW_PANE_GAP / 2),
-            y: windowY,
-        },
+        { x: x - (WINDOW_WIDTH / 2 + WINDOW_PANE_GAP / 2), y: windowY },
+        { x: x + (WINDOW_WIDTH / 2 + WINDOW_PANE_GAP / 2), y: windowY },
     ]);
+};
+
+// Compute evenly distributed x positions for windows based on room dimension
+const computeWindowPositions = (dimension, offset = 0) => {
+    const numWindows = parseInt((dimension - offset) / 1); // At least 2 windows, increase with dimension
+    const start = -(dimension + offset) / 2;
+    const step = dimension / (numWindows - 1);
+    return Array.from({ length: numWindows }, (_, i) => start + i * step);
 };
 
 // 🏠 Custom Roof with Rectangular Base
@@ -252,6 +255,12 @@ const Roof = ({ width, length, height, rotation, y = WALL_HEIGHT }) => {
     const BASE_OFFSET = 0.5; // Controls how much the peak is inset
 
     const geometry = useMemo(() => {
+        // Ensure dimensions are valid and non-zero
+        if (isNaN(width) || isNaN(length) || isNaN(height) || width <= 0 || length <= 0 || height <= 0) {
+            console.error("Invalid dimensions detected in roof geometry. Replacing with default values.");
+            return new THREE.BufferGeometry(); // Return an empty geometry to prevent errors
+        }
+
         const vertices = new Float32Array([
             // Base rectangle (extended for overhang)
             -width / 2 - ROOF_OFFSET, 0, -length / 2 - ROOF_OFFSET, // 0
@@ -263,6 +272,12 @@ const Roof = ({ width, length, height, rotation, y = WALL_HEIGHT }) => {
             -width / 2 + BASE_OFFSET, height, 0,  // 4 (Left Peak)
             width / 2 - BASE_OFFSET, height, 0,   // 5 (Right Peak)
         ]);
+
+        // Validate vertices to ensure no NaN values
+        if (vertices.some((v) => isNaN(v))) {
+            console.error("Invalid vertices detected in roof geometry. Replacing with default values.");
+            return new THREE.BufferGeometry(); // Return an empty geometry to prevent errors
+        }
 
         const indices = new Uint16Array([
             // Side faces
@@ -381,7 +396,9 @@ const Rooms = ({ roomWidth, roomLength, numWindows, type }) => {
 };
 
 const Storey = ({ index, roomWidth, roomLength, doorX = 0, numWindows, renderRooms }) => {
-
+    const frontBackWindowPositions = computeWindowPositions(roomWidth);
+    const sideWindowPositions = computeWindowPositions(roomLength);
+    const mainWindowPositions = computeWindowPositions(roomWidth, 1.4);
     return (
         <group position={[0, index * WALL_HEIGHT * 2, 0]}>
             {/* Front wall with door and windows */}
@@ -390,14 +407,14 @@ const Storey = ({ index, roomWidth, roomLength, doorX = 0, numWindows, renderRoo
                 position={[0, 0, -roomLength]}
                 doorX={doorX}
                 width={roomWidth}
-                windows={index === 0 ? generateWindowPane([roomWidth / 4, -roomWidth / 2]) : generateWindowPane([roomWidth / 2, -roomWidth / 2])}
+                windows={index === 0 ? generateWindowPane(mainWindowPositions) : generateWindowPane(frontBackWindowPositions)}
             />
 
             {/* Back wall with windows */}
             <Wall
                 position={[0, 0, roomLength - WALL_THICKNESS]}
                 width={roomWidth}
-                windows={generateWindowPane([roomWidth / 2, -roomWidth / 2])}
+                windows={generateWindowPane(frontBackWindowPositions)}
             />
 
             {/* Right wall with windows */}
@@ -405,7 +422,7 @@ const Storey = ({ index, roomWidth, roomLength, doorX = 0, numWindows, renderRoo
                 position={[roomWidth - WALL_THICKNESS, 0, 0]}
                 rotation={[0, Math.PI / 2, 0]}
                 width={roomLength}
-                windows={generateWindowPane([roomLength / 2, -roomLength / 2])} // Adjusted for right wall
+                windows={generateWindowPane(sideWindowPositions)}
             />
 
             {/* Left wall with windows */}
@@ -413,7 +430,7 @@ const Storey = ({ index, roomWidth, roomLength, doorX = 0, numWindows, renderRoo
                 position={[-roomWidth, 0, 0]}
                 rotation={[0, Math.PI / 2, 0]}
                 width={roomLength}
-                windows={generateWindowPane([roomLength / 2, -roomLength / 2])} // Adjusted for left wall
+                windows={generateWindowPane(sideWindowPositions)}
             />
 
             {/* Render rooms */}
@@ -428,9 +445,9 @@ const Storey = ({ index, roomWidth, roomLength, doorX = 0, numWindows, renderRoo
     );
 };
 
-const House = ({ roofHeight, renderGrass, doorX, roomWidth, roomLength, numStories, numWindows = 2 }) => {
+const House = ({ roofHeight, renderGrass, doorX, houseWidth, houseLength, numStories, numWindows = 2, roomsPerStorey }) => {
     const renderRooms = (type) => {
-        return <Rooms roomLength={roomLength} roomWidth={roomWidth} numWindows={numWindows} type={type} />;
+        return <Rooms roomLength={houseLength} roomWidth={houseWidth} numWindows={numWindows} type={type} />;
     };
 
     return (
@@ -446,8 +463,8 @@ const House = ({ roofHeight, renderGrass, doorX, roomWidth, roomLength, numStori
                     <Storey
                         key={i}
                         index={i}
-                        roomWidth={roomWidth}
-                        roomLength={roomLength}
+                        roomWidth={houseWidth}
+                        roomLength={houseLength}
                         doorX={doorX} // Pass doorX dynamically
                         numWindows={numWindows}
                         renderRooms={() => renderRooms("unconnected")} // Example: Use "unconnected" as default
@@ -455,8 +472,8 @@ const House = ({ roofHeight, renderGrass, doorX, roomWidth, roomLength, numStori
                 ))
             }
             <Roof
-                width={roomWidth * 2}
-                length={roomLength * 2}
+                width={houseWidth * 2}
+                length={houseLength * 2}
                 height={roofHeight}
                 y={1 + (numStories - 1) * 2}
             />
@@ -468,13 +485,71 @@ const House = ({ roofHeight, renderGrass, doorX, roomWidth, roomLength, numStori
 
 const HouseScene = () => {
     const [roofHeight, setRoofHeight] = useState(1);
-    const [renderGrass, setRenderGrass] = useState(false);
-    const [roomWidth, setRoomWidth] = useState(Math.random() * 1 + 3);
-    const [roomLength, setRoomLength] = useState(Math.random() * 1 + 3);
-    const [numStories, setNumStories] = useState(1);
-    const doorX = roomWidth - 1;
-    // State to toggle between control modes
+    const [renderGrass, setRenderGrass] = useState(true);
+    const [houseWidth, setHouseWidth] = useState(4); // Default width
+    const [houseLength, setHouseLength] = useState(4); // Default length
+    const [numStories, setNumStories] = useState(1); // Default stories
+    const [roomsPerStorey, setRoomsPerStorey] = useState([2]); // Default rooms per storey
+    const [userPrompt, setUserPrompt] = useState(""); // User prompt state
     const [useWASDControls, setUseWASDControls] = useState(false);
+    const doorX = houseWidth - 1;
+
+    const handleNumStoriesChange = (value) => {
+        const newNumStories = parseInt(value);
+        setNumStories(newNumStories);
+
+        // Adjust the roomsPerStorey array to match the number of stories
+        setRoomsPerStorey((prev) => {
+            const updated = [...prev];
+            while (updated.length < newNumStories) updated.push(2); // Default to 2 rooms per new storey
+            while (updated.length > newNumStories) updated.pop();
+            return updated;
+        });
+    };
+
+    const handleRoomsPerStoreyChange = (index, value) => {
+        setRoomsPerStorey((prev) => {
+            const updated = [...prev];
+            updated[index] = Math.min(3, parseInt(value)); // Limit to a maximum of 3 rooms
+            return updated;
+        });
+    };
+
+    const handlePromptSubmit = async () => {
+        const ai_key = import.meta.env.VITE_AI_API_KEY;
+        try {
+            const response = await axios.post("https://api.openai.com/v1/chat/completions", {
+                model: "gpt-3.5-turbo", // Use the correct model for chat completions
+                messages: [
+                    {
+                        role: "system",
+                        content: "You are a helpful assistant that extracts house parameters from user prompts.",
+                    },
+                    {
+                        role: "user",
+                        content: `Parse the following prompt to extract house parameters: ${userPrompt}. Return a JSON object with keys: numStories, houseWidth, houseLength, roomsPerStorey.`,
+                    },
+                ],
+                max_tokens: 200,
+            }, {
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${ai_key}`, // Replace with your OpenAI API key
+                },
+            });
+
+            const parsedData = JSON.parse(response.data.choices[0].message.content.trim());
+
+            // Update state with parsed data or fallback to defaults
+            setNumStories(parsedData.numStories || 1);
+            setHouseWidth(parsedData.houseWidth || 4);
+            setHouseLength(parsedData.houseLength || 4);
+            setRoomsPerStorey(Array(parsedData.numStories || 1).fill(2));
+        } catch (error) {
+            console.error("Error parsing prompt:", error);
+            alert("Failed to parse the prompt. Please try again.");
+        }
+    };
 
     return (
         <div className="h-screen w-full relative">
@@ -484,10 +559,11 @@ const HouseScene = () => {
                 <House
                     roofHeight={roofHeight}
                     renderGrass={renderGrass}
-                    doorX={doorX} // Pass doorX to House
-                    roomWidth={roomWidth}
-                    roomLength={roomLength}
+                    doorX={doorX}
+                    houseWidth={houseWidth}
+                    houseLength={houseLength}
                     numStories={numStories}
+                    roomsPerStorey={roomsPerStorey}
                 />
             </Canvas>
 
@@ -508,32 +584,59 @@ const HouseScene = () => {
                             WASD
                         </button>
                     </div>
-                    {useWASDControls && (
-                        <div className="mt-2 text-xs text-gray-600">
-                            <p>W,A,S,D: Move | Space/C: Up/Down</p>
-                            <p>Shift: Speed up | Click canvas to look around</p>
-                            <p className="text-xs italic">Click to lock cursor, ESC to release</p>
-                        </div>
-                    )}
                 </div>
 
-                <label className="block text-sm font-bold">Roof Height: {roofHeight.toFixed(1)}</label>
-                <input type="range" min="1" max="4" step="0.1" value={roofHeight} onChange={(e) => setRoofHeight(parseFloat(e.target.value))} className="w-40" />
-                <div className="mt-3">
-                    <label className="block text-sm font-bold">Room Width: {roomWidth.toFixed(1)}</label>
-                    <input type="range" min="3" max="7" step="0.1" value={roomWidth} onChange={(e) => setRoomWidth(parseFloat(e.target.value))} className="w-40" />
-                </div>
-                <div className="mt-3">
-                    <label className="block text-sm font-bold">Room Length: {roomLength.toFixed(1)}</label>
-                    <input type="range" min="3" max="7" step="0.1" value={roomLength} onChange={(e) => setRoomLength(parseFloat(e.target.value))} className="w-40" />
-                </div>
-                <div className="mt-3">
-                    <label className="block text-sm font-bold"># Stories: {numStories}</label>
-                    <input type="range" min="1" max="5" step="1" value={numStories} onChange={(e) => setNumStories(parseInt(e.target.value))} className="w-40" />
-                </div>
-                <div className="mt-3">
-                    <label className="block text-sm font-bold">Render Grass</label>
-                    <input type="checkbox" checked={renderGrass} onChange={() => setRenderGrass(!renderGrass)} className="ml-2" />
+                <div className="flex gap-4">
+                    <div>
+                        <label className="block text-sm font-bold">Roof Height: {roofHeight.toFixed(1)}</label>
+                        <input type="range" min="1" max="4" step="0.1" value={roofHeight} onChange={(e) => setRoofHeight(parseFloat(e.target.value))} className="w-40" />
+                        <div className="mt-3">
+                            <label className="block text-sm font-bold">House Width: {houseWidth.toFixed(1)}</label>
+                            <input type="range" min="3" max="7" step="0.1" value={houseWidth} onChange={(e) => setHouseWidth(parseFloat(e.target.value))} className="w-40" />
+                        </div>
+                        <div className="mt-3">
+                            <label className="block text-sm font-bold">House Length: {houseLength.toFixed(1)}</label>
+                            <input type="range" min="3" max="7" step="0.1" value={houseLength} onChange={(e) => setHouseLength(parseFloat(e.target.value))} className="w-40" />
+                        </div>
+                        <div className="mt-3">
+                            <label className="block text-sm font-bold"># Stories: {numStories}</label>
+                            <input type="range" min="1" max="5" step="1" value={numStories} onChange={(e) => handleNumStoriesChange(e.target.value)} className="w-40" />
+                        </div>
+                        {roomsPerStorey.map((rooms, index) => (
+                            <div className="mt-3" key={index}>
+                                <label className="block text-sm font-bold"># Rooms in Storey {index + 1}: {rooms}</label>
+                                <input
+                                    type="range"
+                                    min="1"
+                                    max="3" // Limit to a maximum of 3 rooms
+                                    step="1"
+                                    value={rooms}
+                                    onChange={(e) => handleRoomsPerStoreyChange(index, e.target.value)}
+                                    className="w-40"
+                                />
+                            </div>
+                        ))}
+                        <div className="mt-3">
+                            <label className="block text-sm font-bold">Render Grass</label>
+                            <input type="checkbox" checked={renderGrass} onChange={() => setRenderGrass(!renderGrass)} className="ml-2" />
+                        </div>
+                    </div>
+                    <div className="mt-3">
+                        <label className="block text-sm font-bold">User Prompt</label>
+                        <textarea
+                            value={userPrompt}
+                            onChange={(e) => setUserPrompt(e.target.value)}
+                            className="w-full p-2 border rounded"
+                            rows="4"
+                            placeholder="Describe your house (e.g., 3 stories, 5x5 house)..."
+                        />
+                        <button
+                            onClick={handlePromptSubmit}
+                            className="mt-2 px-3 py-1 bg-blue-500 text-white rounded"
+                        >
+                            Submit Prompt
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
