@@ -374,9 +374,9 @@ const House = ({ roofHeight, renderGrass, doorX, roomWidth, roomLength, numStori
                             width={roomLength}
                             windows={generateWindowPane(roomLength / 2)}
                         />
-                        {false && <UnconnectedRooms roomLength={roomLength} roomWidth={roomWidth} numWindows={numWindows} />}
+                        {true && <UnconnectedRooms roomLength={roomLength} roomWidth={roomWidth} numWindows={numWindows} />}
                         {false && <ConnectedRooms roomLength={roomLength} roomWidth={roomWidth} numWindows={numWindows} />}
-                        {true && <SoloRoom roomLength={roomLength} roomWidth={roomWidth} numWindows={numWindows} />}
+                        {false && <SoloRoom roomLength={roomLength} roomWidth={roomWidth} numWindows={numWindows} />}
 
                         <mesh position={[0, -1, 0]}>
                             <boxGeometry args={[roomWidth * 2.001, 0.2, roomLength * 2.001]} ></boxGeometry>
