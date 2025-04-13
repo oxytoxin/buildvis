@@ -175,8 +175,7 @@ const Wall = ({ hasDoor = false, position, rotation, doorX = 0, width, color = '
     // Add windows
     windows.forEach(window => {
         const { x, y } = window;
-        // Create rectangular window hole for each pane
-        let windowHole = new THREE.Path();
+        const windowHole = new THREE.Path();
         windowHole.moveTo(x - WINDOW_WIDTH / 2, y - WINDOW_HEIGHT / 2);
         windowHole.lineTo(x + WINDOW_WIDTH / 2, y - WINDOW_HEIGHT / 2);
         windowHole.lineTo(x + WINDOW_WIDTH / 2, y + WINDOW_HEIGHT / 2);
@@ -186,6 +185,14 @@ const Wall = ({ hasDoor = false, position, rotation, doorX = 0, width, color = '
     });
 
     const extrudeSettings = { depth: WALL_THICKNESS, bevelEnabled: false };
+
+    // Validate wallShape before creating geometry
+    const isValidShape = wallShape.getPoints().every(point => !isNaN(point.x) && !isNaN(point.y));
+
+    if (!isValidShape) {
+        console.error("Invalid wall shape detected. Skipping geometry creation.");
+        return null;
+    }
 
     // Create window glass and frames
     const windowElements = windows.map((window, index) => {
@@ -225,27 +232,19 @@ const Wall = ({ hasDoor = false, position, rotation, doorX = 0, width, color = '
     );
 };
 
-// Utility function to generate random windows for a wall
-const generateWindowPane = (x) => {
-    const windows = [];
-    const windowY = 0.2;
-    windows.push({
-        x: -x - (WINDOW_WIDTH / 2 + WINDOW_PANE_GAP / 2),
-        y: windowY,
-    });
-    windows.push({
-        x: -x + (WINDOW_WIDTH / 2 + WINDOW_PANE_GAP / 2),
-        y: windowY,
-    });
-    windows.push({
-        x: x - (WINDOW_WIDTH / 2 + WINDOW_PANE_GAP / 2),
-        y: windowY,
-    });
-    windows.push({
-        x: x + (WINDOW_WIDTH / 2 + WINDOW_PANE_GAP / 2),
-        y: windowY,
-    });
-    return windows;
+// Utility function to generate pairs of windows for multiple x positions
+const generateWindowPane = (xValues) => {
+    const windowY = 0.2; // Fixed vertical position for windows
+    return xValues.flatMap((x) => [
+        {
+            x: x - (WINDOW_WIDTH / 2 + WINDOW_PANE_GAP / 2),
+            y: windowY,
+        },
+        {
+            x: x + (WINDOW_WIDTH / 2 + WINDOW_PANE_GAP / 2),
+            y: windowY,
+        },
+    ]);
 };
 
 // 🏠 Custom Roof with Rectangular Base
@@ -295,43 +294,145 @@ const Roof = ({ width, length, height, rotation, y = WALL_HEIGHT }) => {
     );
 };
 
-const Room = ({ roomWidth, roomLength, quadrantX = 1, quadrantY = 1, doorSide = false, doorFront = false, wallSide = true, numWindows = 1 }) => {
+const Room = ({ roomWidth, roomLength, quadrantX = 1, quadrantY = 1, doorSide = false, doorFront = false, wallSide = true, numWindows = 1, doorX = 0, skipWalls = [] }) => {
+    const shouldRenderWall = (wallQuadrantX, wallQuadrantY) => {
+        return !skipWalls.some(
+            (skipWall) => skipWall.quadrantX === wallQuadrantX && skipWall.quadrantY === wallQuadrantY
+        );
+    };
+
     return (
         <group>
-            {
-                wallSide &&
+            {wallSide && shouldRenderWall(quadrantX, quadrantY + 1) && (
                 <Wall
                     hasDoor={doorSide}
                     position={[quadrantX > 0 ? 0 : -WALL_THICKNESS, 0, quadrantY * roomLength / 2]}
                     rotation={[0, Math.PI / 2, 0]}
                     width={roomLength / 2}
+                    doorX={doorX}
                 />
-            }
-            <Wall
-                hasDoor={doorFront}
-                position={[quadrantX * roomWidth / 2, 0, 0]}
-                rotation={[0, 0, 0]}
-                width={roomWidth / 2}
-            />
+            )}
+            {shouldRenderWall(quadrantX + 1, quadrantY) && (
+                <Wall
+                    hasDoor={doorFront}
+                    position={[quadrantX * roomWidth / 2, 0, 0]}
+                    rotation={[0, 0, 0]}
+                    width={roomWidth / 2}
+                    doorX={doorX}
+                />
+            )}
         </group>
-    )
+    );
 }
 
-const ConnectedRooms = ({ roomWidth, roomLength, numWindows }) => {
-    return (<group>
-        <Room doorSide={true} roomWidth={roomWidth} doorFront={true} roomLength={roomLength} quadrantX={-1} quadrantY={1} numWindows={numWindows} />
-        <Room doorFront={true} wallSide={false} roomWidth={roomWidth} roomLength={roomLength} quadrantX={1} quadrantY={1} numWindows={numWindows} />
-    </group>)
-}
+const Rooms = ({ roomWidth, roomLength, numWindows, type }) => {
+    const numRooms = type === "solo" ? 1 : Math.floor(Math.random() * 3) + 2; // Solo has 1 room, others have 2-4
+    const rooms = Array.from({ length: numRooms }, (_, i) => {
+        const quadrantX = Math.random() > 0.5 ? 1 : -1;
+        const quadrantY = Math.random() > 0.5 ? 1 : -1;
+        const doorX = 0;
 
-const UnconnectedRooms = ({ roomWidth, roomLength, numWindows }) => {
-    return (<group>
-        <Room doorFront={true} roomWidth={roomWidth} roomLength={roomLength} quadrantX={-1} quadrantY={1} numWindows={numWindows} />
-        <Room doorFront={true} roomWidth={roomWidth} roomLength={roomLength} quadrantX={1} quadrantY={1} numWindows={numWindows} />
-    </group>)
-}
+        return {
+            quadrantX,
+            quadrantY,
+            doorSide: type === "connected" && i === 0, // First room has a side door for connected rooms
+            doorFront: type !== "solo" || i === 0, // Ensure at least one door for solo/unconnected rooms
+            doorX,
+        };
+    });
+
+    const isAdjoining = (roomA, roomB) => {
+        return (
+            roomA.quadrantX === roomB.quadrantX &&
+            Math.abs(roomA.quadrantY - roomB.quadrantY) === 2
+        ) || (
+                roomA.quadrantY === roomB.quadrantY &&
+                Math.abs(roomA.quadrantX - roomB.quadrantX) === 2
+            );
+    };
+
+    return (
+        <group>
+            {rooms.map((room, index) => {
+                const adjoiningRooms = rooms.filter((otherRoom, otherIndex) =>
+                    otherIndex !== index && isAdjoining(room, otherRoom)
+                );
+
+                return (
+                    <Room
+                        key={index}
+                        doorSide={room.doorSide}
+                        doorFront={room.doorFront}
+                        roomWidth={roomWidth}
+                        roomLength={roomLength}
+                        quadrantX={room.quadrantX}
+                        quadrantY={room.quadrantY}
+                        numWindows={numWindows}
+                        doorX={room.doorX}
+                        skipWalls={adjoiningRooms.map(adjRoom => ({
+                            quadrantX: adjRoom.quadrantX,
+                            quadrantY: adjRoom.quadrantY,
+                        }))}
+                    />
+                );
+            })}
+        </group>
+    );
+};
+
+const Storey = ({ index, roomWidth, roomLength, doorX = 0, numWindows, renderRooms }) => {
+
+    return (
+        <group position={[0, index * WALL_HEIGHT * 2, 0]}>
+            {/* Front wall with door and windows */}
+            <Wall
+                hasDoor={index === 0}
+                position={[0, 0, -roomLength]}
+                doorX={doorX}
+                width={roomWidth}
+                windows={index === 0 ? generateWindowPane([roomWidth / 4, -roomWidth / 2]) : generateWindowPane([roomWidth / 2, -roomWidth / 2])}
+            />
+
+            {/* Back wall with windows */}
+            <Wall
+                position={[0, 0, roomLength - WALL_THICKNESS]}
+                width={roomWidth}
+                windows={generateWindowPane([roomWidth / 2, -roomWidth / 2])}
+            />
+
+            {/* Right wall with windows */}
+            <Wall
+                position={[roomWidth - WALL_THICKNESS, 0, 0]}
+                rotation={[0, Math.PI / 2, 0]}
+                width={roomLength}
+                windows={generateWindowPane([roomLength / 2, -roomLength / 2])} // Adjusted for right wall
+            />
+
+            {/* Left wall with windows */}
+            <Wall
+                position={[-roomWidth, 0, 0]}
+                rotation={[0, Math.PI / 2, 0]}
+                width={roomLength}
+                windows={generateWindowPane([roomLength / 2, -roomLength / 2])} // Adjusted for left wall
+            />
+
+            {/* Render rooms */}
+            {renderRooms()}
+
+            {/* Floor */}
+            <mesh position={[0, -1, 0]}>
+                <boxGeometry args={[roomWidth * 2.001, 0.2, roomLength * 2.001]} />
+                <meshStandardMaterial color="gray" />
+            </mesh>
+        </group>
+    );
+};
 
 const House = ({ roofHeight, renderGrass, doorX, roomWidth, roomLength, numStories, numWindows = 2 }) => {
+    const renderRooms = (type) => {
+        return <Rooms roomLength={roomLength} roomWidth={roomWidth} numWindows={numWindows} type={type} />;
+    };
+
     return (
         <group rotation={[0, Math.PI * 5 / 4, 0]}>
             {renderGrass && (
@@ -341,49 +442,17 @@ const House = ({ roofHeight, renderGrass, doorX, roomWidth, roomLength, numStori
                 </mesh>
             )}
             {
-                [...Array(numStories)].map((_, i) =>
-                    <group key={i} position={[0, i * WALL_HEIGHT * 2, 0]}>
-                        {/* Front wall with door and windows */}
-                        <Wall
-                            hasDoor={i == 0}
-                            position={[0, 0, -roomLength]}
-                            doorX={doorX}
-                            width={roomWidth}
-                            windows={i > 0 ? generateWindowPane(roomWidth / 2) : []}
-                        />
-
-                        {/* Back wall with windows */}
-                        <Wall
-                            position={[0, 0, roomLength - WALL_THICKNESS]}
-                            width={roomWidth}
-                            windows={generateWindowPane(roomWidth / 2)}
-                        />
-
-                        {/* Right wall with windows */}
-                        <Wall
-                            position={[roomWidth - WALL_THICKNESS, 0, 0]}
-                            rotation={[0, Math.PI / 2, 0]}
-                            width={roomLength}
-                            windows={generateWindowPane(roomLength / 2)}
-                        />
-
-                        {/* Left wall with windows */}
-                        <Wall
-                            position={[-roomWidth, 0, 0]}
-                            rotation={[0, Math.PI / 2, 0]}
-                            width={roomLength}
-                            windows={generateWindowPane(roomLength / 2)}
-                        />
-                        {true && <UnconnectedRooms roomLength={roomLength} roomWidth={roomWidth} numWindows={numWindows} />}
-                        {false && <ConnectedRooms roomLength={roomLength} roomWidth={roomWidth} numWindows={numWindows} />}
-                        {false && <SoloRoom roomLength={roomLength} roomWidth={roomWidth} numWindows={numWindows} />}
-
-                        <mesh position={[0, -1, 0]}>
-                            <boxGeometry args={[roomWidth * 2.001, 0.2, roomLength * 2.001]} ></boxGeometry>
-                            <meshStandardMaterial color="gray" />
-                        </mesh>
-                    </group>
-                )
+                [...Array(numStories)].map((_, i) => (
+                    <Storey
+                        key={i}
+                        index={i}
+                        roomWidth={roomWidth}
+                        roomLength={roomLength}
+                        doorX={doorX} // Pass doorX dynamically
+                        numWindows={numWindows}
+                        renderRooms={() => renderRooms("unconnected")} // Example: Use "unconnected" as default
+                    />
+                ))
             }
             <Roof
                 width={roomWidth * 2}
@@ -400,14 +469,10 @@ const House = ({ roofHeight, renderGrass, doorX, roomWidth, roomLength, numStori
 const HouseScene = () => {
     const [roofHeight, setRoofHeight] = useState(1);
     const [renderGrass, setRenderGrass] = useState(false);
-    const [doorX, setDoorX] = useState(0);
     const [roomWidth, setRoomWidth] = useState(Math.random() * 1 + 3);
     const [roomLength, setRoomLength] = useState(Math.random() * 1 + 3);
     const [numStories, setNumStories] = useState(1);
-
-    const minDoorX = -roomWidth + DOOR_WIDTH / 2 + DOOR_MARGIN;
-    const maxDoorX = roomWidth - DOOR_WIDTH / 2 - DOOR_MARGIN;
-
+    const doorX = roomWidth - 1;
     // State to toggle between control modes
     const [useWASDControls, setUseWASDControls] = useState(false);
 
@@ -419,7 +484,7 @@ const HouseScene = () => {
                 <House
                     roofHeight={roofHeight}
                     renderGrass={renderGrass}
-                    doorX={doorX}
+                    doorX={doorX} // Pass doorX to House
                     roomWidth={roomWidth}
                     roomLength={roomLength}
                     numStories={numStories}
@@ -454,10 +519,6 @@ const HouseScene = () => {
 
                 <label className="block text-sm font-bold">Roof Height: {roofHeight.toFixed(1)}</label>
                 <input type="range" min="1" max="4" step="0.1" value={roofHeight} onChange={(e) => setRoofHeight(parseFloat(e.target.value))} className="w-40" />
-                <div className="mt-3">
-                    <label className="block text-sm font-bold">Door X Position: {doorX.toFixed(1)}</label>
-                    <input type="range" min={minDoorX} max={maxDoorX} step="0.1" value={doorX} onChange={(e) => setDoorX(parseFloat(e.target.value))} className="w-40" />
-                </div>
                 <div className="mt-3">
                     <label className="block text-sm font-bold">Room Width: {roomWidth.toFixed(1)}</label>
                     <input type="range" min="3" max="7" step="0.1" value={roomWidth} onChange={(e) => setRoomWidth(parseFloat(e.target.value))} className="w-40" />
