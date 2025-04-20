@@ -492,6 +492,7 @@ const HouseScene = () => {
     const [roomsPerStorey, setRoomsPerStorey] = useState([2]); // Default rooms per storey
     const [userPrompt, setUserPrompt] = useState(""); // User prompt state
     const [useWASDControls, setUseWASDControls] = useState(false);
+    const [showControls, setShowControls] = useState(true);
     const doorX = houseWidth - 1;
 
     const handleNumStoriesChange = (value) => {
@@ -566,9 +567,14 @@ const HouseScene = () => {
                     roomsPerStorey={roomsPerStorey}
                 />
             </Canvas>
-
-            <div className="absolute bottom-5 right-32 transform bg-white p-3 rounded shadow-lg">
-                <div className="mb-4 p-2 bg-gray-100 rounded">
+            {showControls || <button
+                onClick={() => setShowControls(true)}
+                className="mt-2 ml-2 px-3 absolute block bottom-2 py-1 bg-blue-500 text-white rounded"
+            >
+                Show Controls
+            </button>}
+            {showControls && <div className="absolute bottom-5 m-4 sm:right-32 transform bg-white opacity-85 p-3 rounded shadow-lg">
+                <div className="mb-4 p-2 hidden sm:block bg-gray-100 rounded">
                     <label className="block text-sm font-bold mb-2">Camera Controls</label>
                     <div className="flex items-center">
                         <button
@@ -586,7 +592,7 @@ const HouseScene = () => {
                     </div>
                 </div>
 
-                <div className="flex gap-4">
+                <div className="flex flex-col sm:flex-row gap-4">
                     <div>
                         <label className="block text-sm font-bold">Roof Height: {roofHeight.toFixed(1)}</label>
                         <input type="range" min="1" max="4" step="0.1" value={roofHeight} onChange={(e) => setRoofHeight(parseFloat(e.target.value))} className="w-40" />
@@ -636,9 +642,15 @@ const HouseScene = () => {
                         >
                             Submit Prompt
                         </button>
+                        <button
+                            onClick={() => setShowControls(false)}
+                            className="mt-2 ml-2 px-3 py-1 bg-blue-500 text-white rounded"
+                        >
+                            Hide
+                        </button>
                     </div>
                 </div>
-            </div>
+            </div>}
         </div>
     );
 };
