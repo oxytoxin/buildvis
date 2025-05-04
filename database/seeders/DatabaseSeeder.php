@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             ProvinceSeeder::class,
             CityMunicipalitySeeder::class,
             ProductSeeder::class,
+            WorkSeeder::class,
         ]);
     }
 }
