@@ -37,6 +37,10 @@ return [
             'throw' => false,
             'report' => false,
         ],
+        'snapshots' => [
+            'driver' => 'local',
+            'root' => database_path('snapshots'),
+        ],
 
         'media' => [
             'driver' => 'local',

@@ -14,8 +14,12 @@ use Illuminate\Validation\Rules\Password;
 class Register extends Component
 {
 
-    public string $name = '';
+    public string $first_name = '';
+    public string $middle_name = '';
+    public string $last_name = '';
     public string $email = '';
+    public string $gender = '';
+    public string $phone_number = '';
     public string $password = '';
     public string $password_confirmation = '';
 
@@ -25,7 +29,11 @@ class Register extends Component
     public function register(): void
     {
         $validated = $this->validate([
-            'name' => ['required', 'string', 'max:255'],
+            'first_name' => ['required', 'string', 'max:255'],
+            'middle_name' => ['nullable', 'string', 'max:255'],
+            'last_name' => ['required', 'string', 'max:255'],
+            'gender' => ['nullable', 'string', 'in:male,female,other'],
+            'phone_number' => ['nullable', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
             'password' => ['required', 'string', 'confirmed', Password::defaults()],
         ]);

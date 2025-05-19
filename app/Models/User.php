@@ -3,6 +3,8 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -14,17 +16,6 @@ class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
-    protected $fillable = [
-        'name',
-        'email',
-        'password',
-    ];
 
     /**
      * The attributes that should be hidden for serialization.
@@ -51,25 +42,24 @@ class User extends Authenticatable
 
     protected static function booted(): void
     {
-        static::updated(function (User $user) {
-            $user->customer?->update([
-                'name' => $user->name,
-            ]);
-        });
-
         static::deleted(function (User $user) {
             $user->customer?->delete();
         });
 
         static::created(function (User $user) {
-            $user->customer()->create([
-                'name' => $user->name,
-            ]);
+            $user->customer()->create([]);
         });
     }
 
     public function customer()
     {
         return $this->hasOne(Customer::class);
+    }
+
+    public function name(): Attribute
+    {
+        return new Attribute(
+            get: fn() => implode(' ', array_filter([$this->first_name, $this->middle_name, $this->last_name])),
+        );
     }
 }

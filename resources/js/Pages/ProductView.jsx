@@ -10,7 +10,7 @@ export default function ProductView() {
     const gltf = model ? useLoader(GLTFLoader, model.original_url) : null;
     return (
         <div className="h-screen flex flex-col px-16 py-8">
-            <h2 className="text-4xl font-semibold mb-4">View Product</h2>
+            <h2 className="text-2xl font-semibold mb-4">View Product</h2>
             <div className="flex gap-32 flex-1 items-center">
                 <div className="w-1/2 h-full p-8 border-2 border-black">
                     <Canvas>

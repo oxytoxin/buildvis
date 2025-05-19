@@ -46,7 +46,7 @@ class WorkCategoryResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('name'),
-                IconColumn::make('has_materials')->boolean(),
+                IconColumn::make('requires_labor')->boolean(),
                 TextColumn::make('labor_cost_rate')->numeric()->formatStateUsing(fn($state) => number_format($state * 100) . "%")
             ])
             ->filters([

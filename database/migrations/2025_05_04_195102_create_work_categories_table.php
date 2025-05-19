@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('work_categories', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->boolean('has_materials');
+            $table->boolean('requires_labor');
             $table->decimal('labor_cost_rate')->default(1);
             $table->timestamps();
         });

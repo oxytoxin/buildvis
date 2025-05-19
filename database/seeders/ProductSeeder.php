@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\Supplier;
 use Illuminate\Database\Seeder;
+use ProductCategories;
 use Spatie\SimpleExcel\SimpleExcelReader;
 
 class ProductSeeder extends Seeder
@@ -41,6 +42,38 @@ class ProductSeeder extends Seeder
                 'status' => 'active',
             ]);
         });
-        //
+        Product::create([
+            'name' => 'Embankment Materials',
+            'category_id' => ProductCategories::Others,
+            'supplier_id' => $supplier->id,
+            'price' => 400,
+            'unit' => 'cu.m',
+            'stock_quantity' => 999999,
+            'minimum_stock_quantity' => 10,
+            'minimum_order_quantity' => 1,
+            'status' => 'active',
+        ]);
+        Product::create([
+            'name' => 'Excavation',
+            'category_id' => ProductCategories::Others,
+            'supplier_id' => $supplier->id,
+            'price' => 500,
+            'unit' => 'cu.m',
+            'stock_quantity' => 999999,
+            'minimum_stock_quantity' => 10,
+            'minimum_order_quantity' => 1,
+            'status' => 'active',
+        ]);
+        Product::create([
+            'name' => 'Back Fill',
+            'category_id' => ProductCategories::Others,
+            'supplier_id' => $supplier->id,
+            'price' => 500,
+            'unit' => 'cu.m',
+            'stock_quantity' => 999999,
+            'minimum_stock_quantity' => 10,
+            'minimum_order_quantity' => 1,
+            'status' => 'active',
+        ]);
     }
 }

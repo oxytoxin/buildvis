@@ -8,8 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 class Customer extends Model
 {
 
-
-
     public function default_shipping_information()
     {
         return $this->hasOne(ShippingInformation::class)->whereDefault(true);
@@ -30,12 +28,6 @@ class Customer extends Model
                 'customer_id' => $customer->id,
                 'shipping_address' => $customer->default_shipping_information?->address,
                 'billing_address' => $customer->default_shipping_information?->address,
-            ]);
-        });
-
-        static::updated(function (Customer $customer) {
-            $customer->user()->update([
-                'name' => $customer->name,
             ]);
         });
     }
