@@ -6,7 +6,7 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\Supplier;
 use Illuminate\Database\Seeder;
-use ProductCategories;
+use App\Enums\ProductCategories;
 use Spatie\SimpleExcel\SimpleExcelReader;
 
 class ProductSeeder extends Seeder
