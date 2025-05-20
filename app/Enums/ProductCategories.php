@@ -1,5 +1,7 @@
 <?php
 
+namespace App\Enums;
+
 enum ProductCategories: int
 {
     case Electrical = 1;
