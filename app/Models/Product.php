@@ -17,12 +17,9 @@ class Product extends Model implements HasMedia
     use HasFactory;
     use InteractsWithMedia;
 
+    protected $guarded = [];
 
     protected $casts = [
-        'price' => 'decimal:2',
-        'stock_quantity' => 'integer',
-        'minimum_order_quantity' => 'integer',
-        'minimum_stock_quantity' => 'integer',
         'category_id' => ProductCategories::class,
     ];
 
@@ -49,7 +46,6 @@ class Product extends Model implements HasMedia
             ->oldestOfMany();
     }
 
-
     public function images()
     {
         return $this->media()
@@ -75,5 +71,10 @@ class Product extends Model implements HasMedia
     {
         return $this->belongsToMany(WorkCategory::class)
             ->withTimestamps();
+    }
+
+    public function variations(): HasMany
+    {
+        return $this->hasMany(ProductVariation::class);
     }
 }

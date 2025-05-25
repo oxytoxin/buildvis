@@ -35,7 +35,11 @@ class StorePanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Teal,
             ])
+            ->font('Figtree')
             ->navigationItems([
+                NavigationItem::make('Store')
+                    ->url(fn() => route('store.index'))
+                    ->icon('heroicon-o-building-storefront'),
                 NavigationItem::make('House Generator')
                     ->url(fn() => route('house-generator.view'))
                     ->icon('heroicon-o-home')
@@ -43,9 +47,7 @@ class StorePanelProvider extends PanelProvider
             ])
             ->discoverResources(in: app_path('Filament/Store/Resources'), for: 'App\\Filament\\Store\\Resources')
             ->discoverPages(in: app_path('Filament/Store/Pages'), for: 'App\\Filament\\Store\\Pages')
-            ->pages([
-                \App\Filament\Store\Pages\StoreIndex::class,
-            ])
+            ->pages([])
             ->discoverWidgets(in: app_path('Filament/Store/Widgets'), for: 'App\\Filament\\Store\\Widgets')
             ->widgets([
                 Widgets\AccountWidget::class,

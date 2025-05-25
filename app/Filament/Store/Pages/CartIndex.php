@@ -52,7 +52,8 @@ class CartIndex extends Page implements HasForms, HasTable
         return $table
             ->query(OrderItem::query()->whereRelation('order', 'customer_id', Auth::user()->customer?->id)->whereRelation('order', 'status', 'pending'))
             ->columns([
-                TextColumn::make('product.name')->searchable(),
+                TextColumn::make('product_variation.product.name')->searchable()->label('Product'),
+                TextColumn::make('product_variation.name')->searchable()->label('Variation'),
                 TextColumn::make('unit_price')->money('PHP')->sortable(),
                 TextColumn::make('quantity')->size('xs')->sortable(),
                 TextColumn::make('subtotal')->money('PHP')->sortable()->summarize(Sum::make('Grand Total')->money('PHP')->label('Grand Total')),

@@ -21,9 +21,9 @@ class OrderItem extends Model
         return $this->belongsTo(Order::class);
     }
 
-    public function product(): BelongsTo
+    public function product_variation(): BelongsTo
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(ProductVariation::class);
     }
 
     public static function booted()

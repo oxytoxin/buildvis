@@ -42,9 +42,9 @@ class StripeController extends Controller
         $order->update([
             'status' => 'processing',
         ]);
-        $order->items()->with('product')->each(function (OrderItem $orderItem) {
-            $orderItem->product->update([
-                'stock_quantity' => $orderItem->product->stock_quantity - $orderItem->quantity,
+        $order->items()->with('product_variation')->each(function (OrderItem $orderItem) {
+            $orderItem->product_variation->update([
+                'stock_quantity' => $orderItem->product_variation->stock_quantity - $orderItem->quantity,
             ]);
         });
         $customer = $order->customer;

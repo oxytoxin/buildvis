@@ -10,6 +10,8 @@ use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\StripeController;
 use App\Models\Product;
 use Inertia\Inertia;
+use App\Http\Controllers\StoreController;
+use App\Http\Controllers\CartController;
 
 Route::get('/', Welcome::class)->name('welcome');
 
@@ -26,7 +28,7 @@ Route::middleware('guest')->group(function () {
         ->name('password.reset');
 });
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'verified'])->group(function () {
     Volt::route('verify-email', 'pages.auth.verify-email')
         ->name('verification.notice');
 
@@ -53,4 +55,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/stripe-checkout/{order}', [StripeController::class, 'checkout'])->name('stripe.checkout');
     Route::get('/stripe-cancel/{order}', [StripeController::class, 'cancel'])->name('stripe.cancel');
     Route::get('/stripe-success/{order}', [StripeController::class, 'success'])->name('stripe.success');
+
+    // Cart routes
+    Route::post('/cart/add', [CartController::class, 'add'])
+        ->name('cart.add');
+    Route::get('/store', [StoreController::class, 'index'])->name('store.index');
 });

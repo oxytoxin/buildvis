@@ -3,6 +3,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, Sky } from "@react-three/drei";
 import * as THREE from "three";
 import axios from "axios"; // Add axios for API requests
+import Layout from "../Components/Layouts/Layout";
 
 const WALL_HEIGHT = 1;
 const WALL_THICKNESS = 0.2;
@@ -553,105 +554,107 @@ const HouseScene = () => {
     };
 
     return (
-        <div className="h-screen w-full relative">
-            <Canvas camera={{ position: [6, 4, 6], fov: 60 }} fog={{ color: "green", near: 10, far: 50 }}>
-                {useWASDControls ? <WASDControls /> : <OrbitControls />}
-                <Sky sunPosition={[100, 20, 100]} />
-                <House
-                    roofHeight={roofHeight}
-                    renderGrass={renderGrass}
-                    doorX={doorX}
-                    houseWidth={houseWidth}
-                    houseLength={houseLength}
-                    numStories={numStories}
-                    roomsPerStorey={roomsPerStorey}
-                />
-            </Canvas>
-            {showControls || <button
-                onClick={() => setShowControls(true)}
-                className="mt-2 ml-2 px-3 absolute block bottom-2 py-1 bg-blue-500 text-white rounded"
-            >
-                Show Controls
-            </button>}
-            {showControls && <div className="absolute bottom-5 m-4 sm:right-32 transform bg-white opacity-85 p-3 rounded shadow-lg">
-                <div className="mb-4 p-2 hidden sm:block bg-gray-100 rounded">
-                    <label className="block text-sm font-bold mb-2">Camera Controls</label>
-                    <div className="flex items-center">
-                        <button
-                            onClick={() => setUseWASDControls(false)}
-                            className={`px-3 py-1 mr-2 rounded ${!useWASDControls ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
-                        >
-                            Orbit
-                        </button>
-                        <button
-                            onClick={() => setUseWASDControls(true)}
-                            className={`px-3 py-1 rounded ${useWASDControls ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
-                        >
-                            WASD
-                        </button>
+        <Layout>
+            <div className="absolute inset-0">
+                <Canvas camera={{ position: [6, 4, 6], fov: 60 }} fog={{ color: "green", near: 10, far: 50 }}>
+                    {useWASDControls ? <WASDControls /> : <OrbitControls />}
+                    <Sky sunPosition={[100, 20, 100]} />
+                    <House
+                        roofHeight={roofHeight}
+                        renderGrass={renderGrass}
+                        doorX={doorX}
+                        houseWidth={houseWidth}
+                        houseLength={houseLength}
+                        numStories={numStories}
+                        roomsPerStorey={roomsPerStorey}
+                    />
+                </Canvas>
+                {showControls || <button
+                    onClick={() => setShowControls(true)}
+                    className="mt-2 ml-2 px-3 absolute block bottom-2 py-1 bg-blue-500 text-white rounded"
+                >
+                    Show Controls
+                </button>}
+                {showControls && <div className="absolute bottom-5 m-4 sm:right-32 transform bg-white opacity-85 p-3 rounded shadow-lg">
+                    <div className="mb-4 p-2 hidden sm:block bg-gray-100 rounded">
+                        <label className="block text-sm font-bold mb-2">Camera Controls</label>
+                        <div className="flex items-center">
+                            <button
+                                onClick={() => setUseWASDControls(false)}
+                                className={`px-3 py-1 mr-2 rounded ${!useWASDControls ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+                            >
+                                Orbit
+                            </button>
+                            <button
+                                onClick={() => setUseWASDControls(true)}
+                                className={`px-3 py-1 rounded ${useWASDControls ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+                            >
+                                WASD
+                            </button>
+                        </div>
                     </div>
-                </div>
 
-                <div className="flex flex-col sm:flex-row gap-4">
-                    <div>
-                        <label className="block text-sm font-bold">Roof Height: {roofHeight.toFixed(1)}</label>
-                        <input type="range" min="1" max="4" step="0.1" value={roofHeight} onChange={(e) => setRoofHeight(parseFloat(e.target.value))} className="w-40" />
-                        <div className="mt-3">
-                            <label className="block text-sm font-bold">House Width: {houseWidth.toFixed(1)}</label>
-                            <input type="range" min="3" max="7" step="0.1" value={houseWidth} onChange={(e) => setHouseWidth(parseFloat(e.target.value))} className="w-40" />
-                        </div>
-                        <div className="mt-3">
-                            <label className="block text-sm font-bold">House Length: {houseLength.toFixed(1)}</label>
-                            <input type="range" min="3" max="7" step="0.1" value={houseLength} onChange={(e) => setHouseLength(parseFloat(e.target.value))} className="w-40" />
-                        </div>
-                        <div className="mt-3">
-                            <label className="block text-sm font-bold"># Stories: {numStories}</label>
-                            <input type="range" min="1" max="5" step="1" value={numStories} onChange={(e) => handleNumStoriesChange(e.target.value)} className="w-40" />
-                        </div>
-                        {roomsPerStorey.map((rooms, index) => (
-                            <div className="mt-3" key={index}>
-                                <label className="block text-sm font-bold"># Rooms in Storey {index + 1}: {rooms}</label>
-                                <input
-                                    type="range"
-                                    min="1"
-                                    max="3" // Limit to a maximum of 3 rooms
-                                    step="1"
-                                    value={rooms}
-                                    onChange={(e) => handleRoomsPerStoreyChange(index, e.target.value)}
-                                    className="w-40"
-                                />
+                    <div className="flex flex-col sm:flex-row gap-4">
+                        <div>
+                            <label className="block text-sm font-bold">Roof Height: {roofHeight.toFixed(1)}</label>
+                            <input type="range" min="1" max="4" step="0.1" value={roofHeight} onChange={(e) => setRoofHeight(parseFloat(e.target.value))} className="w-40" />
+                            <div className="mt-3">
+                                <label className="block text-sm font-bold">House Width: {houseWidth.toFixed(1)}</label>
+                                <input type="range" min="3" max="7" step="0.1" value={houseWidth} onChange={(e) => setHouseWidth(parseFloat(e.target.value))} className="w-40" />
                             </div>
-                        ))}
+                            <div className="mt-3">
+                                <label className="block text-sm font-bold">House Length: {houseLength.toFixed(1)}</label>
+                                <input type="range" min="3" max="7" step="0.1" value={houseLength} onChange={(e) => setHouseLength(parseFloat(e.target.value))} className="w-40" />
+                            </div>
+                            <div className="mt-3">
+                                <label className="block text-sm font-bold"># Stories: {numStories}</label>
+                                <input type="range" min="1" max="5" step="1" value={numStories} onChange={(e) => handleNumStoriesChange(e.target.value)} className="w-40" />
+                            </div>
+                            {roomsPerStorey.map((rooms, index) => (
+                                <div className="mt-3" key={index}>
+                                    <label className="block text-sm font-bold"># Rooms in Storey {index + 1}: {rooms}</label>
+                                    <input
+                                        type="range"
+                                        min="1"
+                                        max="3" // Limit to a maximum of 3 rooms
+                                        step="1"
+                                        value={rooms}
+                                        onChange={(e) => handleRoomsPerStoreyChange(index, e.target.value)}
+                                        className="w-40"
+                                    />
+                                </div>
+                            ))}
+                            <div className="mt-3">
+                                <label className="block text-sm font-bold">Render Grass</label>
+                                <input type="checkbox" checked={renderGrass} onChange={() => setRenderGrass(!renderGrass)} className="ml-2" />
+                            </div>
+                        </div>
                         <div className="mt-3">
-                            <label className="block text-sm font-bold">Render Grass</label>
-                            <input type="checkbox" checked={renderGrass} onChange={() => setRenderGrass(!renderGrass)} className="ml-2" />
+                            <label className="block text-sm font-bold">User Prompt</label>
+                            <textarea
+                                value={userPrompt}
+                                onChange={(e) => setUserPrompt(e.target.value)}
+                                className="w-full p-2 border rounded"
+                                rows="4"
+                                placeholder="Describe your house (e.g., 3 stories, 5x5 house)..."
+                            />
+                            <button
+                                onClick={handlePromptSubmit}
+                                className="mt-2 px-3 py-1 bg-blue-500 text-white rounded"
+                            >
+                                Submit Prompt
+                            </button>
+                            <button
+                                onClick={() => setShowControls(false)}
+                                className="mt-2 ml-2 px-3 py-1 bg-blue-500 text-white rounded"
+                            >
+                                Hide
+                            </button>
                         </div>
                     </div>
-                    <div className="mt-3">
-                        <label className="block text-sm font-bold">User Prompt</label>
-                        <textarea
-                            value={userPrompt}
-                            onChange={(e) => setUserPrompt(e.target.value)}
-                            className="w-full p-2 border rounded"
-                            rows="4"
-                            placeholder="Describe your house (e.g., 3 stories, 5x5 house)..."
-                        />
-                        <button
-                            onClick={handlePromptSubmit}
-                            className="mt-2 px-3 py-1 bg-blue-500 text-white rounded"
-                        >
-                            Submit Prompt
-                        </button>
-                        <button
-                            onClick={() => setShowControls(false)}
-                            className="mt-2 ml-2 px-3 py-1 bg-blue-500 text-white rounded"
-                        >
-                            Hide
-                        </button>
-                    </div>
-                </div>
-            </div>}
-        </div>
+                </div>}
+            </div>
+        </Layout>
     );
 };
 
