@@ -19,7 +19,7 @@ return new class extends Migration
             $table->integer('minimum_order_quantity')->default(1);
             $table->boolean('is_active')->default(true);
             $table->timestamps();
-
+            $table->boolean('counted_in_stats')->default(true);
             // Ensure unique combinations of product and name
             $table->unique(['product_id', 'name']);
         });

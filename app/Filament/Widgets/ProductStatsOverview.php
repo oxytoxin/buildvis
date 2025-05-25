@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets;
 
 use App\Models\Product;
+use App\Models\ProductVariation;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Number;
@@ -13,12 +14,12 @@ class ProductStatsOverview extends BaseWidget
 
     protected function getStats(): array
     {
-        $totalProducts = Product::count();
-        $totalValue = Product::sum(\DB::raw('price * stock_quantity'));
-        $lowStockCount = Product::where('stock_quantity', '>', 0)
+        $totalProducts = ProductVariation::countedInStats()->count();
+        $totalValue = ProductVariation::countedInStats()->sum(\DB::raw('price * stock_quantity'));
+        $lowStockCount = ProductVariation::countedInStats()->where('stock_quantity', '>', 0)
             ->where('stock_quantity', '<=', \DB::raw('minimum_stock_quantity'))
             ->count();
-        $outOfStockCount = Product::where('stock_quantity', 0)->count();
+        $outOfStockCount = ProductVariation::countedInStats()->where('stock_quantity', 0)->count();
 
         return [
             Stat::make('Total Products', $totalProducts)

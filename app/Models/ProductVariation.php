@@ -24,4 +24,9 @@ class ProductVariation extends Model
     {
         return $this->belongsTo(Product::class);
     }
+
+    public function scopeCountedInStats($query)
+    {
+        return $query->where('counted_in_stats', true);
+    }
 }

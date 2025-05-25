@@ -249,7 +249,8 @@ class ProductVariationSeeder extends Seeder
                 'unit' => 'cubic meter',
                 'variations' => [
                     'Standard' => 400,
-                ]
+                ],
+                'counted_in_stats' => false,
             ],
             [
                 'name' => 'Excavation',
@@ -257,7 +258,8 @@ class ProductVariationSeeder extends Seeder
                 'unit' => 'cubic meter',
                 'variations' => [
                     'Standard' => 500,
-                ]
+                ],
+                'counted_in_stats' => false,
             ],
             [
                 'name' => 'Back Fill',
@@ -265,7 +267,8 @@ class ProductVariationSeeder extends Seeder
                 'unit' => 'cubic meter',
                 'variations' => [
                     'Standard' => 500,
-                ]
+                ],
+                'counted_in_stats' => false,
             ],
         ];
 
@@ -290,6 +293,7 @@ class ProductVariationSeeder extends Seeder
                     'minimum_stock_quantity' => 10,
                     'minimum_order_quantity' => 1,
                     'is_active' => true,
+                    'counted_in_stats' => isset($productData['counted_in_stats']) ? $productData['counted_in_stats'] : true,
                 ]);
             }
         }

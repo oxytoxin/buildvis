@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\ProductResource\Pages;
 use App\Filament\Resources\ProductResource\RelationManagers;
 use App\Models\Product;
+use App\Filament\Resources\ProductResource\RelationManagers\ProductVariationsRelationManager;
 use Filament\Forms;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Form;
@@ -43,23 +44,6 @@ class ProductResource extends Resource
                             Forms\Components\Select::make('supplier_id')
                                 ->relationship('supplier', 'name')
                                 ->required(),
-                            Forms\Components\TextInput::make('price')
-                                ->required()
-                                ->numeric()
-                                ->prefix('₱'),
-                            Forms\Components\TextInput::make('stock_quantity')
-                                ->required()
-                                ->numeric()
-                                ->default(0),
-                            Forms\Components\TextInput::make('minimum_order_quantity')
-                                ->required()
-                                ->numeric()
-                                ->default(1),
-                            Forms\Components\TextInput::make('minimum_stock_quantity')
-                                ->required()
-                                ->numeric()
-                                ->default(0)
-                                ->helperText('Alert will show when stock is at or below this quantity'),
                             Forms\Components\Textarea::make('description')
                                 ->maxLength(65535)
                                 ->columnSpanFull(),
@@ -94,15 +78,6 @@ class ProductResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('supplier.name')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('price')
-                    ->money('PHP')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('stock_quantity')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('minimum_order_quantity')
-                    ->numeric()
-                    ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -133,7 +108,7 @@ class ProductResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            ProductVariationsRelationManager::class,
         ];
     }
 
