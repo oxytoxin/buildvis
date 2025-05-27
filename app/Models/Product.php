@@ -30,15 +30,6 @@ class Product extends Model implements HasMedia
             ->onlyKeepLatest(1);
     }
 
-    public function registerMediaConversions(\Spatie\MediaLibrary\MediaCollections\Models\Media $media = null): void
-    {
-        $this->addMediaConversion('thumb')
-            ->width(400)
-            ->height(400)
-            ->sharpen(10)
-            ->nonQueued();
-    }
-
     public function featured_image()
     {
         return $this->morphOne(Media::class, 'model')

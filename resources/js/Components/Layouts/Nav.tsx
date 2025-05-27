@@ -12,6 +12,7 @@ interface NavItem {
 
 export default function Nav() {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const { url } = usePage();
 
     const isActive = (path: string) => url.startsWith(path);
@@ -69,45 +70,63 @@ export default function Nav() {
         }
     ];
 
+    const NavLink = ({ item, isItemActive, className = '' }: { item: NavItem; isItemActive: boolean; className?: string }) => {
+        const LinkComponent = item.isInertia ? Link : 'a';
+        return (
+            <LinkComponent
+                href={item.href}
+                className={`flex items-center gap-x-2 rounded-lg px-3 py-2 outline-none transition duration-75 hover:bg-gray-50 focus-visible:bg-gray-50 ${isItemActive ? 'bg-gray-50' : ''} ${className}`}
+                onClick={() => setIsMobileMenuOpen(false)}
+            >
+                {React.cloneElement(item.icon as React.ReactElement, {
+                    className: `h-5 w-5 ${isItemActive ? 'text-primary-600' : 'text-gray-400'}`
+                })}
+                <span className={`text-sm font-medium ${isItemActive ? 'text-primary-600' : 'text-gray-700'}`}>
+                    {item.name}
+                </span>
+            </LinkComponent>
+        );
+    };
+
     return (
         <div className="sticky top-0 z-50">
-            <nav className="flex h-16 items-center gap-x-4 bg-white px-4 shadow-sm ring-1 ring-gray-950/5 md:px-6 lg:px-8">
-                {/* Logo */}
-                <div className="me-6 hidden lg:flex">
+            <nav className="flex h-16 items-center justify-between gap-x-4 bg-white px-4 shadow-sm ring-1 ring-gray-950/5 md:px-6 lg:px-8">
+                {/* Logo - visible on all screens */}
+                <div className="flex items-center">
                     <Link href={store.index.get().url} className="text-xl font-bold leading-5 tracking-tight text-gray-950">
                         BuildVis
                     </Link>
                 </div>
 
-                {/* Navigation Items */}
-                <ul className="me-4 hidden items-center gap-x-4 lg:flex">
-                    {navigation.map((item) => {
-                        const NavLink = item.isInertia ? Link : 'a';
-                        const isItemActive = isActive(item.href);
+                {/* Mobile menu button */}
+                <button
+                    type="button"
+                    className="lg:hidden rounded-md p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-500"
+                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                >
+                    <span className="sr-only">Open menu</span>
+                    {isMobileMenuOpen ? (
+                        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    ) : (
+                        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                        </svg>
+                    )}
+                </button>
 
-                        return (
-                            <li key={item.name} className="fi-topbar-item">
-                                <NavLink
-                                    href={item.href}
-                                    className={`fi-topbar-item-button flex items-center justify-center gap-x-2 rounded-lg px-3 py-2 outline-none transition duration-75 hover:bg-gray-50 focus-visible:bg-gray-50 ${isItemActive ? 'bg-gray-50' : ''
-                                        }`}
-                                >
-                                    {React.cloneElement(item.icon as React.ReactElement, {
-                                        className: `fi-topbar-item-icon h-5 w-5 ${isItemActive ? 'text-primary-600' : 'text-gray-400'
-                                            }`
-                                    })}
-                                    <span className={`fi-topbar-item-label text-sm font-medium ${isItemActive ? 'text-primary-600' : 'text-gray-700'
-                                        }`}>
-                                        {item.name}
-                                    </span>
-                                </NavLink>
-                            </li>
-                        );
-                    })}
+                {/* Desktop Navigation */}
+                <ul className="hidden items-center gap-x-4 lg:flex">
+                    {navigation.map((item) => (
+                        <li key={item.name}>
+                            <NavLink item={item} isItemActive={isActive(item.href)} />
+                        </li>
+                    ))}
                 </ul>
 
                 {/* User Menu */}
-                <div className="ms-auto flex items-center gap-x-4">
+                <div className="flex items-center gap-x-4">
                     <div className="relative">
                         <button
                             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -148,6 +167,22 @@ export default function Nav() {
                     </div>
                 </div>
             </nav>
+
+            {/* Mobile Navigation Menu */}
+            {isMobileMenuOpen && (
+                <div className="lg:hidden">
+                    <div className="space-y-1 px-2 pb-3 pt-2 bg-white shadow-lg">
+                        {navigation.map((item) => (
+                            <NavLink
+                                key={item.name}
+                                item={item}
+                                isItemActive={isActive(item.href)}
+                                className="block w-full"
+                            />
+                        ))}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

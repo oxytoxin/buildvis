@@ -32,14 +32,10 @@ export default function Index({ products }: StorePageProps) {
     // Handle search and filter changes
     const handleSearch = (query: string) => {
         setSearchQuery(query);
-        // Use Wayfinder to update URL with search query
-        store.index.get({ query: { search: query || undefined } });
     };
 
     const handleCategoryChange = (category: string | null) => {
         setSelectedCategory(category);
-        // Use Wayfinder to update URL with category
-        store.index.get({ query: { category: category || undefined } });
     };
 
     return (

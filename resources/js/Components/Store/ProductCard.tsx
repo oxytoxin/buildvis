@@ -3,7 +3,8 @@ import { view } from '@routes/product';
 import { useState } from 'react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
-import { Link } from '@inertiajs/react';
+import { Link, useForm } from '@inertiajs/react';
+import { add } from '@actions/App/Http/Controllers/CartController'
 
 interface ProductCardProps {
     product: Product;
@@ -16,6 +17,10 @@ export default function ProductCard({ product, selectedVariationId, onVariationC
     const [isAddingToCart, setIsAddingToCart] = useState(false);
     const selectedVariation = product.variations.find(v => v.id === selectedVariationId) || product.variations[0];
     const activeVariations = product.variations.filter(v => v.is_active);
+    const { post, data, setData } = useForm({
+        variation_id: selectedVariation?.id,
+        quantity: quantity
+    });
 
     const handleAddToCart = async (e: React.MouseEvent) => {
         e.preventDefault(); // Prevent any parent click events
@@ -23,22 +28,13 @@ export default function ProductCard({ product, selectedVariationId, onVariationC
 
         try {
             setIsAddingToCart(true);
-            const response = await axios.post('/cart/add', {
-                variation_id: selectedVariation.id,
-                quantity: quantity
-            }, {
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
+            post(add.url(), {
+                onSuccess: () => {
+                    toast.success('Product added to cart successfully!');
+                    setQuantity(1);
                 }
             });
-
-            if (response.data.message) {
-                toast.success(response.data.message);
-            }
         } catch (error: any) {
-            console.error('Failed to add to cart:', error);
             const errorMessage = error.response?.data?.message || 'Failed to add to cart';
             toast.error(errorMessage);
         } finally {

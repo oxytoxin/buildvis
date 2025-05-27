@@ -14,7 +14,7 @@
                     </ul>
                     <div class="flex items-center justify-end">
                         <div class="hidden md:block">
-                            <a href="{{ route('filament.store.pages.store-index') }}" class="inline-flex py-2.5 px-4 items-center justify-center text-sm font-medium text-teal-900 hover:text-white border border-teal-900 hover:bg-teal-900 rounded-full transition duration-200">Visit Store</a>
+                            <a href="{{ route('store.index') }}" class="inline-flex py-2.5 px-4 items-center justify-center text-sm font-medium text-teal-900 hover:text-white border border-teal-900 hover:bg-teal-900 rounded-full transition duration-200">Visit Store</a>
                         </div>
                         <button x-on:click="mobileNavOpen = !mobileNavOpen" class="md:hidden navbar-burger text-teal-900 hover:text-teal-800">
                             <svg width="32" height="32" viewbox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -45,7 +45,7 @@
                     @endguest
                     @auth
                     <div class="flex flex-col sm:flex-row justify-center">
-                        <a href="{{ route('filament.store.pages.store-index') }}" class="inline-flex py-4 px-6 items-center justify-center text-lg font-medium text-black hover:text-white border border-teal-900 hover:bg-teal-900 rounded-full transition duration-200">Visit Store</a>
+                        <a href="{{ route('store.index') }}" class="inline-flex py-4 px-6 items-center justify-center text-lg font-medium text-black hover:text-white border border-teal-900 hover:bg-teal-900 rounded-full transition duration-200">Visit Store</a>
                     </div>
                     @endauth
                 </div>
@@ -68,7 +68,7 @@
                         <img class="h-28" src="/images/logo-transparent.png" alt="logo">
                     </a>
                     <div class="flex items-center">
-                        <a href="{{ route('filament.store.pages.store-index') }}" class="inline-flex py-2.5 px-4 mr-6 items-center justify-center text-sm font-medium text-teal-900 hover:text-white border border-teal-900 hover:bg-teal-900 rounded-full transition duration-200">Visit Store</a>
+                        <a href="{{ route('store.index') }}" class="inline-flex py-2.5 px-4 mr-6 items-center justify-center text-sm font-medium text-teal-900 hover:text-white border border-teal-900 hover:bg-teal-900 rounded-full transition duration-200">Visit Store</a>
                         <button x-on:click="mobileNavOpen = !mobileNavOpen">
                             <svg width="32" height="32" viewbox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M23.2 8.79999L8.80005 23.2M8.80005 8.79999L23.2 23.2" stroke="#1D1F1E" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>

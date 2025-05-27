@@ -1,7 +1,7 @@
 import { queryParams, type QueryParams } from './../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\CartController::add
-* @see app/Http/Controllers/CartController.php:15
+* @see app/Http/Controllers/CartController.php:16
 * @route '/cart/add'
 */
 export const add = (options?: { query?: QueryParams, mergeQuery?: QueryParams }): {
@@ -19,7 +19,7 @@ add.definition = {
 
 /**
 * @see \App\Http\Controllers\CartController::add
-* @see app/Http/Controllers/CartController.php:15
+* @see app/Http/Controllers/CartController.php:16
 * @route '/cart/add'
 */
 add.url = (options?: { query?: QueryParams, mergeQuery?: QueryParams }) => {
@@ -28,7 +28,7 @@ add.url = (options?: { query?: QueryParams, mergeQuery?: QueryParams }) => {
 
 /**
 * @see \App\Http\Controllers\CartController::add
-* @see app/Http/Controllers/CartController.php:15
+* @see app/Http/Controllers/CartController.php:16
 * @route '/cart/add'
 */
 add.post = (options?: { query?: QueryParams, mergeQuery?: QueryParams }): {

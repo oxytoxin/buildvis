@@ -41,7 +41,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('product/{product}', function (Product $product) {
         return Inertia::render('ProductView', [
-            'product' => $product,
+            'product' => $product->load(['variations.featured_image', 'variations.images']),
             'model' => $product->getFirstMedia('model')
         ]);
     })
