@@ -83,7 +83,6 @@ class CartController extends Controller
                 'unit_price' => $variation->price,
             ]);
         }
-        sleep(3);
         DB::commit();
     }
 }
