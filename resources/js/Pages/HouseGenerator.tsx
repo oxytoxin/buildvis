@@ -9,14 +9,12 @@ const WALL_HEIGHT = 1;
 const WALL_THICKNESS = 0.2;
 const DOOR_WIDTH = 0.85;
 const DOOR_HEIGHT = 1.3;
-const DOOR_MARGIN = 0.2;
 const ROOF_OFFSET = 0.2;
 // Default number of stories (now controlled by state)
 
 // Window properties
 const WINDOW_WIDTH = 0.5;  // Width of each pane (smaller for double-pane)
 const WINDOW_HEIGHT = 0.5;  // Height of window
-const WINDOW_MARGIN = 0.5;  // Margin between window sets
 const WINDOW_PANE_GAP = 0.05; // Gap between the two panes of a window
 
 // WASD Camera Controls Component
@@ -39,7 +37,7 @@ const WASDControls = ({ moveSpeed = 0.15, lookSpeed = 0.005 }) => {
 
     // Set up key listeners
     useEffect(() => {
-        const handleKeyDown = (e) => {
+        const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key.toLowerCase() === 'w') keys.current.w = true;
             if (e.key.toLowerCase() === 'a') keys.current.a = true;
             if (e.key.toLowerCase() === 's') keys.current.s = true;
@@ -49,7 +47,7 @@ const WASDControls = ({ moveSpeed = 0.15, lookSpeed = 0.005 }) => {
             if (e.key.toLowerCase() === 'c') keys.current.c = true;
         };
 
-        const handleKeyUp = (e) => {
+        const handleKeyUp = (e: KeyboardEvent) => {
             if (e.key.toLowerCase() === 'w') keys.current.w = false;
             if (e.key.toLowerCase() === 'a') keys.current.a = false;
             if (e.key.toLowerCase() === 's') keys.current.s = false;
@@ -67,7 +65,7 @@ const WASDControls = ({ moveSpeed = 0.15, lookSpeed = 0.005 }) => {
         };
 
         // Handle mouse movement for camera rotation
-        const handleMouseMove = (e) => {
+        const handleMouseMove = (e: MouseEvent) => {
             if (document.pointerLockElement === gl.domElement) {
                 // Use movementX/Y for smooth camera rotation
                 mousePos.current.x = e.movementX;
@@ -76,7 +74,7 @@ const WASDControls = ({ moveSpeed = 0.15, lookSpeed = 0.005 }) => {
         };
 
         // Prevent context menu on right-click
-        const handleContextMenu = (e) => {
+        const handleContextMenu = (e: MouseEvent) => {
             e.preventDefault();
         };
 
@@ -155,7 +153,17 @@ const WASDControls = ({ moveSpeed = 0.15, lookSpeed = 0.005 }) => {
     return null; // This component doesn't render anything
 };
 
-const Wall = ({ hasDoor = false, position, rotation, doorX = 0, width, color = 'white', windows = [] }) => {
+type WallProps = {
+    hasDoor?: boolean;
+    position: [number, number, number];
+    rotation?: [number, number, number];
+    doorX?: number;
+    width: number;
+    color?: string;
+    windows?: { x: number, y: number }[];
+}
+
+const Wall: React.FC<WallProps> = ({ hasDoor = false, position, rotation = [0, 0, 0], doorX = 0, width, color = 'white', windows = [] }) => {
     const wallShape = new THREE.Shape();
     wallShape.moveTo(-width, -WALL_HEIGHT);
     wallShape.lineTo(width, -WALL_HEIGHT);
@@ -203,7 +211,7 @@ const Wall = ({ hasDoor = false, position, rotation, doorX = 0, width, color = '
 
         return (
             <group key={index} position={[x, y, 0]}>
-                <mesh position={[0, 0, 0.1]}> {/* Slightly in front of frame */}
+                <mesh position={[0, 0, 0.1]}>
                     <boxGeometry args={[WINDOW_WIDTH, WINDOW_HEIGHT, glassDepth]} />
                     <meshPhysicalMaterial
                         color='black'
@@ -220,13 +228,10 @@ const Wall = ({ hasDoor = false, position, rotation, doorX = 0, width, color = '
 
     return (
         <group position={position}>
-            {/* Wall with window holes */}
             <mesh rotation={rotation}>
                 <extrudeGeometry args={[wallShape, extrudeSettings]} />
                 <meshStandardMaterial color={color} />
             </mesh>
-
-            {/* Window glass elements - positioned relative to the wall */}
             <group rotation={rotation}>
                 {windowElements}
             </group>
@@ -235,7 +240,7 @@ const Wall = ({ hasDoor = false, position, rotation, doorX = 0, width, color = '
 };
 
 // Utility function to generate pairs of windows for an array of x positions
-const generateWindowPane = (xValues) => {
+const generateWindowPane = (xValues: number[]) => {
     const windowY = 0.2; // Fixed vertical position for windows
     return xValues.flatMap((x) => [
         { x: x - (WINDOW_WIDTH / 2 + WINDOW_PANE_GAP / 2), y: windowY },
@@ -244,15 +249,22 @@ const generateWindowPane = (xValues) => {
 };
 
 // Compute evenly distributed x positions for windows based on room dimension
-const computeWindowPositions = (dimension, offset = 0) => {
-    const numWindows = parseInt((dimension - offset) / 1); // At least 2 windows, increase with dimension
+const computeWindowPositions = (dimension: number, offset = 0) => {
+    const numWindows = Math.floor((dimension - offset) / 1); // At least 2 windows, increase with dimension
     const start = -(dimension + offset) / 2;
     const step = dimension / (numWindows - 1);
     return Array.from({ length: numWindows }, (_, i) => start + i * step);
 };
 
 // 🏠 Custom Roof with Rectangular Base
-const Roof = ({ width, length, height, rotation, y = WALL_HEIGHT }) => {
+type RoofProps = {
+    width: number;
+    length: number;
+    height: number;
+    rotation?: [number, number, number];
+    y?: number;
+}
+const Roof: React.FC<RoofProps> = ({ width, length, height, rotation = [0, 0, 0], y = WALL_HEIGHT }) => {
     const BASE_OFFSET = 0.5; // Controls how much the peak is inset
 
     const geometry = useMemo(() => {
@@ -309,9 +321,20 @@ const Roof = ({ width, length, height, rotation, y = WALL_HEIGHT }) => {
         </mesh>
     );
 };
-
-const Room = ({ roomWidth, roomLength, quadrantX = 1, quadrantY = 1, doorSide = false, doorFront = false, wallSide = true, numWindows = 1, doorX = 0, skipWalls = [] }) => {
-    const shouldRenderWall = (wallQuadrantX, wallQuadrantY) => {
+type RoomProps = {
+    roomWidth: number;
+    roomLength: number;
+    quadrantX?: number;
+    quadrantY?: number;
+    doorSide?: boolean;
+    doorFront?: boolean;
+    wallSide?: boolean;
+    doorX?: number;
+    numWindows?: number;
+    skipWalls?: { quadrantX: number, quadrantY: number }[];
+}
+const Room: React.FC<RoomProps> = ({ roomWidth, roomLength, quadrantX = 1, quadrantY = 1, doorSide = false, doorFront = false, wallSide = true, doorX = 0, skipWalls = [] }) => {
+    const shouldRenderWall = (wallQuadrantX: number, wallQuadrantY: number) => {
         return !skipWalls.some(
             (skipWall) => skipWall.quadrantX === wallQuadrantX && skipWall.quadrantY === wallQuadrantY
         );
@@ -340,8 +363,12 @@ const Room = ({ roomWidth, roomLength, quadrantX = 1, quadrantY = 1, doorSide = 
         </group>
     );
 }
-
-const Rooms = ({ roomWidth, roomLength, numWindows, type }) => {
+type RoomsProps = {
+    roomWidth: number;
+    roomLength: number;
+    type: string;
+}
+const Rooms: React.FC<RoomsProps> = ({ roomWidth, roomLength, type }) => {
     const numRooms = type === "solo" ? 1 : Math.floor(Math.random() * 3) + 2; // Solo has 1 room, others have 2-4
     const rooms = Array.from({ length: numRooms }, (_, i) => {
         const quadrantX = Math.random() > 0.5 ? 1 : -1;
@@ -357,7 +384,7 @@ const Rooms = ({ roomWidth, roomLength, numWindows, type }) => {
         };
     });
 
-    const isAdjoining = (roomA, roomB) => {
+    const isAdjoining = (roomA: { quadrantX: number, quadrantY: number, doorSide: boolean, doorFront: boolean, doorX: number }, roomB: { quadrantX: number, quadrantY: number, doorSide: boolean, doorFront: boolean, doorX: number }) => {
         return (
             roomA.quadrantX === roomB.quadrantX &&
             Math.abs(roomA.quadrantY - roomB.quadrantY) === 2
@@ -383,7 +410,6 @@ const Rooms = ({ roomWidth, roomLength, numWindows, type }) => {
                         roomLength={roomLength}
                         quadrantX={room.quadrantX}
                         quadrantY={room.quadrantY}
-                        numWindows={numWindows}
                         doorX={room.doorX}
                         skipWalls={adjoiningRooms.map(adjRoom => ({
                             quadrantX: adjRoom.quadrantX,
@@ -396,13 +422,19 @@ const Rooms = ({ roomWidth, roomLength, numWindows, type }) => {
     );
 };
 
-const Storey = ({ index, roomWidth, roomLength, doorX = 0, numWindows, renderRooms }) => {
+type StoreyProps = {
+    index: number;
+    roomWidth: number;
+    roomLength: number;
+    doorX?: number;
+    renderRooms: () => React.ReactNode;
+}
+const Storey: React.FC<StoreyProps> = ({ index, roomWidth, roomLength, doorX = 0, renderRooms }) => {
     const frontBackWindowPositions = computeWindowPositions(roomWidth);
     const sideWindowPositions = computeWindowPositions(roomLength);
     const mainWindowPositions = computeWindowPositions(roomWidth, 1.4);
     return (
         <group position={[0, index * WALL_HEIGHT * 2, 0]}>
-            {/* Front wall with door and windows */}
             <Wall
                 hasDoor={index === 0}
                 position={[0, 0, -roomLength]}
@@ -410,15 +442,12 @@ const Storey = ({ index, roomWidth, roomLength, doorX = 0, numWindows, renderRoo
                 width={roomWidth}
                 windows={index === 0 ? generateWindowPane(mainWindowPositions) : generateWindowPane(frontBackWindowPositions)}
             />
-
-            {/* Back wall with windows */}
             <Wall
                 position={[0, 0, roomLength - WALL_THICKNESS]}
                 width={roomWidth}
                 windows={generateWindowPane(frontBackWindowPositions)}
             />
 
-            {/* Right wall with windows */}
             <Wall
                 position={[roomWidth - WALL_THICKNESS, 0, 0]}
                 rotation={[0, Math.PI / 2, 0]}
@@ -426,7 +455,6 @@ const Storey = ({ index, roomWidth, roomLength, doorX = 0, numWindows, renderRoo
                 windows={generateWindowPane(sideWindowPositions)}
             />
 
-            {/* Left wall with windows */}
             <Wall
                 position={[-roomWidth, 0, 0]}
                 rotation={[0, Math.PI / 2, 0]}
@@ -434,10 +462,8 @@ const Storey = ({ index, roomWidth, roomLength, doorX = 0, numWindows, renderRoo
                 windows={generateWindowPane(sideWindowPositions)}
             />
 
-            {/* Render rooms */}
             {renderRooms()}
 
-            {/* Floor */}
             <mesh position={[0, -1, 0]}>
                 <boxGeometry args={[roomWidth * 2.001, 0.2, roomLength * 2.001]} />
                 <meshStandardMaterial color="gray" />
@@ -445,10 +471,19 @@ const Storey = ({ index, roomWidth, roomLength, doorX = 0, numWindows, renderRoo
         </group>
     );
 };
-
-const House = ({ roofHeight, renderGrass, doorX, houseWidth, houseLength, numStories, numWindows = 2, roomsPerStorey }) => {
-    const renderRooms = (type) => {
-        return <Rooms roomLength={houseLength} roomWidth={houseWidth} numWindows={numWindows} type={type} />;
+type HouseProps = {
+    roofHeight: number;
+    renderGrass: boolean;
+    doorX: number;
+    houseWidth: number;
+    houseLength: number;
+    numStories: number;
+    numWindows?: number;
+    roomsPerStorey?: number[];
+}
+const House: React.FC<HouseProps> = ({ roofHeight, renderGrass, doorX, houseWidth, houseLength, numStories }) => {
+    const renderRooms = (type: string) => {
+        return <Rooms roomLength={houseLength} roomWidth={houseWidth} type={type} />;
     };
 
     return (
@@ -467,7 +502,6 @@ const House = ({ roofHeight, renderGrass, doorX, houseWidth, houseLength, numSto
                         roomWidth={houseWidth}
                         roomLength={houseLength}
                         doorX={doorX} // Pass doorX dynamically
-                        numWindows={numWindows}
                         renderRooms={() => renderRooms("unconnected")} // Example: Use "unconnected" as default
                     />
                 ))
@@ -496,7 +530,7 @@ const HouseScene = () => {
     const [showControls, setShowControls] = useState(true);
     const doorX = houseWidth - 1;
 
-    const handleNumStoriesChange = (value) => {
+    const handleNumStoriesChange = (value: string) => {
         const newNumStories = parseInt(value);
         setNumStories(newNumStories);
 
@@ -509,7 +543,7 @@ const HouseScene = () => {
         });
     };
 
-    const handleRoomsPerStoreyChange = (index, value) => {
+    const handleRoomsPerStoreyChange = (index: number, value: string) => {
         setRoomsPerStorey((prev) => {
             const updated = [...prev];
             updated[index] = Math.min(3, parseInt(value)); // Limit to a maximum of 3 rooms
@@ -519,6 +553,7 @@ const HouseScene = () => {
 
     const handlePromptSubmit = async () => {
         const ai_key = import.meta.env.VITE_AI_API_KEY;
+
         try {
             const response = await axios.post("https://api.openai.com/v1/chat/completions", {
                 model: "gpt-3.5-turbo", // Use the correct model for chat completions
@@ -556,7 +591,7 @@ const HouseScene = () => {
     return (
         <Layout>
             <div className="absolute inset-0">
-                <Canvas camera={{ position: [6, 4, 6], fov: 60 }} fog={{ color: "green", near: 10, far: 50 }}>
+                <Canvas camera={{ position: [6, 4, 6], fov: 60 }}>
                     {useWASDControls ? <WASDControls /> : <OrbitControls />}
                     <Sky sunPosition={[100, 20, 100]} />
                     <House
@@ -635,7 +670,7 @@ const HouseScene = () => {
                                 value={userPrompt}
                                 onChange={(e) => setUserPrompt(e.target.value)}
                                 className="w-full p-2 border rounded"
-                                rows="4"
+                                rows={4}
                                 placeholder="Describe your house (e.g., 3 stories, 5x5 house)..."
                             />
                             <button

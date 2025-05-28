@@ -1,10 +1,9 @@
 import { Product } from '../../types/store';
 import { view } from '@routes/product';
-import { useState } from 'react';
-import axios from 'axios';
+import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { Link, useForm } from '@inertiajs/react';
-import { add } from '@actions/App/Http/Controllers/CartController'
+import cart from "@routes/cart";
 
 interface ProductCardProps {
     product: Product;
@@ -17,29 +16,31 @@ export default function ProductCard({ product, selectedVariationId, onVariationC
     const [isAddingToCart, setIsAddingToCart] = useState(false);
     const selectedVariation = product.variations.find(v => v.id === selectedVariationId) || product.variations[0];
     const activeVariations = product.variations.filter(v => v.is_active);
-    const { post, data, setData } = useForm({
+    const form = useForm({
         variation_id: selectedVariation?.id,
         quantity: quantity
     });
 
-    const handleAddToCart = async (e: React.MouseEvent) => {
-        e.preventDefault(); // Prevent any parent click events
-        if (!selectedVariation) return;
+    useEffect(() => {
+        form.setData({
+            variation_id: selectedVariation?.id,
+            quantity: quantity
+        });
+    }, [selectedVariation, quantity]);
 
-        try {
-            setIsAddingToCart(true);
-            post(add.url(), {
-                onSuccess: () => {
-                    toast.success('Product added to cart successfully!');
-                    setQuantity(1);
-                }
-            });
-        } catch (error: any) {
-            const errorMessage = error.response?.data?.message || 'Failed to add to cart';
-            toast.error(errorMessage);
-        } finally {
-            setIsAddingToCart(false);
-        }
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        form.post(cart.add.url(), {
+            onSuccess: () => {
+                toast.success('Added to cart successfully!');
+                setQuantity(1);
+            },
+            onError: (errors) => {
+                Object.entries(errors).forEach(([_, message]) => {
+                    toast.error(message);
+                });
+            }
+        });
     };
 
     return (
@@ -57,7 +58,7 @@ export default function ProductCard({ product, selectedVariationId, onVariationC
                     </Link>
                 </div>
 
-                <div className="space-y-3">
+                <form onSubmit={handleSubmit} className="space-y-3">
                     {/* Variation Select */}
                     <div>
                         <label htmlFor={`variation-${product.id}`} className="block text-xs font-medium text-gray-700 mb-1">
@@ -117,7 +118,7 @@ export default function ProductCard({ product, selectedVariationId, onVariationC
 
                     {/* Add to Cart Button */}
                     <button
-                        onClick={handleAddToCart}
+                        type='submit'
                         disabled={!selectedVariation?.is_active || isAddingToCart || selectedVariation.stock_quantity < 1}
                         className={`w-full mt-2 px-4 py-2 rounded-lg text-sm font-medium text-white 
                             ${selectedVariation?.is_active && selectedVariation.stock_quantity > 0
@@ -144,7 +145,7 @@ export default function ProductCard({ product, selectedVariationId, onVariationC
                             Only {selectedVariation.stock_quantity} left in stock
                         </div>
                     )}
-                </div>
+                </form>
             </div>
         </div>
     );

@@ -3,13 +3,39 @@ import { useRef, useState, useEffect } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import { useLoader } from "@react-three/fiber";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import Layout from "../Components/Layouts/Layout";
 import cart from "@routes/cart";
 import toast from "react-hot-toast";
 
+type Variation = {
+    id: number;
+    name: string;
+    stock_quantity: number;
+    price: number;
+    featured_image: {
+        url: string;
+    };
+}
+
+type ProductProps = {
+    product: {
+        id: number;
+        name: string;
+        variations: Variation[];
+        description: string;
+        unit: string;
+        featured_image: {
+            url: string;
+        };
+    };
+    model: {
+        original_url: string;
+    };
+}
+
 export default function ProductView() {
-    const { product, model } = usePage().props;
+    const { product, model } = usePage<ProductProps>().props;
     const [activeTab, setActiveTab] = useState('images');
     const [selectedVariation, setSelectedVariation] = useState(product.variations[0] || null);
     const [quantity, setQuantity] = useState(1);
@@ -36,19 +62,19 @@ export default function ProductView() {
         }
     }, [product]);
 
-    const handleVariationClick = (variation) => {
+    const handleVariationClick = (variation: Variation) => {
         setSelectedVariation(variation);
         setQuantity(1); // Reset quantity when variation changes
     };
 
-    const handleQuantityChange = (e) => {
+    const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = parseInt(e.target.value);
         if (value > 0 && value <= selectedVariation.stock_quantity) {
             setQuantity(value);
         }
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         form.post(cart.add.url(), {
             onSuccess: () => {
@@ -56,7 +82,9 @@ export default function ProductView() {
                 setQuantity(1);
             },
             onError: (errors) => {
-                toast.error(errors.message || 'Failed to add to cart');
+                Object.entries(errors).forEach(([_, message]) => {
+                    toast.error(message);
+                });
             }
         });
     };
@@ -97,7 +125,7 @@ export default function ProductView() {
                                 <Canvas>
                                     <color attach="background" args={["#f5efe6"]} />
                                     <ambientLight intensity={0.5} color="white" />
-                                    {model && <primitive object={gltf.scene} />}
+                                    {model && gltf && <primitive object={gltf.scene} />}
                                     <OrbitControls />
                                 </Canvas>
                             ) : (
