@@ -15,18 +15,10 @@ class CartController extends Controller
 {
     public function add(Request $request)
     {
-        if (!Auth::user()->customer) {
-            return response()->json([
-                'message' => 'Customer account not found'
-            ], 403);
-        }
-
         $request->validate([
             'variation_id' => 'required|exists:product_variations,id',
             'quantity' => 'required|integer|min:1',
         ]);
-
-        DB::beginTransaction();
 
         $variation = ProductVariation::with('product')->findOrFail($request->variation_id);
 
@@ -83,6 +75,5 @@ class CartController extends Controller
                 'unit_price' => $variation->price,
             ]);
         }
-        DB::commit();
     }
 }
