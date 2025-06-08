@@ -40,10 +40,6 @@ class StorePanelProvider extends PanelProvider
                 NavigationItem::make('Store')
                     ->url(fn() => route('store.index'))
                     ->icon('heroicon-o-building-storefront'),
-                NavigationItem::make('House Generator')
-                    ->url(fn() => route('house-generator.view'))
-                    ->icon('heroicon-o-home')
-                    ->sort(99),
             ])
             ->discoverResources(in: app_path('Filament/Store/Resources'), for: 'App\\Filament\\Store\\Resources')
             ->discoverPages(in: app_path('Filament/Store/Pages'), for: 'App\\Filament\\Store\\Pages')

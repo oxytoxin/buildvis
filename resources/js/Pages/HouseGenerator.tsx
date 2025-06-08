@@ -519,16 +519,33 @@ const House: React.FC<HouseProps> = ({ roofHeight, renderGrass, doorX, houseWidt
 };
 
 const HouseScene = () => {
+    // Get dimensions from URL parameters
+    const getUrlParams = () => {
+        const params = new URLSearchParams(window.location.search);
+        return {
+            width: parseFloat(params.get('width') || '40'),
+            length: parseFloat(params.get('length') || '40')
+        };
+    };
+
+    const initialParams = getUrlParams();
     const [roofHeight, setRoofHeight] = useState(1);
     const [renderGrass, setRenderGrass] = useState(true);
-    const [houseWidth, setHouseWidth] = useState(4); // Default width
-    const [houseLength, setHouseLength] = useState(4); // Default length
-    const [numStories, setNumStories] = useState(1); // Default stories
-    const [roomsPerStorey, setRoomsPerStorey] = useState([2]); // Default rooms per storey
-    const [userPrompt, setUserPrompt] = useState(""); // User prompt state
+    const [houseWidth, setHouseWidth] = useState(initialParams.width);
+    const [houseLength, setHouseLength] = useState(initialParams.length);
+    const [numStories, setNumStories] = useState(1);
+    const [roomsPerStorey, setRoomsPerStorey] = useState([2]);
+    const [userPrompt, setUserPrompt] = useState("");
     const [useWASDControls, setUseWASDControls] = useState(false);
     const [showControls, setShowControls] = useState(true);
     const doorX = houseWidth - 1;
+
+    // Update dimensions when URL parameters change
+    useEffect(() => {
+        const params = getUrlParams();
+        setHouseWidth(params.width);
+        setHouseLength(params.length);
+    }, [window.location.search]);
 
     const handleNumStoriesChange = (value: string) => {
         const newNumStories = parseInt(value);
@@ -579,8 +596,8 @@ const HouseScene = () => {
 
             // Update state with parsed data or fallback to defaults
             setNumStories(parsedData.numStories || 1);
-            setHouseWidth(parsedData.houseWidth || 4);
-            setHouseLength(parsedData.houseLength || 4);
+            setHouseWidth(parsedData.houseWidth || 40);
+            setHouseLength(parsedData.houseLength || 40);
             setRoomsPerStorey(Array(parsedData.numStories || 1).fill(2));
         } catch (error) {
             console.error("Error parsing prompt:", error);
@@ -635,11 +652,11 @@ const HouseScene = () => {
                             <input type="range" min="1" max="4" step="0.1" value={roofHeight} onChange={(e) => setRoofHeight(parseFloat(e.target.value))} className="w-40" />
                             <div className="mt-3">
                                 <label className="block text-sm font-bold">House Width: {houseWidth.toFixed(1)}</label>
-                                <input type="range" min="3" max="7" step="0.1" value={houseWidth} onChange={(e) => setHouseWidth(parseFloat(e.target.value))} className="w-40" />
+                                <input type="range" min="3" max="100" step="0.1" value={houseWidth} onChange={(e) => setHouseWidth(parseFloat(e.target.value))} className="w-40" />
                             </div>
                             <div className="mt-3">
                                 <label className="block text-sm font-bold">House Length: {houseLength.toFixed(1)}</label>
-                                <input type="range" min="3" max="7" step="0.1" value={houseLength} onChange={(e) => setHouseLength(parseFloat(e.target.value))} className="w-40" />
+                                <input type="range" min="3" max="100" step="0.1" value={houseLength} onChange={(e) => setHouseLength(parseFloat(e.target.value))} className="w-40" />
                             </div>
                             <div className="mt-3">
                                 <label className="block text-sm font-bold"># Stories: {numStories}</label>

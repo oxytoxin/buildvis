@@ -1,5 +1,9 @@
 <x-filament-panels::page>
-    <div class="flex flex-col gap-8 sm:flex-row">
+    <div class="space-y-6">
+        {{ $this->table }}
+    </div>
+
+    <div class="flex flex-col gap-8 sm:flex-row mt-6">
         <div class="sm:w-1/2">
             <div class="space-y-4">
                 <div>

@@ -12,6 +12,7 @@ use App\Models\Product;
 use Inertia\Inertia;
 use App\Http\Controllers\StoreController;
 use App\Http\Controllers\CartController;
+use App\Http\Controllers\HouseGeneratorController;
 
 Route::get('/', Welcome::class)->name('welcome');
 
@@ -47,10 +48,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })
         ->name('product.view');
 
-    Route::get('house-generator', function (Product $product) {
-        return Inertia::render('HouseGenerator', []);
-    })
-        ->name('house-generator.view');
+    Route::get('house-generator', [HouseGeneratorController::class, 'index'])
+        ->name('house-generator.index');
 
     Route::get('/stripe-checkout/{order}', [StripeController::class, 'checkout'])->name('stripe.checkout');
     Route::get('/stripe-cancel/{order}', [StripeController::class, 'cancel'])->name('stripe.cancel');

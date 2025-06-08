@@ -16,6 +16,18 @@ use OpenAI;
 use Spatie\LaravelMarkdown\MarkdownRenderer;
 use Filament\Notifications\Notification;
 use Illuminate\Validation\ValidationException;
+use App\Models\BudgetEstimate as BudgetEstimateModel;
+use App\Models\BudgetEstimateItem;
+use Illuminate\Support\Facades\Auth;
+use Filament\Tables\Concerns\InteractsWithTable;
+use Filament\Tables\Contracts\HasTable;
+use Filament\Tables\Table;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Actions\Action;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Filament\Actions\Action as PageAction;
 
 /**
  * BudgetEstimate Page
@@ -23,8 +35,10 @@ use Illuminate\Validation\ValidationException;
  * This page handles the budget estimation functionality for construction projects
  * using AI to generate practical floor areas and cost estimates based on user input.
  */
-class BudgetEstimate extends Page
+class BudgetEstimate extends Page implements HasTable
 {
+    use InteractsWithTable;
+
     protected static ?string $navigationIcon = 'heroicon-o-banknotes';
     protected static string $view = 'filament.store.pages.budget-estimate';
     protected static ?int $navigationSort = 3;
@@ -47,13 +61,19 @@ class BudgetEstimate extends Page
     /** @var array */
     public array $additional = [];
 
+    /** @var array */
+    public array $savedEstimates = [];
+
+    /** @var ?int */
+    public ?int $selectedEstimateId = null;
+
     /**
      * Validation rules for the form fields
      */
     protected function rules(): array
     {
         return [
-            'budget' => ['required', 'numeric', 'min:100000', 'max:1000000000'],
+            'budget' => ['required', 'numeric'],
             'description' => ['required', 'string', 'min:10', 'max:1000'],
             'chat' => ['nullable', 'string', 'max:1000'],
         ];
@@ -67,8 +87,6 @@ class BudgetEstimate extends Page
         return [
             'budget.required' => 'Please enter your budget amount.',
             'budget.numeric' => 'Budget must be a number.',
-            'budget.min' => 'Budget must be at least ₱100,000.',
-            'budget.max' => 'Budget cannot exceed ₱1,000,000,000.',
             'description.required' => 'Please describe your project.',
             'description.min' => 'Description must be at least 10 characters.',
             'description.max' => 'Description cannot exceed 1000 characters.',
@@ -141,6 +159,89 @@ class BudgetEstimate extends Page
     }
 
     /**
+     * Get the table query
+     */
+    public function table(Table $table): Table
+    {
+        return $table
+            ->query(
+                BudgetEstimateModel::query()
+                    ->where('customer_id', Auth::user()->customer->id)
+                    ->latest()
+            )
+            ->columns([
+                TextColumn::make('name')
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('description')
+                    ->limit(50)
+                    ->searchable(),
+                TextColumn::make('total_amount')
+                    ->money('PHP')
+                    ->sortable(),
+                TextColumn::make('status')
+                    ->badge()
+                    ->color(fn(string $state): string => match ($state) {
+                        'draft' => 'gray',
+                        'submitted' => 'warning',
+                        'approved' => 'success',
+                        'rejected' => 'danger',
+                        default => 'gray',
+                    }),
+                TextColumn::make('created_at')
+                    ->dateTime()
+                    ->sortable(),
+            ])
+            ->actions([
+                Action::make('load')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->action(function (BudgetEstimateModel $record): void {
+                        $this->loadEstimate($record);
+                    }),
+                Action::make('generateHouse')
+                    ->icon('heroicon-o-home')
+                    ->url(fn(BudgetEstimateModel $record) => route('house-generator.index', [
+                        'width' => $record->structured_data['width'] ?? 40,
+                        'length' => $record->structured_data['length'] ?? 40,
+                    ]))
+                    ->color('success'),
+                Action::make('delete')
+                    ->icon('heroicon-o-trash')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->action(function (BudgetEstimateModel $record): void {
+                        $record->delete();
+                        Notification::make()
+                            ->title('Estimate deleted')
+                            ->success()
+                            ->send();
+                    }),
+            ])
+            ->defaultSort('created_at', 'desc');
+    }
+
+    /**
+     * Load an estimate into the form
+     */
+    public function loadEstimate(BudgetEstimateModel $estimate): void
+    {
+        $this->selectedEstimateId = $estimate->id;
+        $this->description = $estimate->description;
+        $this->budget = $estimate->total_amount;
+        $this->quotation = $estimate->structured_data;
+
+        // Load any additional instructions from notes
+        if ($estimate->notes && str_starts_with($estimate->notes, 'Additional instructions:')) {
+            $this->chat = substr($estimate->notes, 24); // Remove "Additional instructions: " prefix
+        }
+
+        Notification::make()
+            ->title('Estimate loaded')
+            ->success()
+            ->send();
+    }
+
+    /**
      * Mount the page and initialize messages
      */
     public function mount(): void
@@ -153,27 +254,30 @@ class BudgetEstimate extends Page
      */
     public function sendChat(): void
     {
-        try {
-            $this->validate([
-                'chat' => ['required', 'string', 'max:1000'],
-            ], [
-                'chat.required' => 'Please enter your additional instructions.',
-                'chat.max' => 'Additional instructions cannot exceed 1000 characters.',
-            ]);
+        $this->validate([
+            'chat' => ['required', 'string', 'max:1000'],
+        ], [
+            'chat.required' => 'Please enter your additional instructions.',
+            'chat.max' => 'Additional instructions cannot exceed 1000 characters.',
+        ]);
 
-            $this->additional[] = [
-                'type' => 'text',
-                'text' => $this->chat
-            ];
-            $this->chat = '';
-            $this->estimate();
-        } catch (ValidationException $e) {
-            Notification::make()
-                ->title('Validation Error')
-                ->body($e->getMessage())
-                ->danger()
-                ->send();
-        }
+        $this->additional[] = [
+            'type' => 'text',
+            'text' => $this->chat
+        ];
+        $this->chat = '';
+        $this->estimate();
+    }
+
+    /**
+     * Reset the form state
+     */
+    private function resetForm(): void
+    {
+        $this->quotation = [];
+        $this->additional = [];
+        $this->chat = '';
+        $this->resetMessages();
     }
 
     /**
@@ -181,49 +285,82 @@ class BudgetEstimate extends Page
      */
     public function estimate(): void
     {
-        try {
-            $this->validate();
+        $this->validate();
 
-            set_time_limit(120);
-            $this->quotation = [];
+        // Reset form state
+        $this->resetForm();
 
-            $client = $this->createOpenAIClient();
-            $this->resetMessages();
+        DB::beginTransaction();
+        $client = $this->createOpenAIClient();
+        $this->resetMessages();
 
-            $response = $client->chat()->create([
-                'model' => 'o4-mini',
-                'messages' => [
-                    [
-                        'role' => 'user',
-                        'content' => [
-                            ...$this->messages,
-                            ...$this->additional
-                        ]
-                    ],
+        $response = $client->chat()->create([
+            'model' => 'o4-mini',
+            'messages' => [
+                [
+                    'role' => 'user',
+                    'content' => [
+                        ...$this->messages,
+                        ...$this->additional
+                    ]
                 ],
-                'response_format' => $this->getResponseFormat()
-            ]);
+            ],
+            'response_format' => $this->getResponseFormat()
+        ]);
 
-            $this->quotation = json_decode($response->choices[0]->message->content, true);
+        $quotation = json_decode($response->choices[0]->message->content, true);
+        // Save the generated estimate
+        $this->saveEstimate($quotation);
 
-            Notification::make()
-                ->title('Success')
-                ->body('Estimate generated successfully.')
-                ->success()
-                ->send();
-        } catch (ValidationException $e) {
-            Notification::make()
-                ->title('Validation Error')
-                ->body($e->getMessage())
-                ->danger()
-                ->send();
-        } catch (\Exception $e) {
-            Notification::make()
-                ->title('Error')
-                ->body('Failed to generate estimate. Please try again.')
-                ->danger()
-                ->send();
+        // Update the quotation property after successful save
+        $this->quotation = $quotation;
+
+        DB::commit();
+
+        Notification::make()
+            ->title('Success')
+            ->body('Estimate generated and saved successfully.')
+            ->success()
+            ->send();
+    }
+
+    /**
+     * Save the generated estimate to the database
+     */
+    private function saveEstimate(array $quotation): void
+    {
+
+        $estimate = BudgetEstimateModel::create([
+            'customer_id' => Auth::user()->customer->id,
+            'name' => "Estimate for {$this->description}",
+            'description' => $this->description,
+            'structured_data' => $quotation,
+            'total_amount' => $quotation['total_cost'],
+            'status' => 'draft',
+            'notes' => $this->chat ? "Additional instructions: {$this->chat}" : null,
+        ]);
+
+        foreach (array_chunk($quotation['itemized_costs'], 10) as $categoryChunk) {
+            foreach ($categoryChunk as $category) {
+                $workCategory = WorkCategory::firstOrCreate(
+                    ['name' => $category['name']],
+                    ['requires_labor' => true, 'labor_cost_rate' => 1]
+                );
+                foreach ($category['line_items'] as $item) {
+                    BudgetEstimateItem::create([
+                        'budget_estimate_id' => $estimate->id,
+                        'work_category_id' => $workCategory->id,
+                        'name' => $item['description'],
+                        'description' => "Unit cost: ₱{$item['unit_cost']}",
+                        'quantity' => $quotation['total_area'],
+                        'unit' => 'square meters',
+                        'unit_price' => $item['unit_cost'],
+                        'type' => 'material',
+                    ]);
+                }
+            }
         }
+        $this->selectedEstimateId = $estimate->id;
     }
 
     /**
