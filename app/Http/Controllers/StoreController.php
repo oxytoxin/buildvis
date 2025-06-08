@@ -17,4 +17,12 @@ class StoreController extends Controller
             'products' => $products,
         ]);
     }
+
+    public function product_view(Product $product)
+    {
+        return Inertia::render('ProductView', [
+            'product' => $product->load(['variations.featured_image', 'variations.images']),
+            'model' => $product->getFirstMedia('model')
+        ]);
+    }
 }

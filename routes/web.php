@@ -40,12 +40,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Volt::route('confirm-password', 'pages.auth.confirm-password')
         ->name('password.confirm');
 
-    Route::get('product/{product}', function (Product $product) {
-        return Inertia::render('ProductView', [
-            'product' => $product->load(['variations.featured_image', 'variations.images']),
-            'model' => $product->getFirstMedia('model')
-        ]);
-    })
+    Route::get('product/{product}', [StoreController::class, 'product_view'])
         ->name('product.view');
 
     Route::get('house-generator', [HouseGeneratorController::class, 'index'])
