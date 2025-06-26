@@ -8,14 +8,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class WorkCategory extends Model
 {
-    public function work_items(): HasMany
-    {
-        return $this->hasMany(WorkItem::class);
-    }
 
-    public function products(): BelongsToMany
+    public function product_variations(): BelongsToMany
     {
-        return $this->belongsToMany(Product::class)
+        return $this->belongsToMany(ProductVariation::class)
             ->withTimestamps();
     }
 }

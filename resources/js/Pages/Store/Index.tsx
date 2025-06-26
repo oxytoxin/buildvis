@@ -5,7 +5,7 @@ import ProductCard from '../../Components/Store/ProductCard';
 import Layout from '../../Components/Layouts/Layout';
 import store from '../../routes/store';
 
-export default function Index({ products }: StorePageProps) {
+export default function Index({ products, cartData }: StorePageProps) {
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedVariations, setSelectedVariations] = useState<Record<number, number>>({});
@@ -84,6 +84,7 @@ export default function Index({ products }: StorePageProps) {
                             product={product}
                             selectedVariationId={selectedVariations[product.id]}
                             onVariationChange={handleVariationChange}
+                            cartData={cartData}
                         />
                     ))}
                 </div>

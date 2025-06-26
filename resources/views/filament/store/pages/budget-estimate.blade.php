@@ -27,19 +27,152 @@
                     @enderror
                 </div>
 
+                <!-- Lot Dimensions -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="lotLength" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Lot Length (m)</label>
+                        <input 
+                            class="mt-1 w-full rounded-lg border-gray-300 focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200" 
+                            id="lotLength" 
+                            type="number" 
+                            wire:model.live.debounce.500ms="lotLength"
+                            min="5"
+                            max="100"
+                            required
+                        />
+                        @error('lotLength')
+                            <p class="mt-1 text-sm text-danger-600 dark:text-danger-400">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    <div>
+                        <label for="lotWidth" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Lot Width (m)</label>
+                        <input 
+                            class="mt-1 w-full rounded-lg border-gray-300 focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200" 
+                            id="lotWidth" 
+                            type="number" 
+                            wire:model.live.debounce.500ms="lotWidth"
+                            min="5"
+                            max="100"
+                            required
+                        />
+                        @error('lotWidth')
+                            <p class="mt-1 text-sm text-danger-600 dark:text-danger-400">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
+
+                <!-- Floor Dimensions -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="floorLength" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Floor Length (m)</label>
+                        <input 
+                            class="mt-1 w-full rounded-lg border-gray-300 focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200" 
+                            id="floorLength" 
+                            type="number" 
+                            wire:model.live.debounce.500ms="floorLength"
+                            min="3"
+                            max="50"
+                            required
+                        />
+                        @error('floorLength')
+                            <p class="mt-1 text-sm text-danger-600 dark:text-danger-400">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    <div>
+                        <label for="floorWidth" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Floor Width (m)</label>
+                        <input 
+                            class="mt-1 w-full rounded-lg border-gray-300 focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200" 
+                            id="floorWidth" 
+                            type="number" 
+                            wire:model.live.debounce.500ms="floorWidth"
+                            min="3"
+                            max="50"
+                            required
+                        />
+                        @error('floorWidth')
+                            <p class="mt-1 text-sm text-danger-600 dark:text-danger-400">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
+
+                <!-- Building Specifications -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="numberOfRooms" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Number of Rooms</label>
+                        <input 
+                            class="mt-1 w-full rounded-lg border-gray-300 focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200" 
+                            id="numberOfRooms" 
+                            type="number" 
+                            wire:model.live.debounce.500ms="numberOfRooms"
+                            min="1"
+                            max="20"
+                            required
+                        />
+                        @error('numberOfRooms')
+                            <p class="mt-1 text-sm text-danger-600 dark:text-danger-400">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    <div>
+                        <label for="numberOfStories" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Number of Stories</label>
+                        <input 
+                            class="mt-1 w-full rounded-lg border-gray-300 focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200" 
+                            id="numberOfStories" 
+                            type="number" 
+                            wire:model.live.debounce.500ms="numberOfStories"
+                            min="1"
+                            max="5"
+                            required
+                        />
+                        @error('numberOfStories')
+                            <p class="mt-1 text-sm text-danger-600 dark:text-danger-400">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
+
+                <!-- Area Summary -->
+                <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <span class="text-gray-500 dark:text-gray-400">Lot Area:</span>
+                            <span class="ml-2 font-medium text-gray-900 dark:text-gray-100">{{ $lotLength * $lotWidth }} sq.m</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-500 dark:text-gray-400">Floor Area:</span>
+                            <span class="ml-2 font-medium text-gray-900 dark:text-gray-100">{{ $floorLength * $floorWidth }} sq.m</span>
+                        </div>
+                    </div>
+                </div>
+
                 <div>
                     <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Project Description</label>
                     <textarea 
                         class="mt-1 w-full rounded-lg border-gray-300 focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200" 
                         rows="7" 
                         required 
-                        placeholder="Describe your construction project in detail..." 
+                        placeholder="Describe your construction project in detail. Include lot size, floor dimensions, number of rooms, stories, and budget. The AI will automatically extract specifications from your description..." 
                         wire:model.live.debounce.500ms="description"
                     ></textarea>
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        Tip: Describe your project naturally. The AI will extract specifications like "20x30 meter lot", "3 bedrooms", "2-story house", or "₱2M budget" from your description.
+                    </p>
                     @error('description')
                         <p class="mt-1 text-sm text-danger-600 dark:text-danger-400">{{ $message }}</p>
                     @enderror
                 </div>
+
+                <x-filament::button 
+                    class="w-full" 
+                    wire:click="parseDescription" 
+                    wire:loading.attr="disabled"
+                    color="info"
+                >
+                    <span wire:loading.remove wire:target="parseDescription">
+                        Extract Specifications with AI
+                    </span>
+                    <span wire:loading wire:target="parseDescription">
+                        Analyzing...
+                    </span>
+                </x-filament::button>
 
                 <x-filament::button 
                     class="w-full" 
@@ -52,34 +185,6 @@
                     </span>
                     <span wire:loading wire:target="estimate">
                         Generating...
-                    </span>
-                </x-filament::button>
-
-                <div>
-                    <label for="chat" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Additional Instructions</label>
-                    <textarea 
-                        class="mt-1 w-full rounded-lg border-gray-300 focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200" 
-                        rows="5" 
-                        required 
-                        placeholder="Add any specific requirements or modifications..." 
-                        wire:model.live.debounce.500ms="chat"
-                    ></textarea>
-                    @error('chat')
-                        <p class="mt-1 text-sm text-danger-600 dark:text-danger-400">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <x-filament::button 
-                    class="w-full" 
-                    wire:click="sendChat" 
-                    wire:loading.attr="disabled"
-                    color="secondary"
-                >
-                    <span wire:loading.remove wire:target="sendChat">
-                        Send Instructions
-                    </span>
-                    <span wire:loading wire:target="sendChat">
-                        Sending...
                     </span>
                 </x-filament::button>
             </div>
@@ -97,12 +202,32 @@
 
                                 <div class="grid grid-cols-2 gap-4">
                                     <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                                        <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Length</h4>
-                                        <p class="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100">{{ $quotation['length'] }}m</p>
+                                        <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Lot Length</h4>
+                                        <p class="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100">{{ $quotation['lot_length'] ?? $lotLength }}m</p>
                                     </div>
                                     <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                                        <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Width</h4>
-                                        <p class="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100">{{ $quotation['width'] }}m</p>
+                                        <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Lot Width</h4>
+                                        <p class="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100">{{ $quotation['lot_width'] ?? $lotWidth }}m</p>
+                                    </div>
+                                    <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                                        <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Floor Length</h4>
+                                        <p class="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100">{{ $quotation['floor_length'] ?? $floorLength }}m</p>
+                                    </div>
+                                    <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                                        <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Floor Width</h4>
+                                        <p class="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100">{{ $quotation['floor_width'] ?? $floorWidth }}m</p>
+                                    </div>
+                                    <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                                        <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Number of Rooms</h4>
+                                        <p class="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100">{{ $quotation['number_of_rooms'] ?? $numberOfRooms }}</p>
+                                    </div>
+                                    <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                                        <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Number of Stories</h4>
+                                        <p class="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100">{{ $quotation['number_of_stories'] ?? $numberOfStories }}</p>
+                                    </div>
+                                    <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                                        <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Lot Area</h4>
+                                        <p class="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100">{{ ($quotation['lot_length'] ?? $lotLength) * ($quotation['lot_width'] ?? $lotWidth) }} sq.m</p>
                                     </div>
                                     <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
                                         <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Floor Area</h4>

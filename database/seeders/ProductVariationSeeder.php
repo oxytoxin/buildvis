@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductVariation;
 use App\Models\Supplier;
+use App\Models\WorkCategory;
 use Illuminate\Database\Seeder;
 
 class ProductVariationSeeder extends Seeder
@@ -14,14 +15,16 @@ class ProductVariationSeeder extends Seeder
     {
         $supplier = Supplier::first();
         $categories = Category::all()->mapWithKeys(fn($m) => [$m->name => $m->id])->toArray();
+        $workCategories = WorkCategory::all()->mapWithKeys(fn($m) => [$m->name => $m->id])->toArray();
 
-        // Define all products with their variations
+        // Define all products with their variations and work categories
         $products = [
             // Electrical Products
             [
                 'name' => 'Orange Pipe',
                 'category' => 'Electrical',
                 'unit' => 'meter',
+                'work_categories' => ['Electrical Works'],
                 'variations' => [
                     '1/2 inch' => 75,
                     '3/4 inch' => 90,
@@ -32,6 +35,7 @@ class ProductVariationSeeder extends Seeder
                 'name' => 'Pannel Box',
                 'category' => 'Electrical',
                 'unit' => 'piece',
+                'work_categories' => ['Electrical Works'],
                 'variations' => [
                     '4 holes' => 420,
                     '6 holes' => 520,
@@ -44,6 +48,7 @@ class ProductVariationSeeder extends Seeder
                 'name' => 'Thhn',
                 'category' => 'Electrical',
                 'unit' => 'piece',
+                'work_categories' => ['Electrical Works'],
                 'variations' => [
                     '6' => 15000,
                     '8' => 8250,
@@ -56,6 +61,7 @@ class ProductVariationSeeder extends Seeder
                 'name' => 'Cicuit Breaker',
                 'category' => 'Electrical',
                 'unit' => 'piece',
+                'work_categories' => ['Electrical Works'],
                 'variations' => [
                     '15Amps' => 380,
                     '20Amps' => 380,
@@ -70,6 +76,7 @@ class ProductVariationSeeder extends Seeder
                 'name' => 'Orange PVC Pie',
                 'category' => 'Plumbing',
                 'unit' => 'meter',
+                'work_categories' => ['Plumbing Materials', 'Plumbing Fixtures'],
                 'variations' => [
                     '2' => 250,
                     '3' => 520,
@@ -80,6 +87,7 @@ class ProductVariationSeeder extends Seeder
                 'name' => 'Blue Pipe',
                 'category' => 'Plumbing',
                 'unit' => 'meter',
+                'work_categories' => ['Plumbing Materials', 'Plumbing Fixtures'],
                 'variations' => [
                     '1/2 inch' => 90,
                     '3/4 inch' => 130,
@@ -90,6 +98,7 @@ class ProductVariationSeeder extends Seeder
                 'name' => 'Elbow',
                 'category' => 'Plumbing',
                 'unit' => 'piece',
+                'work_categories' => ['Plumbing Materials', 'Plumbing Fixtures'],
                 'variations' => [
                     '2x45' => 30,
                     '2x90' => 35,
@@ -103,6 +112,7 @@ class ProductVariationSeeder extends Seeder
                 'name' => 'Tee',
                 'category' => 'Plumbing',
                 'unit' => 'piece',
+                'work_categories' => ['Plumbing Materials', 'Plumbing Fixtures'],
                 'variations' => [
                     '2x2' => 45,
                     '3x2' => 85,
@@ -116,6 +126,7 @@ class ProductVariationSeeder extends Seeder
                 'name' => 'Wye',
                 'category' => 'Plumbing',
                 'unit' => 'piece',
+                'work_categories' => ['Plumbing Materials', 'Plumbing Fixtures'],
                 'variations' => [
                     '2x2' => 45,
                     '3x2' => 80,
@@ -130,6 +141,7 @@ class ProductVariationSeeder extends Seeder
                 'name' => 'RSB',
                 'category' => 'Steel',
                 'unit' => 'piece',
+                'work_categories' => ['Concrete Works', 'Walls and Partitions', 'Formworks and Scaffolding'],
                 'variations' => [
                     '9 mm' => 90,
                     '10 mm' => 130,
@@ -141,6 +153,7 @@ class ProductVariationSeeder extends Seeder
                 'name' => 'Tubular',
                 'category' => 'Steel',
                 'unit' => 'piece',
+                'work_categories' => ['Formworks and Scaffolding', 'Roof Framing and Tinsmithery'],
                 'variations' => [
                     '1x1x1.5' => 205,
                     '1x1x2.0' => 270,
@@ -154,6 +167,7 @@ class ProductVariationSeeder extends Seeder
                 'name' => 'C purlins',
                 'category' => 'Steel',
                 'unit' => 'piece',
+                'work_categories' => ['Roof Framing and Tinsmithery'],
                 'variations' => [
                     '2x2x1.5' => 300,
                     '2x3x1.5' => 400,
@@ -165,6 +179,7 @@ class ProductVariationSeeder extends Seeder
                 'name' => 'A/Bar',
                 'category' => 'Steel',
                 'unit' => 'piece',
+                'work_categories' => ['Concrete Works', 'Walls and Partitions'],
                 'variations' => [
                     '1/4 x 1' => 440,
                     '1/4 x1 1/2' => 650,
@@ -175,6 +190,7 @@ class ProductVariationSeeder extends Seeder
                 'name' => 'Channel Bar',
                 'category' => 'Steel',
                 'unit' => 'piece',
+                'work_categories' => ['Concrete Works', 'Walls and Partitions'],
                 'variations' => [
                     '2x3' => 1200,
                     '2x4' => 1350,
@@ -185,6 +201,7 @@ class ProductVariationSeeder extends Seeder
                 'name' => 'Paint Brush',
                 'category' => 'Paintings',
                 'unit' => 'piece',
+                'work_categories' => ['Painting Works'],
                 'variations' => [
                     '1' => 25,
                     '2' => 45,
@@ -196,6 +213,7 @@ class ProductVariationSeeder extends Seeder
                 'name' => 'Roller Cotton',
                 'category' => 'Paintings',
                 'unit' => 'piece',
+                'work_categories' => ['Painting Works'],
                 'variations' => [
                     '4' => 65,
                     '7' => 90,
@@ -205,6 +223,7 @@ class ProductVariationSeeder extends Seeder
                 'name' => 'Acrytex',
                 'category' => 'Paintings',
                 'unit' => 'piece',
+                'work_categories' => ['Painting Works'],
                 'variations' => [
                     'Primer Pail' => 2350,
                     'Primer Galon' => 639,
@@ -216,6 +235,7 @@ class ProductVariationSeeder extends Seeder
                 'name' => 'Tiles',
                 'category' => 'Others',
                 'unit' => 'piece',
+                'work_categories' => ['Tile Works'],
                 'variations' => [
                     '30x30' => 45,
                     '30x60' => 176,
@@ -227,6 +247,7 @@ class ProductVariationSeeder extends Seeder
                 'name' => 'Marine',
                 'category' => 'Others',
                 'unit' => 'piece',
+                'work_categories' => ['Walls and Partitions', 'Ceiling Works'],
                 'variations' => [
                     '1/4' => 350,
                     '1/2' => 550,
@@ -237,6 +258,7 @@ class ProductVariationSeeder extends Seeder
                 'name' => 'Pinolic',
                 'category' => 'Others',
                 'unit' => 'piece',
+                'work_categories' => ['Ceiling Works'],
                 'variations' => [
                     '1/2' => 500,
                     '3/4' => 780,
@@ -247,6 +269,7 @@ class ProductVariationSeeder extends Seeder
                 'name' => 'Embankment Materials',
                 'category' => 'Others',
                 'unit' => 'cubic meter',
+                'work_categories' => ['Embankment'],
                 'variations' => [
                     'Standard' => 400,
                 ],
@@ -256,6 +279,7 @@ class ProductVariationSeeder extends Seeder
                 'name' => 'Excavation',
                 'category' => 'Others',
                 'unit' => 'cubic meter',
+                'work_categories' => ['Excavation and Site Preparation'],
                 'variations' => [
                     'Standard' => 500,
                 ],
@@ -265,6 +289,7 @@ class ProductVariationSeeder extends Seeder
                 'name' => 'Back Fill',
                 'category' => 'Others',
                 'unit' => 'cubic meter',
+                'work_categories' => ['Excavation and Site Preparation'],
                 'variations' => [
                     'Standard' => 500,
                 ],
@@ -272,9 +297,10 @@ class ProductVariationSeeder extends Seeder
             ],
         ];
 
+
         foreach ($products as $productData) {
             // Create the product
-            $product = Product::create([
+            $product = Product::createQuietly([
                 'name' => $productData['name'],
                 'category_id' => $categories[$productData['category']],
                 'supplier_id' => $supplier->id,
@@ -284,10 +310,11 @@ class ProductVariationSeeder extends Seeder
 
             // Create variations for the product
             foreach ($productData['variations'] as $name => $price) {
-                ProductVariation::create([
+                $variation = ProductVariation::createQuietly([
                     'product_id' => $product->id,
                     'name' => $name,
                     'price' => $price,
+                    'product_name' => $product->name,
                     'sku' => strtoupper(substr($product->name, 0, 3)) . '-' . str_replace(['/', ' ', 'x'], '', $name),
                     'stock_quantity' => 10,
                     'minimum_stock_quantity' => 10,
@@ -295,6 +322,15 @@ class ProductVariationSeeder extends Seeder
                     'is_active' => true,
                     'counted_in_stats' => isset($productData['counted_in_stats']) ? $productData['counted_in_stats'] : true,
                 ]);
+
+                // Attach work categories to the variation
+                if (isset($productData['work_categories'])) {
+                    $workCategoryIds = array_map(function ($workCategoryName) use ($workCategories) {
+                        return $workCategories[$workCategoryName];
+                    }, $productData['work_categories']);
+
+                    $variation->workCategories()->attach($workCategoryIds);
+                }
             }
         }
     }

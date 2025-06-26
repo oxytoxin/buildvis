@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -51,5 +52,26 @@ class ProductVariation extends Model implements HasMedia
     public function scopeCountedInStats($query)
     {
         return $query->where('counted_in_stats', true);
+    }
+
+    public function workCategories(): BelongsToMany
+    {
+        return $this->belongsToMany(WorkCategory::class)
+            ->withTimestamps();
+    }
+
+    public static function boot()
+    {
+        parent::boot();
+
+        static::created(function ($variation) {
+            $variation->product_name = $variation->product->name;
+            $variation->save();
+        });
+
+        static::updated(function ($variation) {
+            $variation->product_name = $variation->product->name;
+            $variation->save();
+        });
     }
 }

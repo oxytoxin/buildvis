@@ -30,14 +30,6 @@ class WorkCategoryResource extends Resource
         return $form
             ->schema([
                 TextInput::make('name')->required(),
-                Repeater::make('work_items')
-                    ->columnSpanFull()
-                    ->relationship('work_items')
-                    ->schema([
-                        TextInput::make('name')->required(),
-                        TextInput::make('unit')->required(),
-                        TextInput::make('unit_cost')->numeric()->minValue(0)->required()
-                    ])
             ]);
     }
 
@@ -65,7 +57,7 @@ class WorkCategoryResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\ProductsRelationManager::class,
         ];
     }
 

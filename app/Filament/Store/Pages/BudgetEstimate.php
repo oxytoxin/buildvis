@@ -46,9 +46,6 @@ class BudgetEstimate extends Page implements HasTable
     /** @var array */
     public array $quotation = [];
 
-    /** @var string */
-    public string $chat = '';
-
     /** @var int */
     public int $budget = 2_000_000;
 
@@ -59,13 +56,172 @@ class BudgetEstimate extends Page implements HasTable
     public array $messages = [];
 
     /** @var array */
-    public array $additional = [];
-
-    /** @var array */
     public array $savedEstimates = [];
 
     /** @var ?int */
     public ?int $selectedEstimateId = null;
+
+    /** @var int */
+    public int $lotLength = 20;
+
+    /** @var int */
+    public int $lotWidth = 20;
+
+    /** @var int */
+    public int $floorLength = 15;
+
+    /** @var int */
+    public int $floorWidth = 15;
+
+    /** @var int */
+    public int $numberOfRooms = 3;
+
+    /** @var int */
+    public int $numberOfStories = 1;
+
+    /**
+     * Parse project description and extract building specifications using AI
+     */
+    public function parseDescription(): void
+    {
+        if (empty($this->description)) {
+            Notification::make()
+                ->title('No description')
+                ->body('Please enter a project description first.')
+                ->warning()
+                ->send();
+            return;
+        }
+
+        try {
+            $client = $this->createOpenAIClient();
+
+            $response = $client->chat()->create([
+                'model' => 'o4-mini',
+                'messages' => [
+                    [
+                        'role' => 'user',
+                        'content' => "Extract building specifications from this project description: {$this->description}"
+                    ],
+                ],
+                'response_format' => [
+                    'type' => 'json_schema',
+                    'json_schema' => [
+                        'name' => 'specifications_extraction',
+                        'strict' => true,
+                        'schema' => [
+                            'type' => 'object',
+                            'properties' => [
+                                'lot_length' => [
+                                    'type' => ['integer', 'null'],
+                                    'description' => 'Lot length in meters. Return the value if mentioned in the description, otherwise return null.'
+                                ],
+                                'lot_width' => [
+                                    'type' => ['integer', 'null'],
+                                    'description' => 'Lot width in meters. Return the value if mentioned in the description, otherwise return null.'
+                                ],
+                                'floor_length' => [
+                                    'type' => ['integer', 'null'],
+                                    'description' => 'Floor length in meters. Return the value if mentioned in the description, otherwise return null.'
+                                ],
+                                'floor_width' => [
+                                    'type' => ['integer', 'null'],
+                                    'description' => 'Floor width in meters. Return the value if mentioned in the description, otherwise return null.'
+                                ],
+                                'number_of_rooms' => [
+                                    'type' => ['integer', 'null'],
+                                    'description' => 'Number of rooms/bedrooms. Return the value if mentioned in the description, otherwise return null.'
+                                ],
+                                'number_of_stories' => [
+                                    'type' => ['integer', 'null'],
+                                    'description' => 'Number of stories/floors. Return the value if mentioned in the description, otherwise return null.'
+                                ],
+                                'budget' => [
+                                    'type' => ['integer', 'null'],
+                                    'description' => 'Budget in pesos. Return the value if mentioned in the description, otherwise return null.'
+                                ],
+                            ],
+                            'required' => ['lot_length', 'lot_width', 'floor_length', 'floor_width', 'number_of_rooms', 'number_of_stories', 'budget'],
+                            'additionalProperties' => false
+                        ]
+                    ]
+                ]
+            ]);
+
+            $specifications = json_decode($response->choices[0]->message->content, true);
+
+            if (!$specifications) {
+                throw new \Exception('Failed to parse AI response');
+            }
+
+            $updated = false;
+            $foundItems = [];
+
+            // Update form fields with extracted specifications (only if found)
+            if ($specifications['lot_length'] !== null) {
+                $this->lotLength = $specifications['lot_length'];
+                $updated = true;
+                $foundItems[] = "Lot length: {$specifications['lot_length']}m";
+            }
+
+            if ($specifications['lot_width'] !== null) {
+                $this->lotWidth = $specifications['lot_width'];
+                $updated = true;
+                $foundItems[] = "Lot width: {$specifications['lot_width']}m";
+            }
+
+            if ($specifications['floor_length'] !== null) {
+                $this->floorLength = $specifications['floor_length'];
+                $updated = true;
+                $foundItems[] = "Floor length: {$specifications['floor_length']}m";
+            }
+
+            if ($specifications['floor_width'] !== null) {
+                $this->floorWidth = $specifications['floor_width'];
+                $updated = true;
+                $foundItems[] = "Floor width: {$specifications['floor_width']}m";
+            }
+
+            if ($specifications['number_of_rooms'] !== null) {
+                $this->numberOfRooms = $specifications['number_of_rooms'];
+                $updated = true;
+                $foundItems[] = "Rooms: {$specifications['number_of_rooms']}";
+            }
+
+            if ($specifications['number_of_stories'] !== null) {
+                $this->numberOfStories = $specifications['number_of_stories'];
+                $updated = true;
+                $foundItems[] = "Stories: {$specifications['number_of_stories']}";
+            }
+
+            if ($specifications['budget'] !== null) {
+                $this->budget = $specifications['budget'];
+                $updated = true;
+                $foundItems[] = "Budget: ₱" . number_format($specifications['budget']);
+            }
+
+            if ($updated) {
+                $foundText = implode(', ', $foundItems);
+                Notification::make()
+                    ->title('Form updated')
+                    ->body("Specifications extracted: {$foundText}")
+                    ->success()
+                    ->send();
+            } else {
+                Notification::make()
+                    ->title('No specifications found')
+                    ->body('No building specifications were found in your description. Please enter them manually.')
+                    ->info()
+                    ->send();
+            }
+        } catch (\Exception $e) {
+            Notification::make()
+                ->title('Error')
+                ->body('Failed to parse description: ' . $e->getMessage())
+                ->danger()
+                ->send();
+        }
+    }
 
     /**
      * Validation rules for the form fields
@@ -73,9 +229,14 @@ class BudgetEstimate extends Page implements HasTable
     protected function rules(): array
     {
         return [
-            'budget' => ['required', 'numeric'],
+            'budget' => ['required', 'numeric', 'min:100000'],
             'description' => ['required', 'string', 'min:10', 'max:1000'],
-            'chat' => ['nullable', 'string', 'max:1000'],
+            'lotLength' => ['required', 'numeric', 'min:5', 'max:100'],
+            'lotWidth' => ['required', 'numeric', 'min:5', 'max:100'],
+            'floorLength' => ['required', 'numeric', 'min:3', 'max:50'],
+            'floorWidth' => ['required', 'numeric', 'min:3', 'max:50'],
+            'numberOfRooms' => ['required', 'numeric', 'min:1', 'max:20'],
+            'numberOfStories' => ['required', 'numeric', 'min:1', 'max:5'],
         ];
     }
 
@@ -87,10 +248,34 @@ class BudgetEstimate extends Page implements HasTable
         return [
             'budget.required' => 'Please enter your budget amount.',
             'budget.numeric' => 'Budget must be a number.',
+            'budget.min' => 'Budget must be at least ₱100,000.',
             'description.required' => 'Please describe your project.',
             'description.min' => 'Description must be at least 10 characters.',
             'description.max' => 'Description cannot exceed 1000 characters.',
-            'chat.max' => 'Additional instructions cannot exceed 1000 characters.',
+            'lotLength.required' => 'Please enter the lot length.',
+            'lotLength.numeric' => 'Lot length must be a number.',
+            'lotLength.min' => 'Lot length must be at least 5 meters.',
+            'lotLength.max' => 'Lot length cannot exceed 100 meters.',
+            'lotWidth.required' => 'Please enter the lot width.',
+            'lotWidth.numeric' => 'Lot width must be a number.',
+            'lotWidth.min' => 'Lot width must be at least 5 meters.',
+            'lotWidth.max' => 'Lot width cannot exceed 100 meters.',
+            'floorLength.required' => 'Please enter the floor length.',
+            'floorLength.numeric' => 'Floor length must be a number.',
+            'floorLength.min' => 'Floor length must be at least 3 meters.',
+            'floorLength.max' => 'Floor length cannot exceed 50 meters.',
+            'floorWidth.required' => 'Please enter the floor width.',
+            'floorWidth.numeric' => 'Floor width must be a number.',
+            'floorWidth.min' => 'Floor width must be at least 3 meters.',
+            'floorWidth.max' => 'Floor width cannot exceed 50 meters.',
+            'numberOfRooms.required' => 'Please enter the number of rooms.',
+            'numberOfRooms.numeric' => 'Number of rooms must be a number.',
+            'numberOfRooms.min' => 'Number of rooms must be at least 1.',
+            'numberOfRooms.max' => 'Number of rooms cannot exceed 20.',
+            'numberOfStories.required' => 'Please enter the number of stories.',
+            'numberOfStories.numeric' => 'Number of stories must be a number.',
+            'numberOfStories.min' => 'Number of stories must be at least 1.',
+            'numberOfStories.max' => 'Number of stories cannot exceed 5.',
         ];
     }
 
@@ -99,12 +284,33 @@ class BudgetEstimate extends Page implements HasTable
      */
     public function resetMessages(): void
     {
-        $items = json_encode(WorkCategory::query()
-            ->get(['id', 'name'])
-            ->map(fn($wc) => [
-                'name' => $wc->name,
-                'items' => []
-            ])->toArray());
+        // Get work categories that have product variations
+        $workCategoriesWithProducts = WorkCategory::query()
+            ->whereHas('product_variations')
+            ->with(['product_variations' => function ($query) {
+                $query->where('is_active', true)
+                    ->where('counted_in_stats', true)
+                    ->with('product');
+            }])
+            ->get()
+            ->map(function ($wc) {
+                return [
+                    'name' => $wc->name,
+                    'requires_labor' => $wc->requires_labor,
+                    'labor_cost_rate' => $wc->labor_cost_rate,
+                    'products' => $wc->product_variations->map(function ($pv) {
+                        return [
+                            'name' => $pv->product_name . ' - ' . $pv->name,
+                            'price' => $pv->price,
+                            'unit' => $pv->product->unit,
+                            'sku' => $pv->sku
+                        ];
+                    })->toArray()
+                ];
+            })
+            ->toArray();
+
+        $items = json_encode($workCategoriesWithProducts);
 
         $this->messages = [
             [
@@ -115,10 +321,6 @@ class BudgetEstimate extends Page implements HasTable
                 'type' => 'text',
                 'text' => $this->getWorkCategoriesPrompt($items)
             ],
-            [
-                'type' => 'text',
-                'text' => $this->getAreaCalculationPrompt()
-            ],
         ];
     }
 
@@ -127,12 +329,21 @@ class BudgetEstimate extends Page implements HasTable
      */
     private function getInitialPrompt(): string
     {
+        $totalFloorArea = $this->floorLength * $this->floorWidth * $this->numberOfStories;
+        $budgetPerSqm = $this->budget / $totalFloorArea;
+
         return "
-            I have a construction budget of {$this->budget} pesos. 
-            The project involves an embankment job with the following unit costs:
-            materials:400, labor:350, excavation:500, backfill:500;
-            Give me a practical floor area that prefers almost equal width and length.
-            Based on this, calculate the total area that is below my budget. 
+            I have a construction budget of {$this->budget} pesos.
+            Lot dimensions: {$this->lotLength}m x {$this->lotWidth}m (total lot area: " . ($this->lotLength * $this->lotWidth) . " sq.m)
+            Floor dimensions: {$this->floorLength}m x {$this->floorWidth}m (total floor area: " . ($this->floorLength * $this->floorWidth) . " sq.m)
+            Number of rooms: {$this->numberOfRooms}
+            Number of stories: {$this->numberOfStories}
+            Total floor area: {$totalFloorArea} sq.m
+            Budget per square meter: ₱" . number_format($budgetPerSqm, 2) . "
+            
+            The floor area should fit within the lot area. Calculate the total cost based on the specified floor dimensions, number of rooms, and number of stories.
+            
+            IMPORTANT: For each work category, you must select specific product variations from the available products list and calculate quantities based on the floor area and typical construction requirements. Consider the budget constraints and provide realistic quantities for each product.
         ";
     }
 
@@ -142,19 +353,24 @@ class BudgetEstimate extends Page implements HasTable
     private function getWorkCategoriesPrompt(string $items): string
     {
         return "
-            The project involves an embankment job with the following unit costs:
+            The project involves the following work categories with available products:
             {$items}
-        ";
-    }
-
-    /**
-     * Get the area calculation prompt
-     */
-    private function getAreaCalculationPrompt(): string
-    {
-        return "
-            Give me a practical floor area that prefers almost equal width and length.
-            Based on this, calculate the total area that is below my budget. 
+            
+            INSTRUCTIONS FOR EACH WORK CATEGORY:
+            1. Select appropriate products from the available list for each work category
+            2. Calculate realistic quantities based on the floor area and construction requirements
+            3. Consider typical construction ratios (e.g., electrical outlets per room, plumbing fixtures per bathroom, etc.)
+            4. For materials that require labor, add labor costs using the specified labor_cost_rate
+            5. Ensure the total cost stays within the budget
+            6. Provide detailed breakdown of quantities and costs for each selected product
+            
+            TYPICAL CONSTRUCTION RATIOS TO CONSIDER:
+            - Electrical: 1 outlet per 3 sq.m, 1 switch per room, 1 panel box per floor
+            - Plumbing: 1 bathroom per 2-3 rooms, 1 kitchen per floor
+            - Steel: 15-20 kg per sq.m for concrete reinforcement
+            - Paint: 0.2-0.3 liters per sq.m per coat (typically 2-3 coats)
+            - Tiles: 1.1x floor area (accounting for waste)
+            - Formworks: 2.5x floor area (walls, columns, beams)
         ";
     }
 
@@ -230,9 +446,24 @@ class BudgetEstimate extends Page implements HasTable
         $this->budget = $estimate->total_amount;
         $this->quotation = $estimate->structured_data;
 
-        // Load any additional instructions from notes
-        if ($estimate->notes && str_starts_with($estimate->notes, 'Additional instructions:')) {
-            $this->chat = substr($estimate->notes, 24); // Remove "Additional instructions: " prefix
+        // Load dimension data from structured data
+        if (isset($estimate->structured_data['lot_length'])) {
+            $this->lotLength = $estimate->structured_data['lot_length'];
+        }
+        if (isset($estimate->structured_data['lot_width'])) {
+            $this->lotWidth = $estimate->structured_data['lot_width'];
+        }
+        if (isset($estimate->structured_data['floor_length'])) {
+            $this->floorLength = $estimate->structured_data['floor_length'];
+        }
+        if (isset($estimate->structured_data['floor_width'])) {
+            $this->floorWidth = $estimate->structured_data['floor_width'];
+        }
+        if (isset($estimate->structured_data['number_of_rooms'])) {
+            $this->numberOfRooms = $estimate->structured_data['number_of_rooms'];
+        }
+        if (isset($estimate->structured_data['number_of_stories'])) {
+            $this->numberOfStories = $estimate->structured_data['number_of_stories'];
         }
 
         Notification::make()
@@ -250,33 +481,11 @@ class BudgetEstimate extends Page implements HasTable
     }
 
     /**
-     * Handle chat message submission
-     */
-    public function sendChat(): void
-    {
-        $this->validate([
-            'chat' => ['required', 'string', 'max:1000'],
-        ], [
-            'chat.required' => 'Please enter your additional instructions.',
-            'chat.max' => 'Additional instructions cannot exceed 1000 characters.',
-        ]);
-
-        $this->additional[] = [
-            'type' => 'text',
-            'text' => $this->chat
-        ];
-        $this->chat = '';
-        $this->estimate();
-    }
-
-    /**
      * Reset the form state
      */
     private function resetForm(): void
     {
         $this->quotation = [];
-        $this->additional = [];
-        $this->chat = '';
         $this->resetMessages();
     }
 
@@ -287,41 +496,51 @@ class BudgetEstimate extends Page implements HasTable
     {
         $this->validate();
 
-        // Reset form state
-        $this->resetForm();
+        try {
+            DB::beginTransaction();
 
-        DB::beginTransaction();
-        $client = $this->createOpenAIClient();
-        $this->resetMessages();
+            $client = $this->createOpenAIClient();
+            $this->resetMessages();
 
-        $response = $client->chat()->create([
-            'model' => 'o4-mini',
-            'messages' => [
-                [
-                    'role' => 'user',
-                    'content' => [
-                        ...$this->messages,
-                        ...$this->additional
-                    ]
+            $response = $client->chat()->create([
+                'model' => 'o4-mini',
+                'messages' => [
+                    [
+                        'role' => 'user',
+                        'content' => $this->messages
+                    ],
                 ],
-            ],
-            'response_format' => $this->getResponseFormat()
-        ]);
+                'response_format' => $this->getResponseFormat()
+            ]);
 
-        $quotation = json_decode($response->choices[0]->message->content, true);
-        // Save the generated estimate
-        $this->saveEstimate($quotation);
+            $quotation = json_decode($response->choices[0]->message->content, true);
 
-        // Update the quotation property after successful save
-        $this->quotation = $quotation;
+            if (!$quotation) {
+                throw new \Exception('Failed to parse AI response');
+            }
 
-        DB::commit();
+            // Save the generated estimate
+            $this->saveEstimate($quotation);
 
-        Notification::make()
-            ->title('Success')
-            ->body('Estimate generated and saved successfully.')
-            ->success()
-            ->send();
+            // Update the quotation property with the generated data
+            $this->quotation = $quotation;
+
+            DB::commit();
+
+            Notification::make()
+                ->title('Success')
+                ->body('Estimate generated and saved successfully.')
+                ->success()
+                ->send();
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Notification::make()
+                ->title('Error')
+                ->body('Failed to generate estimate: ' . $e->getMessage())
+                ->danger()
+                ->send();
+        }
     }
 
     /**
@@ -329,6 +548,13 @@ class BudgetEstimate extends Page implements HasTable
      */
     private function saveEstimate(array $quotation): void
     {
+        // Add dimension data to the quotation
+        $quotation['lot_length'] = $this->lotLength;
+        $quotation['lot_width'] = $this->lotWidth;
+        $quotation['floor_length'] = $this->floorLength;
+        $quotation['floor_width'] = $this->floorWidth;
+        $quotation['number_of_rooms'] = $this->numberOfRooms;
+        $quotation['number_of_stories'] = $this->numberOfStories;
 
         $estimate = BudgetEstimateModel::create([
             'customer_id' => Auth::user()->customer->id,
@@ -337,29 +563,45 @@ class BudgetEstimate extends Page implements HasTable
             'structured_data' => $quotation,
             'total_amount' => $quotation['total_cost'],
             'status' => 'draft',
-            'notes' => $this->chat ? "Additional instructions: {$this->chat}" : null,
         ]);
 
-        foreach (array_chunk($quotation['itemized_costs'], 10) as $categoryChunk) {
-            foreach ($categoryChunk as $category) {
-                $workCategory = WorkCategory::firstOrCreate(
-                    ['name' => $category['name']],
-                    ['requires_labor' => true, 'labor_cost_rate' => 1]
-                );
-                foreach ($category['line_items'] as $item) {
-                    BudgetEstimateItem::create([
-                        'budget_estimate_id' => $estimate->id,
-                        'work_category_id' => $workCategory->id,
-                        'name' => $item['description'],
-                        'description' => "Unit cost: ₱{$item['unit_cost']}",
-                        'quantity' => $quotation['total_area'],
-                        'unit' => 'square meters',
-                        'unit_price' => $item['unit_cost'],
-                        'type' => 'material',
-                    ]);
-                }
+        foreach ($quotation['itemized_costs'] as $category) {
+            $workCategory = WorkCategory::where('name', $category['name'])->first();
+
+            if (!$workCategory) {
+                continue;
+            }
+
+            foreach ($category['products'] as $product) {
+                BudgetEstimateItem::create([
+                    'budget_estimate_id' => $estimate->id,
+                    'work_category_id' => $workCategory->id,
+                    'name' => $product['product_name'],
+                    'description' => "SKU: {$product['sku']}, Unit: {$product['unit']}",
+                    'quantity' => $product['quantity'],
+                    'unit' => $product['unit'],
+                    'unit_price' => $product['unit_price'],
+                    'total_price' => $product['total_price'],
+                    'type' => 'material',
+                ]);
+            }
+
+            // Add labor cost if required
+            if ($workCategory->requires_labor && isset($category['labor_cost']) && $category['labor_cost'] > 0) {
+                BudgetEstimateItem::create([
+                    'budget_estimate_id' => $estimate->id,
+                    'work_category_id' => $workCategory->id,
+                    'name' => "Labor - {$category['name']}",
+                    'description' => "Labor cost for {$category['name']}",
+                    'quantity' => 1,
+                    'unit' => 'lump sum',
+                    'unit_price' => $category['labor_cost'],
+                    'total_price' => $category['labor_cost'],
+                    'type' => 'labor',
+                ]);
             }
         }
+
         $this->selectedEstimateId = $estimate->id;
     }
 
@@ -390,34 +632,47 @@ class BudgetEstimate extends Page implements HasTable
                         'length' => ['type' => 'integer'],
                         'width' => ['type' => 'integer'],
                         'total_area' => ['type' => 'integer'],
+                        'lot_length' => ['type' => 'integer'],
+                        'lot_width' => ['type' => 'integer'],
+                        'floor_length' => ['type' => 'integer'],
+                        'floor_width' => ['type' => 'integer'],
+                        'number_of_rooms' => ['type' => 'integer'],
+                        'number_of_stories' => ['type' => 'integer'],
                         'itemized_costs' => [
                             'type' => 'array',
                             'items' => [
                                 'type' => 'object',
                                 'properties' => [
                                     'name' => ['type' => 'string'],
-                                    'line_items' => [
+                                    'category_total' => ['type' => 'number'],
+                                    'labor_cost' => ['type' => 'number'],
+                                    'products' => [
                                         'type' => 'array',
                                         'items' => [
                                             'type' => 'object',
                                             'properties' => [
-                                                'description' => ['type' => 'string'],
-                                                'unit_cost' => ['type' => 'number'],
-                                                'total_cost' => ['type' => 'number']
+                                                'product_name' => ['type' => 'string'],
+                                                'sku' => ['type' => 'string'],
+                                                'unit' => ['type' => 'string'],
+                                                'quantity' => ['type' => 'number'],
+                                                'unit_price' => ['type' => 'number'],
+                                                'total_price' => ['type' => 'number']
                                             ],
-                                            'required' => ['description', 'unit_cost', 'total_cost'],
+                                            'required' => ['product_name', 'sku', 'unit', 'quantity', 'unit_price', 'total_price'],
                                             'additionalProperties' => false
                                         ]
                                     ]
                                 ],
-                                'required' => ['name', 'line_items'],
+                                'required' => ['name', 'category_total', 'products'],
                                 'additionalProperties' => false
                             ]
                         ],
                         'budget' => ['type' => 'number'],
                         'total_cost' => ['type' => 'number'],
+                        'materials_cost' => ['type' => 'number'],
+                        'labor_cost_total' => ['type' => 'number'],
                     ],
-                    'required' => ['length', 'width', 'total_area', 'itemized_costs', 'budget', 'total_cost'],
+                    'required' => ['length', 'width', 'total_area', 'lot_length', 'lot_width', 'floor_length', 'floor_width', 'number_of_rooms', 'number_of_stories', 'itemized_costs', 'budget', 'total_cost', 'materials_cost', 'labor_cost_total'],
                     'additionalProperties' => false
                 ]
             ]

@@ -23,4 +23,5 @@ export interface Product {
 
 export interface StorePageProps {
     products: Product[];
+    cartData: Record<number, number>; // variation_id => quantity
 } 

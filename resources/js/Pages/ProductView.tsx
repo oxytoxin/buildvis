@@ -32,14 +32,30 @@ type ProductProps = {
     model: {
         original_url: string;
     };
+    cartData: Record<number, number>; // variation_id => quantity
 }
 
 export default function ProductView() {
-    const { product, model } = usePage<ProductProps>().props;
+    const { product, model, cartData } = usePage<ProductProps>().props;
     const [activeTab, setActiveTab] = useState('images');
-    const [selectedVariation, setSelectedVariation] = useState(product.variations[0] || null);
     const [quantity, setQuantity] = useState(1);
     const gltf = model ? useLoader(GLTFLoader, model.original_url) : null;
+
+    // Get initial selected variation from URL params or default to first variation
+    const getInitialVariation = () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const variationId = urlParams.get('variation');
+        if (variationId) {
+            const variation = product.variations.find(v => v.id === parseInt(variationId));
+            if (variation) return variation;
+        }
+        return product.variations[0] || null;
+    };
+
+    const [selectedVariation, setSelectedVariation] = useState(getInitialVariation);
+
+    // Get cart quantity for selected variation
+    const cartQuantity = selectedVariation ? (cartData[selectedVariation.id] || 0) : 0;
 
     const form = useForm({
         variation_id: selectedVariation?.id,
@@ -57,7 +73,8 @@ export default function ProductView() {
     // Update selected variation when product changes
     useEffect(() => {
         if (product.variations?.length > 0) {
-            setSelectedVariation(product.variations[0]);
+            const initialVariation = getInitialVariation();
+            setSelectedVariation(initialVariation);
             setQuantity(1); // Reset quantity when variation changes
         }
     }, [product]);
@@ -65,6 +82,11 @@ export default function ProductView() {
     const handleVariationClick = (variation: Variation) => {
         setSelectedVariation(variation);
         setQuantity(1); // Reset quantity when variation changes
+
+        // Update URL to reflect selected variation
+        const url = new URL(window.location.href);
+        url.searchParams.set('variation', variation.id.toString());
+        window.history.replaceState({}, '', url.toString());
     };
 
     const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -79,7 +101,7 @@ export default function ProductView() {
         form.post(cart.add.url(), {
             onSuccess: () => {
                 toast.success('Added to cart successfully!');
-                setQuantity(1);
+                setQuantity(1); // Only reset quantity, keep selected variation
             },
             onError: (errors) => {
                 Object.entries(errors).forEach(([_, message]) => {
@@ -155,6 +177,16 @@ export default function ProductView() {
                             {selectedVariation?.stock_quantity} in stock
                         </p>
 
+                        {/* Cart Quantity Display */}
+                        {cartQuantity > 0 && (
+                            <div className="mt-4 bg-teal-50 border border-teal-200 rounded-lg p-3">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-teal-700 font-medium">In Cart:</span>
+                                    <span className="text-teal-600 font-semibold">{cartQuantity} {product.unit}</span>
+                                </div>
+                            </div>
+                        )}
+
                         {/* Add to Cart Section */}
                         <div className="mt-8 flex flex-col sm:flex-row items-start sm:items-center gap-4">
                             <div className="flex items-center gap-2">
@@ -213,24 +245,32 @@ export default function ProductView() {
                             <h3 className="text-base md:text-lg font-semibold mb-1">{product.name}</h3>
                             <h4 className="text-xs md:text-sm text-gray-600 mb-3">Available Variations</h4>
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 md:gap-3">
-                                {product.variations.map((variation) => (
-                                    <div
-                                        key={variation.id}
-                                        onClick={() => handleVariationClick(variation)}
-                                        className={`border rounded-lg p-2 cursor-pointer transition-all ${selectedVariation?.id === variation.id
-                                            ? 'border-teal-500 shadow-lg'
-                                            : 'hover:shadow-md hover:border-gray-300'
-                                            }`}
-                                    >
-                                        <img
-                                            src={variation.featured_image?.url ?? 'https://placehold.co/600x400'}
-                                            alt={variation.name}
-                                            className="w-full h-20 md:h-24 object-cover rounded-lg mb-1"
-                                        />
-                                        <h4 className="font-medium text-xs md:text-sm truncate">{variation.name}</h4>
-                                        <p className="text-teal-600 text-xs md:text-sm">P{variation.price}</p>
-                                    </div>
-                                ))}
+                                {product.variations.map((variation) => {
+                                    const variationCartQuantity = cartData[variation.id] || 0;
+                                    return (
+                                        <div
+                                            key={variation.id}
+                                            onClick={() => handleVariationClick(variation)}
+                                            className={`border rounded-lg p-2 cursor-pointer transition-all ${selectedVariation?.id === variation.id
+                                                ? 'border-teal-500 shadow-lg'
+                                                : 'hover:shadow-md hover:border-gray-300'
+                                                }`}
+                                        >
+                                            <img
+                                                src={variation.featured_image?.url ?? 'https://placehold.co/600x400'}
+                                                alt={variation.name}
+                                                className="w-full h-20 md:h-24 object-cover rounded-lg mb-1"
+                                            />
+                                            <h4 className="font-medium text-xs md:text-sm truncate">{variation.name}</h4>
+                                            <p className="text-teal-600 text-xs md:text-sm">P{variation.price}</p>
+                                            {variationCartQuantity > 0 && (
+                                                <p className="text-xs text-teal-600 font-medium mt-1">
+                                                    {variationCartQuantity} in cart
+                                                </p>
+                                            )}
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     </div>

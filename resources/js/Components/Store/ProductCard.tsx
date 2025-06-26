@@ -9,9 +9,10 @@ interface ProductCardProps {
     product: Product;
     selectedVariationId: number | undefined;
     onVariationChange: (productId: number, variationId: number) => void;
+    cartData: Record<number, number>; // variation_id => quantity
 }
 
-export default function ProductCard({ product, selectedVariationId, onVariationChange }: ProductCardProps) {
+export default function ProductCard({ product, selectedVariationId, onVariationChange, cartData }: ProductCardProps) {
     const [quantity, setQuantity] = useState(1);
     const [isAddingToCart, setIsAddingToCart] = useState(false);
     const selectedVariation = product.variations.find(v => v.id === selectedVariationId) || product.variations[0];
@@ -20,6 +21,9 @@ export default function ProductCard({ product, selectedVariationId, onVariationC
         variation_id: selectedVariation?.id,
         quantity: quantity
     });
+
+    // Get cart quantity for selected variation
+    const cartQuantity = selectedVariation ? (cartData[selectedVariation.id] || 0) : 0;
 
     useEffect(() => {
         form.setData({
@@ -81,6 +85,16 @@ export default function ProductCard({ product, selectedVariationId, onVariationC
                             ))}
                         </select>
                     </div>
+
+                    {/* Cart Quantity Display */}
+                    {cartQuantity > 0 && (
+                        <div className="bg-teal-50 border border-teal-200 rounded-lg p-2">
+                            <div className="flex items-center justify-between text-xs">
+                                <span className="text-teal-700 font-medium">In Cart:</span>
+                                <span className="text-teal-600 font-semibold">{cartQuantity} {product.unit}</span>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Quantity Input */}
                     <div>

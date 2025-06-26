@@ -90,13 +90,22 @@ export default function Nav() {
 
     return (
         <div className="sticky top-0 z-50">
-            <nav className="flex h-16 items-center justify-between gap-x-4 bg-white px-4 shadow-sm ring-1 ring-gray-950/5 md:px-6 lg:px-8">
-                {/* Logo - visible on all screens */}
+            <nav className="flex h-16 items-center gap-x-4 bg-white px-4 shadow-sm ring-1 ring-gray-950/5 md:px-6 lg:px-8">
+                {/* Logo */}
                 <div className="flex items-center">
                     <Link href={store.index.get().url} className="text-xl font-bold leading-5 tracking-tight text-gray-950">
                         BuildVis
                     </Link>
                 </div>
+
+                {/* Desktop Navigation - Left aligned */}
+                <ul className="hidden items-center gap-x-4 lg:flex lg:flex-1 lg:ml-8">
+                    {navigation.map((item) => (
+                        <li key={item.name}>
+                            <NavLink item={item} isItemActive={isActive(item.href)} />
+                        </li>
+                    ))}
+                </ul>
 
                 {/* Mobile menu button */}
                 <button
@@ -115,15 +124,6 @@ export default function Nav() {
                         </svg>
                     )}
                 </button>
-
-                {/* Desktop Navigation */}
-                <ul className="hidden items-center gap-x-4 lg:flex">
-                    {navigation.map((item) => (
-                        <li key={item.name}>
-                            <NavLink item={item} isItemActive={isActive(item.href)} />
-                        </li>
-                    ))}
-                </ul>
 
                 {/* User Menu */}
                 <div className="flex items-center gap-x-4">

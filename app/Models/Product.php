@@ -58,14 +58,19 @@ class Product extends Model implements HasMedia
         return $this->hasMany(OrderItem::class);
     }
 
-    public function work_categories(): BelongsToMany
-    {
-        return $this->belongsToMany(WorkCategory::class)
-            ->withTimestamps();
-    }
-
     public function variations(): HasMany
     {
         return $this->hasMany(ProductVariation::class);
+    }
+
+    public static function boot()
+    {
+        parent::boot();
+
+        static::updated(function ($product) {
+            $product->variations()->update([
+                'product_name' => $product->name,
+            ]);
+        });
     }
 }
