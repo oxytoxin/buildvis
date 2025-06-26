@@ -284,15 +284,13 @@ class BudgetEstimate extends Page implements HasTable
      */
     public function resetMessages(): void
     {
-        // Get work categories that have product variations
-        $workCategoriesWithProducts = WorkCategory::query()
+        $workCategories = WorkCategory::query()
             ->whereHas('product_variations')
             ->with(['product_variations' => function ($query) {
-                $query->where('is_active', true)
-                    ->where('counted_in_stats', true)
-                    ->with('product');
+                $query->with('product');
             }])
-            ->get()
+            ->get();
+        $workCategoriesWithProducts = $workCategories
             ->map(function ($wc) {
                 return [
                     'name' => $wc->name,
@@ -308,8 +306,10 @@ class BudgetEstimate extends Page implements HasTable
                     })->toArray()
                 ];
             })
+            ->filter(function ($wc) {
+                return count($wc['products']) > 0;
+            })
             ->toArray();
-
         $items = json_encode($workCategoriesWithProducts);
 
         $this->messages = [
@@ -332,19 +332,7 @@ class BudgetEstimate extends Page implements HasTable
         $totalFloorArea = $this->floorLength * $this->floorWidth * $this->numberOfStories;
         $budgetPerSqm = $this->budget / $totalFloorArea;
 
-        return "
-            I have a construction budget of {$this->budget} pesos.
-            Lot dimensions: {$this->lotLength}m x {$this->lotWidth}m (total lot area: " . ($this->lotLength * $this->lotWidth) . " sq.m)
-            Floor dimensions: {$this->floorLength}m x {$this->floorWidth}m (total floor area: " . ($this->floorLength * $this->floorWidth) . " sq.m)
-            Number of rooms: {$this->numberOfRooms}
-            Number of stories: {$this->numberOfStories}
-            Total floor area: {$totalFloorArea} sq.m
-            Budget per square meter: ₱" . number_format($budgetPerSqm, 2) . "
-            
-            The floor area should fit within the lot area. Calculate the total cost based on the specified floor dimensions, number of rooms, and number of stories.
-            
-            IMPORTANT: For each work category, you must select specific product variations from the available products list and calculate quantities based on the floor area and typical construction requirements. Consider the budget constraints and provide realistic quantities for each product.
-        ";
+        return "Budget: ₱{$this->budget} | Floor: {$totalFloorArea} sq.m | Budget/sq.m: ₱" . number_format($budgetPerSqm, 2) . " | Rooms: {$this->numberOfRooms} | Stories: {$this->numberOfStories}. Select products from available list and calculate realistic quantities based on floor area. Stay within budget.";
     }
 
     /**
@@ -352,26 +340,7 @@ class BudgetEstimate extends Page implements HasTable
      */
     private function getWorkCategoriesPrompt(string $items): string
     {
-        return "
-            The project involves the following work categories with available products:
-            {$items}
-            
-            INSTRUCTIONS FOR EACH WORK CATEGORY:
-            1. Select appropriate products from the available list for each work category
-            2. Calculate realistic quantities based on the floor area and construction requirements
-            3. Consider typical construction ratios (e.g., electrical outlets per room, plumbing fixtures per bathroom, etc.)
-            4. For materials that require labor, add labor costs using the specified labor_cost_rate
-            5. Ensure the total cost stays within the budget
-            6. Provide detailed breakdown of quantities and costs for each selected product
-            
-            TYPICAL CONSTRUCTION RATIOS TO CONSIDER:
-            - Electrical: 1 outlet per 3 sq.m, 1 switch per room, 1 panel box per floor
-            - Plumbing: 1 bathroom per 2-3 rooms, 1 kitchen per floor
-            - Steel: 15-20 kg per sq.m for concrete reinforcement
-            - Paint: 0.2-0.3 liters per sq.m per coat (typically 2-3 coats)
-            - Tiles: 1.1x floor area (accounting for waste)
-            - Formworks: 2.5x floor area (walls, columns, beams)
-        ";
+        return "Available work categories with products: {$items}. For each category: select appropriate products, calculate quantities (electrical: 1 outlet/3sqm, plumbing: 1 bathroom/2-3 rooms, steel: 15-20kg/sqm, paint: 0.2-0.3L/sqm/coat, tiles: 1.1x area, formworks: 2.5x area). Add labor costs if required.";
     }
 
     /**
@@ -510,7 +479,7 @@ class BudgetEstimate extends Page implements HasTable
                         'content' => $this->messages
                     ],
                 ],
-                'response_format' => $this->getResponseFormat()
+                'response_format' => $this->getResponseFormat(),
             ]);
 
             $quotation = json_decode($response->choices[0]->message->content, true);
@@ -565,15 +534,24 @@ class BudgetEstimate extends Page implements HasTable
             'status' => 'draft',
         ]);
 
+        // Get all work categories at once to avoid N+1 queries
+        $workCategoryNames = collect($quotation['itemized_costs'])->pluck('name')->toArray();
+        $workCategories = WorkCategory::whereIn('name', $workCategoryNames)->get()->keyBy('name');
+
+        // Prepare bulk insert data
+        $itemsToInsert = [];
+        $now = now();
+
         foreach ($quotation['itemized_costs'] as $category) {
-            $workCategory = WorkCategory::where('name', $category['name'])->first();
+            $workCategory = $workCategories->get($category['name']);
 
             if (!$workCategory) {
                 continue;
             }
 
+            // Add product items
             foreach ($category['products'] as $product) {
-                BudgetEstimateItem::create([
+                $itemsToInsert[] = [
                     'budget_estimate_id' => $estimate->id,
                     'work_category_id' => $workCategory->id,
                     'name' => $product['product_name'],
@@ -581,14 +559,15 @@ class BudgetEstimate extends Page implements HasTable
                     'quantity' => $product['quantity'],
                     'unit' => $product['unit'],
                     'unit_price' => $product['unit_price'],
-                    'total_price' => $product['total_price'],
                     'type' => 'material',
-                ]);
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
             }
 
             // Add labor cost if required
             if ($workCategory->requires_labor && isset($category['labor_cost']) && $category['labor_cost'] > 0) {
-                BudgetEstimateItem::create([
+                $itemsToInsert[] = [
                     'budget_estimate_id' => $estimate->id,
                     'work_category_id' => $workCategory->id,
                     'name' => "Labor - {$category['name']}",
@@ -596,10 +575,16 @@ class BudgetEstimate extends Page implements HasTable
                     'quantity' => 1,
                     'unit' => 'lump sum',
                     'unit_price' => $category['labor_cost'],
-                    'total_price' => $category['labor_cost'],
                     'type' => 'labor',
-                ]);
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
             }
+        }
+
+        // Bulk insert all items at once
+        if (!empty($itemsToInsert)) {
+            BudgetEstimateItem::insert($itemsToInsert);
         }
 
         $this->selectedEstimateId = $estimate->id;
@@ -613,6 +598,10 @@ class BudgetEstimate extends Page implements HasTable
         return OpenAI::factory()
             ->withApiKey(config('services.ai.api_key'))
             ->withBaseUri(config('services.ai.base_uri'))
+            ->withHttpClient(new \GuzzleHttp\Client([
+                'timeout' => 120, // 2 minutes timeout
+                'connect_timeout' => 30, // 30 seconds connection timeout
+            ]))
             ->make();
     }
 
@@ -663,7 +652,7 @@ class BudgetEstimate extends Page implements HasTable
                                         ]
                                     ]
                                 ],
-                                'required' => ['name', 'category_total', 'products'],
+                                'required' => ['name', 'category_total', 'labor_cost', 'products'],
                                 'additionalProperties' => false
                             ]
                         ],

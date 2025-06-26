@@ -241,6 +241,19 @@
 
                                 <div class="border-t border-gray-200 dark:border-gray-600 pt-4">
                                     <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Total Quotation: ₱{{ number_format($quotation['total_cost']) }}</h3>
+                                    
+                                    @if(isset($quotation['materials_cost']) && isset($quotation['labor_cost_total']))
+                                        <div class="grid grid-cols-2 gap-4 mb-4">
+                                            <div class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+                                                <h4 class="text-sm font-medium text-blue-600 dark:text-blue-400">Materials Cost</h4>
+                                                <p class="text-lg font-semibold text-blue-900 dark:text-blue-100">₱{{ number_format($quotation['materials_cost']) }}</p>
+                                            </div>
+                                            <div class="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
+                                                <h4 class="text-sm font-medium text-green-600 dark:text-green-400">Labor Cost</h4>
+                                                <p class="text-lg font-semibold text-green-900 dark:text-green-100">₱{{ number_format($quotation['labor_cost_total']) }}</p>
+                                            </div>
+                                        </div>
+                                    @endif
                                 </div>
 
                                 <div class="space-y-6">
@@ -248,24 +261,40 @@
                                         <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600">
                                             <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-600">
                                                 <h3 class="text-base font-medium text-gray-900 dark:text-gray-100">{{ $itemized_cost['name'] }}</h3>
+                                                @if(isset($itemized_cost['category_total']))
+                                                    <p class="text-sm text-gray-500 dark:text-gray-400">Category Total: ₱{{ number_format($itemized_cost['category_total']) }}</p>
+                                                @endif
                                             </div>
                                             <div class="overflow-x-auto">
                                                 <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                                                     <thead class="bg-gray-50 dark:bg-gray-700">
                                                         <tr>
-                                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Description</th>
-                                                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Unit Cost</th>
-                                                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total Cost</th>
+                                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Product</th>
+                                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">SKU</th>
+                                                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Quantity</th>
+                                                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Unit</th>
+                                                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Unit Price</th>
+                                                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total Price</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                                        @foreach ($itemized_cost['line_items'] as $line_item)
+                                                        @foreach ($itemized_cost['products'] as $product)
                                                             <tr>
-                                                                <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{{ $line_item['description'] }}</td>
-                                                                <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 text-right">₱{{ number_format($line_item['unit_cost']) }}</td>
-                                                                <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 text-right">₱{{ number_format($line_item['total_cost']) }}</td>
+                                                                <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{{ $product['product_name'] }}</td>
+                                                                <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{{ $product['sku'] }}</td>
+                                                                <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 text-right">{{ number_format($product['quantity']) }}</td>
+                                                                <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 text-right">{{ $product['unit'] }}</td>
+                                                                <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 text-right">₱{{ number_format($product['unit_price']) }}</td>
+                                                                <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 text-right">₱{{ number_format($product['total_price']) }}</td>
                                                             </tr>
                                                         @endforeach
+                                                        @if(isset($itemized_cost['labor_cost']) && $itemized_cost['labor_cost'] > 0)
+                                                            <tr class="bg-gray-50 dark:bg-gray-700">
+                                                                <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100" colspan="4">Labor Cost</td>
+                                                                <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 text-right">₱{{ number_format($itemized_cost['labor_cost']) }}</td>
+                                                                <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 text-right">₱{{ number_format($itemized_cost['labor_cost']) }}</td>
+                                                            </tr>
+                                                        @endif
                                                     </tbody>
                                                 </table>
                                             </div>
