@@ -17,4 +17,9 @@ class HouseGeneratorController extends Controller
             'length' => $length,
         ]);
     }
+
+    public function index2(Request $request)
+    {
+        return Inertia::render('HouseGen');
+    }
 }

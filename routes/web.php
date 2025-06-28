@@ -45,6 +45,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('house-generator', [HouseGeneratorController::class, 'index'])
         ->name('house-generator.index');
+    Route::get('house-generator-2', [HouseGeneratorController::class, 'index2'])
+        ->name('house-generator.index2');
 
     Route::get('/stripe-checkout/{order}', [StripeController::class, 'checkout'])->name('stripe.checkout');
     Route::get('/stripe-cancel/{order}', [StripeController::class, 'cancel'])->name('stripe.cancel');
