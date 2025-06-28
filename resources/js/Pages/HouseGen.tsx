@@ -2,18 +2,12 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { Suspense, useState, useMemo } from 'react';
 import { calculateRoomLayout, type Room, type HouseDimensions } from '../utils/roomLayout';
-import * as THREE from 'three';
+import { createHollowBox } from '../utils/hollowBox';
 
-const Room = ({ position, dimensions, color, outerWalls, windows }: {
+const Room = ({ position, dimensions, color, windows }: {
     position: [number, number, number];
     dimensions: [number, number, number];
     color: string;
-    outerWalls: {
-        front: boolean;
-        back: boolean;
-        left: boolean;
-        right: boolean;
-    };
     windows: {
         front?: [number, number, number];
         back?: [number, number, number];
@@ -24,146 +18,17 @@ const Room = ({ position, dimensions, color, outerWalls, windows }: {
     const wallThickness = 0.2; // 20cm wall thickness
     const [width, height, length] = dimensions;
 
-    // Window dimensions
-    const windowWidth = 1.2; // 1.2 meters wide window
-    const windowHeight = 1.0; // 1.0 meters tall window
-
-    // Create a hollow box using CSG operations
-    const createHollowBox = () => {
-        const outerGeometry = new THREE.BoxGeometry(width, height, length);
-        const innerGeometry = new THREE.BoxGeometry(
-            width - (2 * wallThickness),
-            height - (2 * wallThickness),
-            length - (2 * wallThickness)
-        );
-
-        // Create a single geometry by combining outer and inner
-        const geometry = new THREE.BufferGeometry();
-        const outerPositions = outerGeometry.attributes.position.array;
-        const innerPositions = innerGeometry.attributes.position.array;
-        const outerIndices = outerGeometry.index?.array || [];
-        const innerIndices = innerGeometry.index?.array || [];
-
-        // Combine vertices and indices
-        const positions = new Float32Array(outerPositions.length + innerPositions.length);
-        const indices = new Uint32Array(outerIndices.length + innerIndices.length);
-
-        // Copy outer geometry
-        positions.set(outerPositions, 0);
-        indices.set(outerIndices, 0);
-
-        // Copy inner geometry with offset
-        positions.set(innerPositions, outerPositions.length);
-        for (let i = 0; i < innerIndices.length; i++) {
-            indices[outerIndices.length + i] = innerIndices[i] + outerPositions.length / 3;
-        }
-
-        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-        geometry.setIndex(new THREE.BufferAttribute(indices, 1));
-        geometry.computeVertexNormals();
-
-        // Create a group to hold the room, edge lines, and windows
-        const group = new THREE.Group();
-
-        // Create the main room mesh
-        const mesh = new THREE.Mesh(
-            geometry,
-            new THREE.MeshStandardMaterial({
-                color: color,
-                side: THREE.DoubleSide
-            })
-        );
-        group.add(mesh);
-
-        // Create edge lines
-        const edges = new THREE.EdgesGeometry(outerGeometry);
-        const lineMaterial = new THREE.LineBasicMaterial({ color: 'black', linewidth: 2 });
-        const wireframe = new THREE.LineSegments(edges, lineMaterial);
-        group.add(wireframe);
-
-        // Create inner edge lines
-        const innerEdges = new THREE.EdgesGeometry(innerGeometry);
-        const innerWireframe = new THREE.LineSegments(innerEdges, lineMaterial);
-        group.add(innerWireframe);
-
-        // Create windows using pre-calculated positions
-        const createWindow = (windowPosition: [number, number, number], rotation: number) => {
-            console.log('Creating window at position:', windowPosition, 'rotation:', rotation);
-
-            // Create double window (side by side)
-            const singleWindowWidth = (windowWidth - wallThickness * 0.1) / 2; // Half width minus small gap
-            const dividerThickness = wallThickness * 0.1; // Thickness of divider
-
-            // Create window group
-            const windowGroup = new THREE.Group();
-
-            // Left window
-            const leftWindowGeometry = new THREE.BoxGeometry(singleWindowWidth, windowHeight, wallThickness * 1.5);
-            const leftWindowMaterial = new THREE.MeshStandardMaterial({
-                color: '#87CEEB', // Light blue for glass
-                transparent: true,
-                opacity: 0.8,
-                side: THREE.DoubleSide
-            });
-            const leftWindow = new THREE.Mesh(leftWindowGeometry, leftWindowMaterial);
-            leftWindow.position.set(-singleWindowWidth / 2 - dividerThickness / 2, 0, 0);
-            windowGroup.add(leftWindow);
-
-            // Right window
-            const rightWindowGeometry = new THREE.BoxGeometry(singleWindowWidth, windowHeight, wallThickness * 1.5);
-            const rightWindowMaterial = new THREE.MeshStandardMaterial({
-                color: '#87CEEB', // Light blue for glass
-                transparent: true,
-                opacity: 0.8,
-                side: THREE.DoubleSide
-            });
-            const rightWindow = new THREE.Mesh(rightWindowGeometry, rightWindowMaterial);
-            rightWindow.position.set(singleWindowWidth / 2 + dividerThickness / 2, 0, 0);
-            windowGroup.add(rightWindow);
-
-            // Vertical divider line between windows
-            const dividerGeometry = new THREE.BoxGeometry(dividerThickness, windowHeight, wallThickness * 1.5);
-            const dividerMaterial = new THREE.MeshStandardMaterial({
-                color: '#1a1a1a', // Dark gray for frame
-                side: THREE.DoubleSide
-            });
-            const divider = new THREE.Mesh(dividerGeometry, dividerMaterial);
-            divider.position.set(0, 0, 0);
-            windowGroup.add(divider);
-
-            // Position and rotate the entire window group
-            windowGroup.position.set(windowPosition[0], windowPosition[1], windowPosition[2]);
-            windowGroup.rotation.y = rotation;
-            group.add(windowGroup);
-
-            console.log('Double window group with divider added to group');
-        };
-
-        // Add windows using pre-calculated positions
-        console.log('Room windows:', windows);
-
-        if (windows.front) {
-            console.log('Creating front window');
-            createWindow(windows.front, 0); // Front window
-        }
-        if (windows.back) {
-            console.log('Creating back window');
-            createWindow(windows.back, 0); // Back window
-        }
-        if (windows.left) {
-            console.log('Creating left window');
-            createWindow(windows.left, Math.PI / 2); // Left window
-        }
-        if (windows.right) {
-            console.log('Creating right window');
-            createWindow(windows.right, Math.PI / 2); // Right window
-        }
-
-        return group;
-    };
+    const hollowBox = createHollowBox({
+        width,
+        height,
+        length,
+        wallThickness,
+        color,
+        windows
+    });
 
     return (
-        <primitive object={createHollowBox()} position={position} />
+        <primitive object={hollowBox} position={position} />
     );
 };
 
@@ -244,9 +109,9 @@ const HouseGen = () => {
                         </label>
                         <input
                             type="range"
-                            min="2"
+                            min="2.5"
                             max="6"
-                            step="0.2"
+                            step="0.1"
                             value={dimensions.height}
                             onChange={(e) => handleDimensionChange('height', parseFloat(e.target.value))}
                             className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
@@ -304,7 +169,6 @@ const HouseGen = () => {
                             position={room.position}
                             dimensions={room.dimensions}
                             color={wallColor}
-                            outerWalls={room.outerWalls}
                             windows={room.windows}
                         />
                     ))}
