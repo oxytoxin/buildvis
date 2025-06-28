@@ -21,39 +21,6 @@ export interface HouseDimensions {
     height: number;
 }
 
-// Helper function to determine outer walls based on room position and house dimensions
-const calculateOuterWalls = (
-    roomPosition: [number, number, number],
-    roomDimensions: [number, number, number],
-    houseDimensions: HouseDimensions
-): { front: boolean; back: boolean; left: boolean; right: boolean } => {
-    const [roomX, roomY, roomZ] = roomPosition;
-    const [roomWidth, roomHeight, roomLength] = roomDimensions;
-    const { width: houseWidth, length: houseLength } = houseDimensions;
-
-    // Calculate room boundaries
-    const roomLeft = roomX - (roomWidth / 2);
-    const roomRight = roomX + (roomWidth / 2);
-    const roomFront = roomZ - (roomLength / 2);
-    const roomBack = roomZ + (roomLength / 2);
-
-    // Calculate house boundaries
-    const houseLeft = -(houseWidth / 2);
-    const houseRight = houseWidth / 2;
-    const houseFront = -(houseLength / 2);
-    const houseBack = houseLength / 2;
-
-    // Check if walls are at house boundaries (with small tolerance for floating point)
-    const tolerance = 0.1;
-
-    return {
-        left: Math.abs(roomLeft - houseLeft) < tolerance,
-        right: Math.abs(roomRight - houseRight) < tolerance,
-        front: Math.abs(roomFront - houseFront) < tolerance,
-        back: Math.abs(roomBack - houseBack) < tolerance,
-    };
-};
-
 // Helper function to calculate window positions for a room
 const calculateWindowPositions = (
     roomDimensions: [number, number, number],
@@ -63,7 +30,7 @@ const calculateWindowPositions = (
     const [width, height, length] = roomDimensions;
 
     // Window height position (0.5m from bottom)
-    const windowY = -(height / 2) + 0.5 + 0.5; // 0.5m window height, positioned 0.5m from bottom
+    const windowY = -(height / 2) + 0.5 + 1; // 0.5m window height, positioned 0.5m from bottom
 
     const windows: { front?: [number, number, number]; back?: [number, number, number]; left?: [number, number, number]; right?: [number, number, number] } = {};
 

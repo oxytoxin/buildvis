@@ -88,30 +88,69 @@ const Room = ({ position, dimensions, color, outerWalls, windows }: {
 
         // Create windows using pre-calculated positions
         const createWindow = (windowPosition: [number, number, number], rotation: number) => {
-            const windowGeometry = new THREE.BoxGeometry(windowWidth, windowHeight, wallThickness * 1.5);
-            const windowMaterial = new THREE.MeshStandardMaterial({
+            console.log('Creating window at position:', windowPosition, 'rotation:', rotation);
+
+            // Create double window (side by side)
+            const singleWindowWidth = (windowWidth - wallThickness * 0.1) / 2; // Half width minus small gap
+            const dividerThickness = wallThickness * 0.1; // Thickness of divider
+
+            // Left window
+            const leftWindowGeometry = new THREE.BoxGeometry(singleWindowWidth, windowHeight, wallThickness * 1.5);
+            const leftWindowMaterial = new THREE.MeshStandardMaterial({
                 color: '#87CEEB', // Light blue for glass
                 transparent: true,
-                opacity: 0.6,
+                opacity: 0.8,
                 side: THREE.DoubleSide
             });
-            const windowMesh = new THREE.Mesh(windowGeometry, windowMaterial);
-            windowMesh.position.set(windowPosition[0], windowPosition[1], windowPosition[2]);
-            windowMesh.rotation.y = rotation;
-            group.add(windowMesh);
+            const leftWindow = new THREE.Mesh(leftWindowGeometry, leftWindowMaterial);
+            leftWindow.position.set(windowPosition[0] - singleWindowWidth / 2 - dividerThickness / 2, windowPosition[1], windowPosition[2]);
+            leftWindow.rotation.y = rotation;
+            group.add(leftWindow);
+
+            // Right window
+            const rightWindowGeometry = new THREE.BoxGeometry(singleWindowWidth, windowHeight, wallThickness * 1.5);
+            const rightWindowMaterial = new THREE.MeshStandardMaterial({
+                color: '#87CEEB', // Light blue for glass
+                transparent: true,
+                opacity: 0.8,
+                side: THREE.DoubleSide
+            });
+            const rightWindow = new THREE.Mesh(rightWindowGeometry, rightWindowMaterial);
+            rightWindow.position.set(windowPosition[0] + singleWindowWidth / 2 + dividerThickness / 2, windowPosition[1], windowPosition[2]);
+            rightWindow.rotation.y = rotation;
+            group.add(rightWindow);
+
+            // Vertical divider line between windows
+            const dividerGeometry = new THREE.BoxGeometry(dividerThickness, windowHeight, wallThickness * 1.5);
+            const dividerMaterial = new THREE.MeshStandardMaterial({
+                color: '#1a1a1a', // Dark gray for frame
+                side: THREE.DoubleSide
+            });
+            const divider = new THREE.Mesh(dividerGeometry, dividerMaterial);
+            divider.position.set(windowPosition[0], windowPosition[1], windowPosition[2]);
+            divider.rotation.y = rotation;
+            group.add(divider);
+
+            console.log('Double window with divider added to group');
         };
 
         // Add windows using pre-calculated positions
+        console.log('Room windows:', windows);
+
         if (windows.front) {
+            console.log('Creating front window');
             createWindow(windows.front, 0); // Front window
         }
         if (windows.back) {
+            console.log('Creating back window');
             createWindow(windows.back, 0); // Back window
         }
         if (windows.left) {
+            console.log('Creating left window');
             createWindow(windows.left, Math.PI / 2); // Left window
         }
         if (windows.right) {
+            console.log('Creating right window');
             createWindow(windows.right, Math.PI / 2); // Right window
         }
 
