@@ -94,6 +94,9 @@ const Room = ({ position, dimensions, color, outerWalls, windows }: {
             const singleWindowWidth = (windowWidth - wallThickness * 0.1) / 2; // Half width minus small gap
             const dividerThickness = wallThickness * 0.1; // Thickness of divider
 
+            // Create window group
+            const windowGroup = new THREE.Group();
+
             // Left window
             const leftWindowGeometry = new THREE.BoxGeometry(singleWindowWidth, windowHeight, wallThickness * 1.5);
             const leftWindowMaterial = new THREE.MeshStandardMaterial({
@@ -103,9 +106,8 @@ const Room = ({ position, dimensions, color, outerWalls, windows }: {
                 side: THREE.DoubleSide
             });
             const leftWindow = new THREE.Mesh(leftWindowGeometry, leftWindowMaterial);
-            leftWindow.position.set(windowPosition[0] - singleWindowWidth / 2 - dividerThickness / 2, windowPosition[1], windowPosition[2]);
-            leftWindow.rotation.y = rotation;
-            group.add(leftWindow);
+            leftWindow.position.set(-singleWindowWidth / 2 - dividerThickness / 2, 0, 0);
+            windowGroup.add(leftWindow);
 
             // Right window
             const rightWindowGeometry = new THREE.BoxGeometry(singleWindowWidth, windowHeight, wallThickness * 1.5);
@@ -116,9 +118,8 @@ const Room = ({ position, dimensions, color, outerWalls, windows }: {
                 side: THREE.DoubleSide
             });
             const rightWindow = new THREE.Mesh(rightWindowGeometry, rightWindowMaterial);
-            rightWindow.position.set(windowPosition[0] + singleWindowWidth / 2 + dividerThickness / 2, windowPosition[1], windowPosition[2]);
-            rightWindow.rotation.y = rotation;
-            group.add(rightWindow);
+            rightWindow.position.set(singleWindowWidth / 2 + dividerThickness / 2, 0, 0);
+            windowGroup.add(rightWindow);
 
             // Vertical divider line between windows
             const dividerGeometry = new THREE.BoxGeometry(dividerThickness, windowHeight, wallThickness * 1.5);
@@ -127,11 +128,15 @@ const Room = ({ position, dimensions, color, outerWalls, windows }: {
                 side: THREE.DoubleSide
             });
             const divider = new THREE.Mesh(dividerGeometry, dividerMaterial);
-            divider.position.set(windowPosition[0], windowPosition[1], windowPosition[2]);
-            divider.rotation.y = rotation;
-            group.add(divider);
+            divider.position.set(0, 0, 0);
+            windowGroup.add(divider);
 
-            console.log('Double window with divider added to group');
+            // Position and rotate the entire window group
+            windowGroup.position.set(windowPosition[0], windowPosition[1], windowPosition[2]);
+            windowGroup.rotation.y = rotation;
+            group.add(windowGroup);
+
+            console.log('Double window group with divider added to group');
         };
 
         // Add windows using pre-calculated positions
