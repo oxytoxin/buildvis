@@ -1,6 +1,18 @@
 export interface Room {
     position: [number, number, number];
     dimensions: [number, number, number];
+    outerWalls: {
+        front: boolean;
+        back: boolean;
+        left: boolean;
+        right: boolean;
+    };
+    windows: {
+        front?: [number, number, number]; // [x, y, z] position
+        back?: [number, number, number];
+        left?: [number, number, number];
+        right?: [number, number, number];
+    };
 }
 
 export interface HouseDimensions {
@@ -9,269 +21,631 @@ export interface HouseDimensions {
     height: number;
 }
 
+// Helper function to determine outer walls based on room position and house dimensions
+const calculateOuterWalls = (
+    roomPosition: [number, number, number],
+    roomDimensions: [number, number, number],
+    houseDimensions: HouseDimensions
+): { front: boolean; back: boolean; left: boolean; right: boolean } => {
+    const [roomX, roomY, roomZ] = roomPosition;
+    const [roomWidth, roomHeight, roomLength] = roomDimensions;
+    const { width: houseWidth, length: houseLength } = houseDimensions;
+
+    // Calculate room boundaries
+    const roomLeft = roomX - (roomWidth / 2);
+    const roomRight = roomX + (roomWidth / 2);
+    const roomFront = roomZ - (roomLength / 2);
+    const roomBack = roomZ + (roomLength / 2);
+
+    // Calculate house boundaries
+    const houseLeft = -(houseWidth / 2);
+    const houseRight = houseWidth / 2;
+    const houseFront = -(houseLength / 2);
+    const houseBack = houseLength / 2;
+
+    // Check if walls are at house boundaries (with small tolerance for floating point)
+    const tolerance = 0.1;
+
+    return {
+        left: Math.abs(roomLeft - houseLeft) < tolerance,
+        right: Math.abs(roomRight - houseRight) < tolerance,
+        front: Math.abs(roomFront - houseFront) < tolerance,
+        back: Math.abs(roomBack - houseBack) < tolerance,
+    };
+};
+
+// Helper function to calculate window positions for a room
+const calculateWindowPositions = (
+    roomDimensions: [number, number, number],
+    outerWalls: { front: boolean; back: boolean; left: boolean; right: boolean },
+    wallThickness: number = 0.2
+): { front?: [number, number, number]; back?: [number, number, number]; left?: [number, number, number]; right?: [number, number, number] } => {
+    const [width, height, length] = roomDimensions;
+
+    // Window height position (0.5m from bottom)
+    const windowY = -(height / 2) + 0.5 + 0.5; // 0.5m window height, positioned 0.5m from bottom
+
+    const windows: { front?: [number, number, number]; back?: [number, number, number]; left?: [number, number, number]; right?: [number, number, number] } = {};
+
+    if (outerWalls.front) {
+        windows.front = [0, windowY, -(length / 2) + (wallThickness / 2)];
+    }
+    if (outerWalls.back) {
+        windows.back = [0, windowY, (length / 2) - (wallThickness / 2)];
+    }
+    if (outerWalls.left) {
+        windows.left = [-(width / 2) + (wallThickness / 2), windowY, 0];
+    }
+    if (outerWalls.right) {
+        windows.right = [(width / 2) - (wallThickness / 2), windowY, 0];
+    }
+
+    return windows;
+};
+
+// Helper function to determine outer walls for 3-room layouts
+const calculateOuterWallsFor3Rooms = (
+    roomIndex: number,
+    isHorizontalSplit: boolean
+): { front: boolean; back: boolean; left: boolean; right: boolean } => {
+    if (isHorizontalSplit) {
+        // Two rooms on top, one on bottom
+        switch (roomIndex) {
+            case 0: // Top-left room
+                return { front: true, back: false, left: true, right: false };
+            case 1: // Top-right room
+                return { front: true, back: false, left: false, right: true };
+            case 2: // Bottom room
+                return { front: false, back: true, left: true, right: true };
+            default:
+                return { front: false, back: false, left: false, right: false };
+        }
+    } else {
+        // Two rooms on left, one on right
+        switch (roomIndex) {
+            case 0: // Left room
+                return { front: true, back: true, left: true, right: false };
+            case 1: // Top-right room
+                return { front: true, back: false, left: false, right: true };
+            case 2: // Bottom-right room
+                return { front: false, back: true, left: false, right: true };
+            default:
+                return { front: false, back: false, left: false, right: false };
+        }
+    }
+};
+
 export function calculateRoomLayout(numRooms: number, dimensions: HouseDimensions): Room[] {
     const rooms: Room[] = [];
     const roomHeight = dimensions.height;
 
     if (numRooms === 1) {
-        // Single room takes full space
-        rooms.push({
+        const outerWalls = {
+            front: true,
+            back: true,
+            left: true,
+            right: true,
+        };
+
+        const room: Room = {
             position: [0, roomHeight / 2, 0],
             dimensions: [dimensions.width, roomHeight, dimensions.length],
-        });
+            outerWalls,
+            windows: calculateWindowPositions([dimensions.width, roomHeight, dimensions.length], outerWalls),
+        };
+        rooms.push(room);
     } else if (numRooms === 2) {
-        // Two rooms side by side - random arrangement
         const roomWidth = dimensions.width / 2;
+        const roomLength = dimensions.length;
 
-        // Randomly choose between side-by-side or front-back arrangement
-        const arrangement = Math.random() > 0.5;
+        // Check if we should split horizontally or vertically
+        if (dimensions.width >= dimensions.length) {
+            // Split horizontally
+            const leftOuterWalls = {
+                front: true,   // Front edge of house
+                back: true,    // Back edge of house
+                left: true,    // Left edge of house
+                right: false,  // Shared with right room
+            };
 
-        if (arrangement) {
-            // Side by side
-            rooms.push({
+            const leftRoom: Room = {
                 position: [-(dimensions.width / 4), roomHeight / 2, 0],
                 dimensions: [roomWidth, roomHeight, dimensions.length],
-            });
-            rooms.push({
+                outerWalls: leftOuterWalls,
+                windows: calculateWindowPositions([roomWidth, roomHeight, dimensions.length], leftOuterWalls),
+            };
+            rooms.push(leftRoom);
+
+            const rightOuterWalls = {
+                front: true,   // Front edge of house
+                back: true,    // Back edge of house
+                left: false,   // Shared with left room
+                right: true,   // Right edge of house
+            };
+
+            const rightRoom: Room = {
                 position: [dimensions.width / 4, roomHeight / 2, 0],
                 dimensions: [roomWidth, roomHeight, dimensions.length],
-            });
+                outerWalls: rightOuterWalls,
+                windows: calculateWindowPositions([roomWidth, roomHeight, dimensions.length], rightOuterWalls),
+            };
+            rooms.push(rightRoom);
         } else {
-            // Front and back
-            const roomLength = dimensions.length / 2;
-            rooms.push({
+            // Split vertically
+            const topOuterWalls = {
+                front: true,   // Front edge of house
+                back: false,   // Shared with bottom room
+                left: true,    // Left edge of house
+                right: true,   // Right edge of house
+            };
+
+            const topRoom: Room = {
                 position: [0, roomHeight / 2, -(dimensions.length / 4)],
                 dimensions: [dimensions.width, roomHeight, roomLength],
-            });
-            rooms.push({
+                outerWalls: topOuterWalls,
+                windows: calculateWindowPositions([dimensions.width, roomHeight, roomLength], topOuterWalls),
+            };
+            rooms.push(topRoom);
+
+            const bottomOuterWalls = {
+                front: false,  // Shared with top room
+                back: true,    // Back edge of house
+                left: true,    // Left edge of house
+                right: true,   // Right edge of house
+            };
+
+            const bottomRoom: Room = {
                 position: [0, roomHeight / 2, dimensions.length / 4],
-                dimensions: [dimensions.width, roomHeight, roomLength],
-            });
+                dimensions: [dimensions.width, roomHeight, dimensions.length / 2],
+                outerWalls: bottomOuterWalls,
+                windows: calculateWindowPositions([dimensions.width, roomHeight, dimensions.length / 2], bottomOuterWalls),
+            };
+            rooms.push(bottomRoom);
         }
     } else if (numRooms === 3) {
-        // Three rooms - random arrangement
-        const arrangements = [
-            // Two on top, one large below
-            () => {
-                const topRoomWidth = dimensions.width / 2;
-                const topRoomLength = dimensions.length / 2;
-                const bottomRoomLength = dimensions.length / 2;
+        const isHorizontalSplit = dimensions.width >= dimensions.length;
 
-                rooms.push({
-                    position: [-(dimensions.width / 4), roomHeight / 2, -(dimensions.length / 4)],
-                    dimensions: [topRoomWidth, roomHeight, topRoomLength],
-                });
-                rooms.push({
-                    position: [dimensions.width / 4, roomHeight / 2, -(dimensions.length / 4)],
-                    dimensions: [topRoomWidth, roomHeight, topRoomLength],
-                });
-                rooms.push({
-                    position: [0, roomHeight / 2, dimensions.length / 4],
-                    dimensions: [dimensions.width, roomHeight, bottomRoomLength],
-                });
-            },
-            // One large on left, two stacked on right
-            () => {
-                const leftRoomWidth = dimensions.width / 2;
-                const rightRoomWidth = dimensions.width / 2;
-                const rightRoomLength = dimensions.length / 2;
+        if (isHorizontalSplit) {
+            // Two rooms on top, one on bottom
+            const topRoomWidth = dimensions.width / 2;
+            const topRoomLength = dimensions.length / 2;
 
-                rooms.push({
-                    position: [-(dimensions.width / 4), roomHeight / 2, 0],
-                    dimensions: [leftRoomWidth, roomHeight, dimensions.length],
-                });
-                rooms.push({
-                    position: [dimensions.width / 4, roomHeight / 2, -(dimensions.length / 4)],
-                    dimensions: [rightRoomWidth, roomHeight, rightRoomLength],
-                });
-                rooms.push({
-                    position: [dimensions.width / 4, roomHeight / 2, dimensions.length / 4],
-                    dimensions: [rightRoomWidth, roomHeight, rightRoomLength],
-                });
-            }
-        ];
+            const topLeftOuterWalls = calculateOuterWallsFor3Rooms(0, true);
+            const topLeftRoom: Room = {
+                position: [-(dimensions.width / 4), roomHeight / 2, -(dimensions.length / 4)],
+                dimensions: [topRoomWidth, roomHeight, topRoomLength],
+                outerWalls: topLeftOuterWalls,
+                windows: calculateWindowPositions([topRoomWidth, roomHeight, topRoomLength], topLeftOuterWalls),
+            };
+            rooms.push(topLeftRoom);
 
-        const randomArrangement = arrangements[Math.floor(Math.random() * arrangements.length)];
-        randomArrangement();
+            const topRightOuterWalls = calculateOuterWallsFor3Rooms(1, true);
+            const topRightRoom: Room = {
+                position: [dimensions.width / 4, roomHeight / 2, -(dimensions.length / 4)],
+                dimensions: [topRoomWidth, roomHeight, topRoomLength],
+                outerWalls: topRightOuterWalls,
+                windows: calculateWindowPositions([topRoomWidth, roomHeight, topRoomLength], topRightOuterWalls),
+            };
+            rooms.push(topRightRoom);
+
+            const bottomOuterWalls = calculateOuterWallsFor3Rooms(2, true);
+            const bottomRoom: Room = {
+                position: [0, roomHeight / 2, dimensions.length / 4],
+                dimensions: [dimensions.width, roomHeight, dimensions.length / 2],
+                outerWalls: bottomOuterWalls,
+                windows: calculateWindowPositions([dimensions.width, roomHeight, dimensions.length / 2], bottomOuterWalls),
+            };
+            rooms.push(bottomRoom);
+        } else {
+            // Two rooms on left, one on right
+            const leftRoomWidth = dimensions.width / 2;
+            const rightRoomWidth = dimensions.width / 2;
+            const rightRoomLength = dimensions.length / 2;
+
+            const leftOuterWalls = calculateOuterWallsFor3Rooms(0, false);
+            const leftRoom: Room = {
+                position: [-(dimensions.width / 4), roomHeight / 2, 0],
+                dimensions: [leftRoomWidth, roomHeight, dimensions.length],
+                outerWalls: leftOuterWalls,
+                windows: calculateWindowPositions([leftRoomWidth, roomHeight, dimensions.length], leftOuterWalls),
+            };
+            rooms.push(leftRoom);
+
+            const topRightOuterWalls = calculateOuterWallsFor3Rooms(1, false);
+            const topRightRoom: Room = {
+                position: [dimensions.width / 4, roomHeight / 2, -(dimensions.length / 4)],
+                dimensions: [rightRoomWidth, roomHeight, rightRoomLength],
+                outerWalls: topRightOuterWalls,
+                windows: calculateWindowPositions([rightRoomWidth, roomHeight, rightRoomLength], topRightOuterWalls),
+            };
+            rooms.push(topRightRoom);
+
+            const bottomRightOuterWalls = calculateOuterWallsFor3Rooms(2, false);
+            const bottomRightRoom: Room = {
+                position: [dimensions.width / 4, roomHeight / 2, dimensions.length / 4],
+                dimensions: [rightRoomWidth, roomHeight, rightRoomLength],
+                outerWalls: bottomRightOuterWalls,
+                windows: calculateWindowPositions([rightRoomWidth, roomHeight, rightRoomLength], bottomRightOuterWalls),
+            };
+            rooms.push(bottomRightRoom);
+        }
     } else if (numRooms === 4) {
-        // 2x2 grid
         const roomWidth = dimensions.width / 2;
         const roomLength = dimensions.length / 2;
 
-        for (let i = 0; i < 4; i++) {
-            const row = Math.floor(i / 2);
-            const col = i % 2;
-            const x = (col * roomWidth) - (dimensions.width / 2) + (roomWidth / 2);
-            const z = (row * roomLength) - (dimensions.length / 2) + (roomLength / 2);
+        // Create a 2x2 grid with proper outer wall detection
+        const topLeftOuterWalls = {
+            front: true,   // Top edge of house
+            back: false,   // Shared with bottom room
+            left: true,    // Left edge of house
+            right: false,  // Shared with right room
+        };
 
-            rooms.push({
-                position: [x, roomHeight / 2, z],
-                dimensions: [roomWidth, roomHeight, roomLength],
-            });
-        }
+        const topLeftRoom: Room = {
+            position: [-(dimensions.width / 4), roomHeight / 2, -(dimensions.length / 4)],
+            dimensions: [roomWidth, roomHeight, roomLength],
+            outerWalls: topLeftOuterWalls,
+            windows: calculateWindowPositions([roomWidth, roomHeight, roomLength], topLeftOuterWalls),
+        };
+        rooms.push(topLeftRoom);
+
+        const topRightOuterWalls = {
+            front: true,   // Top edge of house
+            back: false,   // Shared with bottom room
+            left: false,   // Shared with left room
+            right: true,   // Right edge of house
+        };
+
+        const topRightRoom: Room = {
+            position: [dimensions.width / 4, roomHeight / 2, -(dimensions.length / 4)],
+            dimensions: [roomWidth, roomHeight, roomLength],
+            outerWalls: topRightOuterWalls,
+            windows: calculateWindowPositions([roomWidth, roomHeight, roomLength], topRightOuterWalls),
+        };
+        rooms.push(topRightRoom);
+
+        const bottomLeftOuterWalls = {
+            front: false,  // Shared with top room
+            back: true,    // Bottom edge of house
+            left: true,    // Left edge of house
+            right: false,  // Shared with right room
+        };
+
+        const bottomLeftRoom: Room = {
+            position: [-(dimensions.width / 4), roomHeight / 2, dimensions.length / 4],
+            dimensions: [roomWidth, roomHeight, roomLength],
+            outerWalls: bottomLeftOuterWalls,
+            windows: calculateWindowPositions([roomWidth, roomHeight, roomLength], bottomLeftOuterWalls),
+        };
+        rooms.push(bottomLeftRoom);
+
+        const bottomRightOuterWalls = {
+            front: false,  // Shared with top room
+            back: true,    // Bottom edge of house
+            left: false,   // Shared with left room
+            right: true,   // Right edge of house
+        };
+
+        const bottomRightRoom: Room = {
+            position: [dimensions.width / 4, roomHeight / 2, dimensions.length / 4],
+            dimensions: [roomWidth, roomHeight, roomLength],
+            outerWalls: bottomRightOuterWalls,
+            windows: calculateWindowPositions([roomWidth, roomHeight, roomLength], bottomRightOuterWalls),
+        };
+        rooms.push(bottomRightRoom);
     } else if (numRooms === 5) {
-        // Five rooms - random arrangement
-        const arrangements = [
-            // 3 on top, 2 below
-            () => {
-                const topRoomWidth = dimensions.width / 3;
-                const topRoomLength = dimensions.length / 2;
-                const bottomRoomLength = dimensions.length / 2;
+        const roomWidth = dimensions.width / 3;
+        const roomLength = dimensions.length / 2;
 
-                // Top row - 3 rooms
-                for (let i = 0; i < 3; i++) {
-                    const x = (i * topRoomWidth) - (dimensions.width / 2) + (topRoomWidth / 2);
-                    rooms.push({
-                        position: [x, roomHeight / 2, -(dimensions.length / 4)],
-                        dimensions: [topRoomWidth, roomHeight, topRoomLength],
-                    });
-                }
+        // Top row: 3 rooms
+        for (let i = 0; i < 3; i++) {
+            const x = -(dimensions.width / 3) + (i * dimensions.width / 3);
+            const outerWalls = {
+                front: true,   // Front edge of house
+                back: false,   // Shared with bottom rooms
+                left: i === 0, // Only leftmost room has left wall
+                right: i === 2, // Only rightmost room has right wall
+            };
 
-                // Bottom row - 2 rooms
-                const bottomRoomWidth = dimensions.width / 2;
-                rooms.push({
-                    position: [-(dimensions.width / 4), roomHeight / 2, dimensions.length / 4],
-                    dimensions: [bottomRoomWidth, roomHeight, bottomRoomLength],
-                });
-                rooms.push({
-                    position: [dimensions.width / 4, roomHeight / 2, dimensions.length / 4],
-                    dimensions: [bottomRoomWidth, roomHeight, bottomRoomLength],
-                });
-            },
-            // 2 on left, 3 stacked on right
-            () => {
-                const leftRoomWidth = dimensions.width / 2;
-                const rightRoomWidth = dimensions.width / 2;
-                const leftRoomLength = dimensions.length / 2;
-                const rightRoomLength = dimensions.length / 3;
-
-                // Left side - 2 rooms
-                rooms.push({
-                    position: [-(dimensions.width / 4), roomHeight / 2, -(dimensions.length / 4)],
-                    dimensions: [leftRoomWidth, roomHeight, leftRoomLength],
-                });
-                rooms.push({
-                    position: [-(dimensions.width / 4), roomHeight / 2, dimensions.length / 4],
-                    dimensions: [leftRoomWidth, roomHeight, leftRoomLength],
-                });
-
-                // Right side - 3 rooms
-                for (let i = 0; i < 3; i++) {
-                    const z = (i * rightRoomLength) - (dimensions.length / 2) + (rightRoomLength / 2);
-                    rooms.push({
-                        position: [dimensions.width / 4, roomHeight / 2, z],
-                        dimensions: [rightRoomWidth, roomHeight, rightRoomLength],
-                    });
-                }
-            }
-        ];
-
-        const randomArrangement = arrangements[Math.floor(Math.random() * arrangements.length)];
-        randomArrangement();
-    } else if (numRooms === 6) {
-        // 2x3 grid
-        const roomWidth = dimensions.width / 2;
-        const roomLength = dimensions.length / 3;
-
-        for (let i = 0; i < 6; i++) {
-            const row = Math.floor(i / 2);
-            const col = i % 2;
-            const x = (col * roomWidth) - (dimensions.width / 2) + (roomWidth / 2);
-            const z = (row * roomLength) - (dimensions.length / 2) + (roomLength / 2);
-
-            rooms.push({
-                position: [x, roomHeight / 2, z],
+            const room: Room = {
+                position: [x, roomHeight / 2, -(dimensions.length / 4)],
                 dimensions: [roomWidth, roomHeight, roomLength],
-            });
+                outerWalls,
+                windows: calculateWindowPositions([roomWidth, roomHeight, roomLength], outerWalls),
+            };
+            rooms.push(room);
+        }
+
+        // Bottom row: 2 rooms
+        const bottomRoomWidth = dimensions.width / 2;
+        const bottomRoomLength = dimensions.length / 2;
+
+        const bottomLeftOuterWalls = {
+            front: false,  // Shared with top rooms
+            back: true,    // Back edge of house
+            left: true,    // Left edge of house
+            right: false,  // Shared with right room
+        };
+
+        const bottomLeftRoom: Room = {
+            position: [-(dimensions.width / 4), roomHeight / 2, dimensions.length / 4],
+            dimensions: [bottomRoomWidth, roomHeight, bottomRoomLength],
+            outerWalls: bottomLeftOuterWalls,
+            windows: calculateWindowPositions([bottomRoomWidth, roomHeight, bottomRoomLength], bottomLeftOuterWalls),
+        };
+        rooms.push(bottomLeftRoom);
+
+        const bottomRightOuterWalls = {
+            front: false,  // Shared with top rooms
+            back: true,    // Back edge of house
+            left: false,   // Shared with left room
+            right: true,   // Right edge of house
+        };
+
+        const bottomRightRoom: Room = {
+            position: [dimensions.width / 4, roomHeight / 2, dimensions.length / 4],
+            dimensions: [bottomRoomWidth, roomHeight, bottomRoomLength],
+            outerWalls: bottomRightOuterWalls,
+            windows: calculateWindowPositions([bottomRoomWidth, roomHeight, bottomRoomLength], bottomRightOuterWalls),
+        };
+        rooms.push(bottomRightRoom);
+    } else if (numRooms === 6) {
+        const roomWidth = dimensions.width / 3;
+        const roomLength = dimensions.length / 2;
+
+        // Top row: 3 rooms
+        for (let i = 0; i < 3; i++) {
+            const x = -(dimensions.width / 3) + (i * dimensions.width / 3);
+            const outerWalls = {
+                front: true,   // Front edge of house
+                back: false,   // Shared with bottom rooms
+                left: i === 0, // Only leftmost room has left wall
+                right: i === 2, // Only rightmost room has right wall
+            };
+
+            const room: Room = {
+                position: [x, roomHeight / 2, -(dimensions.length / 4)],
+                dimensions: [roomWidth, roomHeight, roomLength],
+                outerWalls,
+                windows: calculateWindowPositions([roomWidth, roomHeight, roomLength], outerWalls),
+            };
+            rooms.push(room);
+        }
+
+        // Bottom row: 3 rooms
+        for (let i = 0; i < 3; i++) {
+            const x = -(dimensions.width / 3) + (i * dimensions.width / 3);
+            const outerWalls = {
+                front: false,  // Shared with top rooms
+                back: true,    // Back edge of house
+                left: i === 0, // Only leftmost room has left wall
+                right: i === 2, // Only rightmost room has right wall
+            };
+
+            const room: Room = {
+                position: [x, roomHeight / 2, dimensions.length / 4],
+                dimensions: [roomWidth, roomHeight, roomLength],
+                outerWalls,
+                windows: calculateWindowPositions([roomWidth, roomHeight, roomLength], outerWalls),
+            };
+            rooms.push(room);
         }
     } else if (numRooms === 7) {
-        // Seven rooms - random arrangement
-        const arrangements = [
-            // 3 on top, 4 below
-            () => {
-                const topRoomWidth = dimensions.width / 3;
-                const topRoomLength = dimensions.length / 2;
-                const bottomRoomLength = dimensions.length / 2;
-
-                // Top row - 3 rooms
-                for (let i = 0; i < 3; i++) {
-                    const x = (i * topRoomWidth) - (dimensions.width / 2) + (topRoomWidth / 2);
-                    rooms.push({
-                        position: [x, roomHeight / 2, -(dimensions.length / 4)],
-                        dimensions: [topRoomWidth, roomHeight, topRoomLength],
-                    });
-                }
-
-                // Bottom row - 4 rooms
-                const bottomRoomWidth = dimensions.width / 4;
-                for (let i = 0; i < 4; i++) {
-                    const x = (i * bottomRoomWidth) - (dimensions.width / 2) + (bottomRoomWidth / 2);
-                    rooms.push({
-                        position: [x, roomHeight / 2, dimensions.length / 4],
-                        dimensions: [bottomRoomWidth, roomHeight, bottomRoomLength],
-                    });
-                }
-            },
-            // 4 on top, 3 below
-            () => {
-                const topRoomWidth = dimensions.width / 4;
-                const topRoomLength = dimensions.length / 2;
-                const bottomRoomLength = dimensions.length / 2;
-
-                // Top row - 4 rooms
-                for (let i = 0; i < 4; i++) {
-                    const x = (i * topRoomWidth) - (dimensions.width / 2) + (topRoomWidth / 2);
-                    rooms.push({
-                        position: [x, roomHeight / 2, -(dimensions.length / 4)],
-                        dimensions: [topRoomWidth, roomHeight, topRoomLength],
-                    });
-                }
-
-                // Bottom row - 3 rooms
-                const bottomRoomWidth = dimensions.width / 3;
-                for (let i = 0; i < 3; i++) {
-                    const x = (i * bottomRoomWidth) - (dimensions.width / 2) + (bottomRoomWidth / 2);
-                    rooms.push({
-                        position: [x, roomHeight / 2, dimensions.length / 4],
-                        dimensions: [bottomRoomWidth, roomHeight, bottomRoomLength],
-                    });
-                }
-            }
-        ];
-
-        const randomArrangement = arrangements[Math.floor(Math.random() * arrangements.length)];
-        randomArrangement();
-    } else if (numRooms === 8) {
-        // 2x4 grid
-        const roomWidth = dimensions.width / 2;
-        const roomLength = dimensions.length / 4;
-
-        for (let i = 0; i < 8; i++) {
-            const row = Math.floor(i / 2);
-            const col = i % 2;
-            const x = (col * roomWidth) - (dimensions.width / 2) + (roomWidth / 2);
-            const z = (row * roomLength) - (dimensions.length / 2) + (roomLength / 2);
-
-            rooms.push({
-                position: [x, roomHeight / 2, z],
-                dimensions: [roomWidth, roomHeight, roomLength],
-            });
-        }
-    } else if (numRooms === 9) {
-        // 3x3 grid
         const roomWidth = dimensions.width / 3;
         const roomLength = dimensions.length / 3;
 
-        for (let i = 0; i < 9; i++) {
-            const row = Math.floor(i / 3);
-            const col = i % 3;
-            const x = (col * roomWidth) - (dimensions.width / 2) + (roomWidth / 2);
-            const z = (row * roomLength) - (dimensions.length / 2) + (roomLength / 2);
+        // Top row: 3 rooms
+        for (let i = 0; i < 3; i++) {
+            const x = -(dimensions.width / 3) + (i * dimensions.width / 3);
+            const outerWalls = {
+                front: true,   // Front edge of house
+                back: false,   // Shared with middle rooms
+                left: i === 0, // Only leftmost room has left wall
+                right: i === 2, // Only rightmost room has right wall
+            };
 
-            rooms.push({
+            const room: Room = {
+                position: [x, roomHeight / 2, -(dimensions.length / 3)],
+                dimensions: [roomWidth, roomHeight, roomLength],
+                outerWalls,
+                windows: calculateWindowPositions([roomWidth, roomHeight, roomLength], outerWalls),
+            };
+            rooms.push(room);
+        }
+
+        // Middle row: 2 rooms
+        const middleRoomWidth = dimensions.width / 2;
+        const middleRoomLength = dimensions.length / 3;
+
+        const middleLeftOuterWalls = {
+            front: false,  // Shared with top rooms
+            back: false,   // Shared with bottom rooms
+            left: true,    // Left edge of house
+            right: false,  // Shared with right room
+        };
+
+        const middleLeftRoom: Room = {
+            position: [-(dimensions.width / 4), roomHeight / 2, 0],
+            dimensions: [middleRoomWidth, roomHeight, middleRoomLength],
+            outerWalls: middleLeftOuterWalls,
+            windows: calculateWindowPositions([middleRoomWidth, roomHeight, middleRoomLength], middleLeftOuterWalls),
+        };
+        rooms.push(middleLeftRoom);
+
+        const middleRightOuterWalls = {
+            front: false,  // Shared with top rooms
+            back: false,   // Shared with bottom rooms
+            left: false,   // Shared with left room
+            right: true,   // Right edge of house
+        };
+
+        const middleRightRoom: Room = {
+            position: [dimensions.width / 4, roomHeight / 2, 0],
+            dimensions: [middleRoomWidth, roomHeight, middleRoomLength],
+            outerWalls: middleRightOuterWalls,
+            windows: calculateWindowPositions([middleRoomWidth, roomHeight, middleRoomLength], middleRightOuterWalls),
+        };
+        rooms.push(middleRightRoom);
+
+        // Bottom row: 2 rooms
+        const bottomRoomWidth = dimensions.width / 2;
+        const bottomRoomLength = dimensions.length / 3;
+
+        const bottomLeftOuterWalls = {
+            front: false,  // Shared with middle rooms
+            back: true,    // Back edge of house
+            left: true,    // Left edge of house
+            right: false,  // Shared with right room
+        };
+
+        const bottomLeftRoom: Room = {
+            position: [-(dimensions.width / 4), roomHeight / 2, dimensions.length / 3],
+            dimensions: [bottomRoomWidth, roomHeight, bottomRoomLength],
+            outerWalls: bottomLeftOuterWalls,
+            windows: calculateWindowPositions([bottomRoomWidth, roomHeight, bottomRoomLength], bottomLeftOuterWalls),
+        };
+        rooms.push(bottomLeftRoom);
+
+        const bottomRightOuterWalls = {
+            front: false,  // Shared with middle rooms
+            back: true,    // Back edge of house
+            left: false,   // Shared with left room
+            right: true,   // Right edge of house
+        };
+
+        const bottomRightRoom: Room = {
+            position: [dimensions.width / 4, roomHeight / 2, dimensions.length / 3],
+            dimensions: [bottomRoomWidth, roomHeight, bottomRoomLength],
+            outerWalls: bottomRightOuterWalls,
+            windows: calculateWindowPositions([bottomRoomWidth, roomHeight, bottomRoomLength], bottomRightOuterWalls),
+        };
+        rooms.push(bottomRightRoom);
+    } else if (numRooms === 8) {
+        const roomWidth = dimensions.width / 3;
+        const roomLength = dimensions.length / 3;
+
+        // Top row: 3 rooms
+        for (let i = 0; i < 3; i++) {
+            const x = -(dimensions.width / 3) + (i * dimensions.width / 3);
+            const outerWalls = {
+                front: true,   // Front edge of house
+                back: false,   // Shared with middle rooms
+                left: i === 0, // Only leftmost room has left wall
+                right: i === 2, // Only rightmost room has right wall
+            };
+
+            const room: Room = {
+                position: [x, roomHeight / 2, -(dimensions.length / 3)],
+                dimensions: [roomWidth, roomHeight, roomLength],
+                outerWalls,
+                windows: calculateWindowPositions([roomWidth, roomHeight, roomLength], outerWalls),
+            };
+            rooms.push(room);
+        }
+
+        // Middle row: 2 rooms
+        const middleRoomWidth = dimensions.width / 2;
+        const middleRoomLength = dimensions.length / 3;
+
+        const middleLeftOuterWalls = {
+            front: false,  // Shared with top rooms
+            back: false,   // Shared with bottom rooms
+            left: true,    // Left edge of house
+            right: false,  // Shared with right room
+        };
+
+        const middleLeftRoom: Room = {
+            position: [-(dimensions.width / 4), roomHeight / 2, 0],
+            dimensions: [middleRoomWidth, roomHeight, middleRoomLength],
+            outerWalls: middleLeftOuterWalls,
+            windows: calculateWindowPositions([middleRoomWidth, roomHeight, middleRoomLength], middleLeftOuterWalls),
+        };
+        rooms.push(middleLeftRoom);
+
+        const middleRightOuterWalls = {
+            front: false,  // Shared with top rooms
+            back: false,   // Shared with bottom rooms
+            left: false,   // Shared with left room
+            right: true,   // Right edge of house
+        };
+
+        const middleRightRoom: Room = {
+            position: [dimensions.width / 4, roomHeight / 2, 0],
+            dimensions: [middleRoomWidth, roomHeight, middleRoomLength],
+            outerWalls: middleRightOuterWalls,
+            windows: calculateWindowPositions([middleRoomWidth, roomHeight, middleRoomLength], middleRightOuterWalls),
+        };
+        rooms.push(middleRightRoom);
+
+        // Bottom row: 3 rooms
+        for (let i = 0; i < 3; i++) {
+            const x = -(dimensions.width / 3) + (i * dimensions.width / 3);
+            const outerWalls = {
+                front: false,  // Shared with middle rooms
+                back: true,    // Back edge of house
+                left: i === 0, // Only leftmost room has left wall
+                right: i === 2, // Only rightmost room has right wall
+            };
+
+            const room: Room = {
+                position: [x, roomHeight / 2, dimensions.length / 3],
+                dimensions: [roomWidth, roomHeight, roomLength],
+                outerWalls,
+                windows: calculateWindowPositions([roomWidth, roomHeight, roomLength], outerWalls),
+            };
+            rooms.push(room);
+        }
+    } else if (numRooms === 9) {
+        const roomWidth = dimensions.width / 3;
+        const roomLength = dimensions.length / 3;
+
+        // Create a 3x3 grid
+        for (let row = 0; row < 3; row++) {
+            for (let col = 0; col < 3; col++) {
+                const x = -(dimensions.width / 3) + (col * dimensions.width / 3);
+                const z = -(dimensions.length / 3) + (row * dimensions.length / 3);
+
+                const outerWalls = {
+                    front: row === 0,  // Only top row has front wall
+                    back: row === 2,   // Only bottom row has back wall
+                    left: col === 0,   // Only left column has left wall
+                    right: col === 2,  // Only right column has right wall
+                };
+
+                const room: Room = {
+                    position: [x, roomHeight / 2, z],
+                    dimensions: [roomWidth, roomHeight, roomLength],
+                    outerWalls,
+                    windows: calculateWindowPositions([roomWidth, roomHeight, roomLength], outerWalls),
+                };
+                rooms.push(room);
+            }
+        }
+    } else {
+        // For other numbers, create a random arrangement
+        const roomWidth = Math.min(dimensions.width / 2, 3);
+        const roomLength = Math.min(dimensions.length / 2, 3);
+        const maxRooms = Math.floor((dimensions.width / roomWidth) * (dimensions.length / roomLength));
+
+        for (let i = 0; i < Math.min(numRooms, maxRooms); i++) {
+            const x = (Math.random() - 0.5) * (dimensions.width - roomWidth);
+            const z = (Math.random() - 0.5) * (dimensions.length - roomLength);
+
+            // For random arrangements, assume all walls are outer walls
+            const outerWalls = {
+                front: true,
+                back: true,
+                left: true,
+                right: true,
+            };
+
+            const room: Room = {
                 position: [x, roomHeight / 2, z],
                 dimensions: [roomWidth, roomHeight, roomLength],
-            });
+                outerWalls,
+                windows: calculateWindowPositions([roomWidth, roomHeight, roomLength], outerWalls),
+            };
+            rooms.push(room);
         }
     }
 

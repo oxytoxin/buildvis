@@ -4,14 +4,29 @@ import { Suspense, useState, useMemo } from 'react';
 import { calculateRoomLayout, type Room, type HouseDimensions } from '../utils/roomLayout';
 import * as THREE from 'three';
 
-const Room = ({ position, dimensions, color, outerWallColor }: {
+const Room = ({ position, dimensions, color, outerWalls, windows }: {
     position: [number, number, number];
     dimensions: [number, number, number];
     color: string;
-    outerWallColor?: string;
+    outerWalls: {
+        front: boolean;
+        back: boolean;
+        left: boolean;
+        right: boolean;
+    };
+    windows: {
+        front?: [number, number, number];
+        back?: [number, number, number];
+        left?: [number, number, number];
+        right?: [number, number, number];
+    };
 }) => {
     const wallThickness = 0.2; // 20cm wall thickness
     const [width, height, length] = dimensions;
+
+    // Window dimensions
+    const windowWidth = 1.2; // 1.2 meters wide window
+    const windowHeight = 1.0; // 1.0 meters tall window
 
     // Create a hollow box using CSG operations
     const createHollowBox = () => {
@@ -47,14 +62,14 @@ const Room = ({ position, dimensions, color, outerWallColor }: {
         geometry.setIndex(new THREE.BufferAttribute(indices, 1));
         geometry.computeVertexNormals();
 
-        // Create a group to hold both the room and the edge lines
+        // Create a group to hold the room, edge lines, and windows
         const group = new THREE.Group();
 
         // Create the main room mesh
         const mesh = new THREE.Mesh(
             geometry,
             new THREE.MeshStandardMaterial({
-                color: outerWallColor || color,
+                color: color,
                 side: THREE.DoubleSide
             })
         );
@@ -70,6 +85,35 @@ const Room = ({ position, dimensions, color, outerWallColor }: {
         const innerEdges = new THREE.EdgesGeometry(innerGeometry);
         const innerWireframe = new THREE.LineSegments(innerEdges, lineMaterial);
         group.add(innerWireframe);
+
+        // Create windows using pre-calculated positions
+        const createWindow = (windowPosition: [number, number, number], rotation: number) => {
+            const windowGeometry = new THREE.BoxGeometry(windowWidth, windowHeight, wallThickness * 1.5);
+            const windowMaterial = new THREE.MeshStandardMaterial({
+                color: '#87CEEB', // Light blue for glass
+                transparent: true,
+                opacity: 0.6,
+                side: THREE.DoubleSide
+            });
+            const windowMesh = new THREE.Mesh(windowGeometry, windowMaterial);
+            windowMesh.position.set(windowPosition[0], windowPosition[1], windowPosition[2]);
+            windowMesh.rotation.y = rotation;
+            group.add(windowMesh);
+        };
+
+        // Add windows using pre-calculated positions
+        if (windows.front) {
+            createWindow(windows.front, 0); // Front window
+        }
+        if (windows.back) {
+            createWindow(windows.back, 0); // Back window
+        }
+        if (windows.left) {
+            createWindow(windows.left, Math.PI / 2); // Left window
+        }
+        if (windows.right) {
+            createWindow(windows.right, Math.PI / 2); // Right window
+        }
 
         return group;
     };
@@ -216,6 +260,8 @@ const HouseGen = () => {
                             position={room.position}
                             dimensions={room.dimensions}
                             color={wallColor}
+                            outerWalls={room.outerWalls}
+                            windows={room.windows}
                         />
                     ))}
 
