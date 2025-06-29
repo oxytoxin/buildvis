@@ -5,31 +5,228 @@ import { calculateRoomLayout, type Room, type HouseDimensions, type Story } from
 import { createHollowBox } from '../utils/hollowBox';
 import * as THREE from 'three';
 
-const Room = ({ position, dimensions, color, windows }: {
+const Room = ({ position, dimensions, externalColor, internalColor, windows, outerWalls, internalWalls }: {
     position: [number, number, number];
     dimensions: [number, number, number];
-    color: string;
+    externalColor: string;
+    internalColor: string;
     windows: {
         front?: [number, number, number];
         back?: [number, number, number];
         left?: [number, number, number];
         right?: [number, number, number];
     };
+    outerWalls: {
+        front: boolean;
+        back: boolean;
+        left: boolean;
+        right: boolean;
+    };
+    internalWalls: {
+        front: boolean;
+        back: boolean;
+        left: boolean;
+        right: boolean;
+    };
 }) => {
     const wallThickness = 0.2; // 20cm wall thickness
     const [width, height, length] = dimensions;
 
-    const hollowBox = createHollowBox({
-        width,
-        height,
-        length,
-        wallThickness,
-        color,
-        windows
-    });
+    // Create individual wall meshes
+    const createWall = (wallType: 'front' | 'back' | 'left' | 'right', isOuter: boolean) => {
+        let wallGeometry: THREE.BoxGeometry;
+        let wallPosition: [number, number, number];
+        let wallRotation: [number, number, number] = [0, 0, 0];
+
+        switch (wallType) {
+            case 'front':
+                wallGeometry = new THREE.BoxGeometry(width, height, wallThickness);
+                wallPosition = [0, 0, -length / 2 + wallThickness / 2];
+                break;
+            case 'back':
+                wallGeometry = new THREE.BoxGeometry(width, height, wallThickness);
+                wallPosition = [0, 0, length / 2 - wallThickness / 2];
+                break;
+            case 'left':
+                wallGeometry = new THREE.BoxGeometry(wallThickness, height, length);
+                wallPosition = [-width / 2 + wallThickness / 2, 0, 0];
+                break;
+            case 'right':
+                wallGeometry = new THREE.BoxGeometry(wallThickness, height, length);
+                wallPosition = [width / 2 - wallThickness / 2, 0, 0];
+                break;
+        }
+
+        const wall = new THREE.Mesh(wallGeometry);
+        wall.position.set(...wallPosition);
+        wall.rotation.set(...wallRotation);
+
+        return wall;
+    };
+
+    // Create internal wall meshes (positioned slightly inward to avoid z-fighting)
+    const createInternalWall = (wallType: 'front' | 'back' | 'left' | 'right') => {
+        let wallGeometry: THREE.BoxGeometry;
+        let wallPosition: [number, number, number];
+        let wallRotation: [number, number, number] = [0, 0, 0];
+        const offset = wallThickness * 0.1; // Small offset to prevent z-fighting
+
+        switch (wallType) {
+            case 'front':
+                wallGeometry = new THREE.BoxGeometry(width - wallThickness * 2, height, wallThickness);
+                wallPosition = [0, 0, -length / 2 + wallThickness * 1.5 + offset];
+                break;
+            case 'back':
+                wallGeometry = new THREE.BoxGeometry(width - wallThickness * 2, height, wallThickness);
+                wallPosition = [0, 0, length / 2 - wallThickness * 1.5 - offset];
+                break;
+            case 'left':
+                wallGeometry = new THREE.BoxGeometry(wallThickness, height, length - wallThickness * 2);
+                wallPosition = [-width / 2 + wallThickness * 1.5 + offset, 0, 0];
+                break;
+            case 'right':
+                wallGeometry = new THREE.BoxGeometry(wallThickness, height, length - wallThickness * 2);
+                wallPosition = [width / 2 - wallThickness * 1.5 - offset, 0, 0];
+                break;
+        }
+
+        const wall = new THREE.Mesh(wallGeometry);
+        wall.position.set(...wallPosition);
+        wall.rotation.set(...wallRotation);
+
+        return wall;
+    };
+
+    // Create interior wallpaper plane
+    const createWallpaperPlane = (wallType: 'front' | 'back' | 'left' | 'right') => {
+        let planeWidth: number, planeHeight: number;
+        let planePosition: [number, number, number];
+        let planeRotation: [number, number, number] = [0, 0, 0];
+
+        switch (wallType) {
+            case 'front':
+                planeWidth = width - wallThickness * 2;
+                planeHeight = height;
+                planePosition = [0, 0, -length / 2 + wallThickness * 1.5];
+                break;
+            case 'back':
+                planeWidth = width - wallThickness * 2;
+                planeHeight = height;
+                planePosition = [0, 0, length / 2 - wallThickness * 1.5];
+                planeRotation = [0, Math.PI, 0];
+                break;
+            case 'left':
+                planeWidth = length - wallThickness * 2;
+                planeHeight = height;
+                planePosition = [-width / 2 + wallThickness * 1.5, 0, 0];
+                planeRotation = [0, Math.PI / 2, 0];
+                break;
+            case 'right':
+                planeWidth = length - wallThickness * 2;
+                planeHeight = height;
+                planePosition = [width / 2 - wallThickness * 1.5, 0, 0];
+                planeRotation = [0, -Math.PI / 2, 0];
+                break;
+        }
+
+        const planeGeometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
+        const planeMaterial = new THREE.MeshStandardMaterial({
+            color: internalColor,
+            side: THREE.FrontSide
+        });
+        const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+        plane.position.set(...planePosition);
+        plane.rotation.set(...planeRotation);
+
+        return plane;
+    };
+
+    const group = new THREE.Group();
+
+    // Add external walls (single color)
+    if (outerWalls.front) {
+        const wall = createWall('front', true);
+        wall.material = new THREE.MeshStandardMaterial({ color: externalColor });
+        group.add(wall);
+    }
+    if (outerWalls.back) {
+        const wall = createWall('back', true);
+        wall.material = new THREE.MeshStandardMaterial({ color: externalColor });
+        group.add(wall);
+    }
+    if (outerWalls.left) {
+        const wall = createWall('left', true);
+        wall.material = new THREE.MeshStandardMaterial({ color: externalColor });
+        group.add(wall);
+    }
+    if (outerWalls.right) {
+        const wall = createWall('right', true);
+        wall.material = new THREE.MeshStandardMaterial({ color: externalColor });
+        group.add(wall);
+    }
+
+    // Add interior wallpaper planes
+    if (outerWalls.front) group.add(createWallpaperPlane('front'));
+    if (outerWalls.back) group.add(createWallpaperPlane('back'));
+    if (outerWalls.left) group.add(createWallpaperPlane('left'));
+    if (outerWalls.right) group.add(createWallpaperPlane('right'));
+
+    // Add internal walls (both sides use internal color)
+    if (internalWalls.front) {
+        const wall = createWall('front', false);
+        wall.material = new THREE.MeshStandardMaterial({ color: internalColor });
+        group.add(wall);
+    }
+    if (internalWalls.back) {
+        const wall = createWall('back', false);
+        wall.material = new THREE.MeshStandardMaterial({ color: internalColor });
+        group.add(wall);
+    }
+    if (internalWalls.left) {
+        const wall = createWall('left', false);
+        wall.material = new THREE.MeshStandardMaterial({ color: internalColor });
+        group.add(wall);
+    }
+    if (internalWalls.right) {
+        const wall = createWall('right', false);
+        wall.material = new THREE.MeshStandardMaterial({ color: internalColor });
+        group.add(wall);
+    }
+
+    // Add windows (only on external walls)
+    const createWindow = (windowPosition: [number, number, number], rotation: number) => {
+        const windowWidth = 1.2;
+        const windowHeight = 1.0;
+
+        const windowGeometry = new THREE.BoxGeometry(windowWidth, windowHeight, wallThickness * 1.5);
+        const windowMaterial = new THREE.MeshStandardMaterial({
+            color: '#87CEEB',
+            transparent: true,
+            opacity: 0.8,
+            side: THREE.DoubleSide
+        });
+        const window = new THREE.Mesh(windowGeometry, windowMaterial);
+        window.position.set(windowPosition[0], windowPosition[1], windowPosition[2]);
+        window.rotation.y = rotation;
+        group.add(window);
+    };
+
+    // Add windows using pre-calculated positions
+    if (windows.front && outerWalls.front) {
+        createWindow(windows.front, 0);
+    }
+    if (windows.back && outerWalls.back) {
+        createWindow(windows.back, 0);
+    }
+    if (windows.left && outerWalls.left) {
+        createWindow(windows.left, Math.PI / 2);
+    }
+    if (windows.right && outerWalls.right) {
+        createWindow(windows.right, Math.PI / 2);
+    }
 
     return (
-        <primitive object={hollowBox} position={position} />
+        <primitive object={group} position={position} />
     );
 };
 
@@ -195,7 +392,8 @@ const HouseGen = () => {
     const [stories, setStories] = useState<Story[]>([
         { numRooms: 4, height: 3 }
     ]);
-    const [wallColor, setWallColor] = useState('#D2D8E4');
+    const [externalWallColor, setExternalWallColor] = useState('#D2D8E4');
+    const [internalWallColor, setInternalWallColor] = useState('#E8E8E8');
     const [groundColor, setGroundColor] = useState('#8FBC8F');
     const [roofType, setRoofType] = useState<'flat' | 'pointed'>('flat');
     const [roofColor, setRoofColor] = useState('#8B4513');
@@ -248,7 +446,8 @@ const HouseGen = () => {
         setDimensions(defaultDimensions);
         setLotDimensions(defaultLotDimensions);
         setStories(defaultStories);
-        setWallColor('#D2D8E4');
+        setExternalWallColor('#D2D8E4');
+        setInternalWallColor('#E8E8E8');
         setGroundColor('#8FBC8F');
         setRoofType('flat');
         setRoofColor('#8B4513');
@@ -353,12 +552,24 @@ const HouseGen = () => {
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Wall Color
+                                External Wall Color
                             </label>
                             <input
                                 type="color"
-                                value={wallColor}
-                                onChange={(e) => setWallColor(e.target.value)}
+                                value={externalWallColor}
+                                onChange={(e) => setExternalWallColor(e.target.value)}
+                                className="w-full h-10 rounded-lg cursor-pointer"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Internal Wall Color
+                            </label>
+                            <input
+                                type="color"
+                                value={internalWallColor}
+                                onChange={(e) => setInternalWallColor(e.target.value)}
                                 className="w-full h-10 rounded-lg cursor-pointer"
                             />
                         </div>
@@ -511,8 +722,11 @@ const HouseGen = () => {
                             key={index}
                             position={room.position}
                             dimensions={room.dimensions}
-                            color={wallColor}
+                            externalColor={externalWallColor}
+                            internalColor={internalWallColor}
                             windows={room.windows}
+                            outerWalls={room.outerWalls}
+                            internalWalls={room.internalWalls}
                         />
                     ))}
 
