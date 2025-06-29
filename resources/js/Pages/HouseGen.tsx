@@ -1,6 +1,6 @@
-import { Canvas } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
-import { Suspense, useState, useMemo } from 'react';
+import { Suspense, useState, useMemo, useEffect, useRef } from 'react';
 import { calculateRoomLayout, type Room, type HouseDimensions, type Story } from '../utils/roomLayout';
 import { createHollowBox } from '../utils/hollowBox';
 import * as THREE from 'three';
@@ -124,6 +124,66 @@ const PointedRoof = ({ dimensions, color, yOffset }: {
     );
 };
 
+// WASD Camera Controls Component
+const WASDControls = ({ moveSpeed = 0.15 }) => {
+    const { camera } = useThree();
+    const keys = useRef({ w: false, a: false, s: false, d: false, q: false, e: false });
+
+    // Set up key listeners
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key.toLowerCase() === 'w') keys.current.w = true;
+            if (e.key.toLowerCase() === 'a') keys.current.a = true;
+            if (e.key.toLowerCase() === 's') keys.current.s = true;
+            if (e.key.toLowerCase() === 'd') keys.current.d = true;
+            if (e.key.toLowerCase() === 'q') keys.current.q = true;
+            if (e.key.toLowerCase() === 'e') keys.current.e = true;
+        };
+
+        const handleKeyUp = (e: KeyboardEvent) => {
+            if (e.key.toLowerCase() === 'w') keys.current.w = false;
+            if (e.key.toLowerCase() === 'a') keys.current.a = false;
+            if (e.key.toLowerCase() === 's') keys.current.s = false;
+            if (e.key.toLowerCase() === 'd') keys.current.d = false;
+            if (e.key.toLowerCase() === 'q') keys.current.q = false;
+            if (e.key.toLowerCase() === 'e') keys.current.e = false;
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup', handleKeyUp);
+        };
+    }, []);
+
+    // Update camera position on each frame
+    useFrame(() => {
+        // Get camera direction vectors
+        const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+        const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+
+        // Ensure movement is only on the horizontal plane
+        forward.y = 0;
+        forward.normalize();
+        right.y = 0;
+        right.normalize();
+
+        // WASD movement
+        if (keys.current.w) camera.position.addScaledVector(forward, moveSpeed);
+        if (keys.current.s) camera.position.addScaledVector(forward, -moveSpeed);
+        if (keys.current.a) camera.position.addScaledVector(right, -moveSpeed);
+        if (keys.current.d) camera.position.addScaledVector(right, moveSpeed);
+
+        // Q/E for vertical movement
+        if (keys.current.q) camera.position.y += moveSpeed;
+        if (keys.current.e) camera.position.y -= moveSpeed;
+    });
+
+    return null; // This component doesn't render anything
+};
+
 const HouseGen = () => {
     const [dimensions, setDimensions] = useState<HouseDimensions>({
         length: 10,
@@ -206,220 +266,238 @@ const HouseGen = () => {
 
     return (
         <div className="w-full h-screen relative">
-            {/* Control Panel */}
-            <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm p-4 rounded-lg shadow-lg z-10 min-w-64 max-h-[90vh] overflow-y-auto">
+            {/* Control Panel - Split into two columns */}
+            <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm p-4 rounded-lg shadow-lg z-10 max-h-[90vh] overflow-y-auto">
                 <h2 className="text-lg font-semibold mb-4 text-gray-800">House Layout (Meters)</h2>
 
-                <div className="space-y-4">
-                    <div className="border-b border-gray-200 pb-3">
-                        <h3 className="text-md font-medium text-gray-700 mb-3">House Dimensions</h3>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Length: {dimensions.length}m
-                            </label>
-                            <input
-                                type="range"
-                                min="5"
-                                max="20"
-                                step="0.5"
-                                value={dimensions.length}
-                                onChange={(e) => handleDimensionChange('length', parseFloat(e.target.value))}
-                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Width: {dimensions.width}m
-                            </label>
-                            <input
-                                type="range"
-                                min="4"
-                                max="15"
-                                step="0.5"
-                                value={dimensions.width}
-                                onChange={(e) => handleDimensionChange('width', parseFloat(e.target.value))}
-                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Height: {dimensions.height}m
-                            </label>
-                            <input
-                                type="range"
-                                min="2.5"
-                                max="6"
-                                step="0.1"
-                                value={dimensions.height}
-                                onChange={(e) => handleDimensionChange('height', parseFloat(e.target.value))}
-                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
-                            />
-                        </div>
-                    </div>
-
-                    <div className="border-b border-gray-200 pb-3">
-                        <h3 className="text-md font-medium text-gray-700 mb-3">Stories ({stories.length})</h3>
-
-                        {stories.map((story, storyIndex) => (
-                            <div key={storyIndex} className="mb-4 p-3 bg-gray-50 rounded-lg">
-                                <div className="flex items-center justify-between mb-2">
-                                    <span className="text-sm font-medium text-gray-700">
-                                        Story {storyIndex + 1}
-                                    </span>
-                                    {stories.length > 1 && (
-                                        <button
-                                            onClick={() => removeStory(storyIndex)}
-                                            className="text-red-500 hover:text-red-700 text-sm"
-                                        >
-                                            Remove
-                                        </button>
-                                    )}
-                                </div>
-
-                                <div className="space-y-2">
-                                    <div>
-                                        <label className="block text-xs font-medium text-gray-600 mb-1">
-                                            Rooms: {story.numRooms}
-                                        </label>
-                                        <input
-                                            type="range"
-                                            min="1"
-                                            max="9"
-                                            step="1"
-                                            value={story.numRooms}
-                                            onChange={(e) => handleStoryChange(storyIndex, 'numRooms', parseInt(e.target.value))}
-                                            className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-xs font-medium text-gray-600 mb-1">
-                                            Height: {story.height}m
-                                        </label>
-                                        <input
-                                            type="range"
-                                            min="2.5"
-                                            max="6"
-                                            step="0.1"
-                                            value={story.height}
-                                            onChange={(e) => handleStoryChange(storyIndex, 'height', parseFloat(e.target.value))}
-                                            className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
-                                        />
-                                    </div>
-                                </div>
+                <div className="grid grid-cols-2 gap-4">
+                    {/* Left Column */}
+                    <div className="space-y-4">
+                        <div className="border-b border-gray-200 pb-3">
+                            <h3 className="text-md font-medium text-gray-700 mb-3">House Dimensions</h3>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Length: {dimensions.length}m
+                                </label>
+                                <input
+                                    type="range"
+                                    min="5"
+                                    max="20"
+                                    step="0.5"
+                                    value={dimensions.length}
+                                    onChange={(e) => handleDimensionChange('length', parseFloat(e.target.value))}
+                                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                                />
                             </div>
-                        ))}
 
-                        <button
-                            onClick={addStory}
-                            className="w-full bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 text-sm"
-                        >
-                            Add Story
-                        </button>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Width: {dimensions.width}m
+                                </label>
+                                <input
+                                    type="range"
+                                    min="4"
+                                    max="15"
+                                    step="0.5"
+                                    value={dimensions.width}
+                                    onChange={(e) => handleDimensionChange('width', parseFloat(e.target.value))}
+                                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Height: {dimensions.height}m
+                                </label>
+                                <input
+                                    type="range"
+                                    min="2.5"
+                                    max="6"
+                                    step="0.1"
+                                    value={dimensions.height}
+                                    onChange={(e) => handleDimensionChange('height', parseFloat(e.target.value))}
+                                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="border-b border-gray-200 pb-3">
+                            <h3 className="text-md font-medium text-gray-700 mb-3">Roof</h3>
+
+                            <div className="mb-3">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Roof Type
+                                </label>
+                                <select
+                                    value={roofType}
+                                    onChange={(e) => setRoofType(e.target.value as 'flat' | 'pointed')}
+                                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                >
+                                    <option value="flat">Flat Roof</option>
+                                    <option value="pointed">Pointed Roof</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Roof Color
+                                </label>
+                                <input
+                                    type="color"
+                                    value={roofColor}
+                                    onChange={(e) => setRoofColor(e.target.value)}
+                                    className="w-full h-10 rounded-lg cursor-pointer"
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Wall Color
+                            </label>
+                            <input
+                                type="color"
+                                value={wallColor}
+                                onChange={(e) => setWallColor(e.target.value)}
+                                className="w-full h-10 rounded-lg cursor-pointer"
+                            />
+                        </div>
                     </div>
 
-                    <div className="border-b border-gray-200 pb-3">
-                        <h3 className="text-md font-medium text-gray-700 mb-3">Roof</h3>
+                    {/* Right Column */}
+                    <div className="space-y-4">
+                        <div className="border-b border-gray-200 pb-3">
+                            <h3 className="text-md font-medium text-gray-700 mb-3">Stories ({stories.length})</h3>
 
-                        <div className="mb-3">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Roof Type
-                            </label>
-                            <select
-                                value={roofType}
-                                onChange={(e) => setRoofType(e.target.value as 'flat' | 'pointed')}
-                                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            {stories.map((story, storyIndex) => (
+                                <div key={storyIndex} className="mb-3 p-2 bg-gray-50 rounded-lg">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="text-xs font-medium text-gray-700">
+                                            Story {storyIndex + 1}
+                                        </span>
+                                        {stories.length > 1 && (
+                                            <button
+                                                onClick={() => removeStory(storyIndex)}
+                                                className="text-red-500 hover:text-red-700 text-xs"
+                                            >
+                                                Remove
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    <div className="space-y-1">
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-600 mb-1">
+                                                Rooms: {story.numRooms}
+                                            </label>
+                                            <input
+                                                type="range"
+                                                min="1"
+                                                max="9"
+                                                step="1"
+                                                value={story.numRooms}
+                                                onChange={(e) => handleStoryChange(storyIndex, 'numRooms', parseInt(e.target.value))}
+                                                className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-600 mb-1">
+                                                Height: {story.height}m
+                                            </label>
+                                            <input
+                                                type="range"
+                                                min="2.5"
+                                                max="6"
+                                                step="0.1"
+                                                value={story.height}
+                                                onChange={(e) => handleStoryChange(storyIndex, 'height', parseFloat(e.target.value))}
+                                                className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+
+                            <button
+                                onClick={addStory}
+                                className="w-full bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 text-sm"
                             >
-                                <option value="flat">Flat Roof</option>
-                                <option value="pointed">Pointed Roof</option>
-                            </select>
+                                Add Story
+                            </button>
                         </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Roof Color
-                            </label>
-                            <input
-                                type="color"
-                                value={roofColor}
-                                onChange={(e) => setRoofColor(e.target.value)}
-                                className="w-full h-10 rounded-lg cursor-pointer"
-                            />
+                        <div className="border-b border-gray-200 pb-3">
+                            <h3 className="text-md font-medium text-gray-700 mb-3">Lot Area</h3>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Lot Width: {lotDimensions[0]}m
+                                </label>
+                                <input
+                                    type="range"
+                                    min="10"
+                                    max="30"
+                                    step="1"
+                                    value={lotDimensions[0]}
+                                    onChange={(e) => handleLotDimensionChange('width', parseInt(e.target.value))}
+                                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Lot Length: {lotDimensions[1]}m
+                                </label>
+                                <input
+                                    type="range"
+                                    min="10"
+                                    max="30"
+                                    step="1"
+                                    value={lotDimensions[1]}
+                                    onChange={(e) => handleLotDimensionChange('length', parseInt(e.target.value))}
+                                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Ground Color
+                                </label>
+                                <input
+                                    type="color"
+                                    value={groundColor}
+                                    onChange={(e) => setGroundColor(e.target.value)}
+                                    className="w-full h-10 rounded-lg cursor-pointer"
+                                />
+                            </div>
                         </div>
-                    </div>
 
-                    <div className="border-b border-gray-200 pb-3">
-                        <h3 className="text-md font-medium text-gray-700 mb-3">Lot Area</h3>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Lot Width: {lotDimensions[0]}m
-                            </label>
-                            <input
-                                type="range"
-                                min="10"
-                                max="30"
-                                step="1"
-                                value={lotDimensions[0]}
-                                onChange={(e) => handleLotDimensionChange('width', parseInt(e.target.value))}
-                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
-                            />
+                        <div className="pt-2">
+                            <button
+                                onClick={handleReset}
+                                className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200"
+                            >
+                                Reset to Default
+                            </button>
                         </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Lot Length: {lotDimensions[1]}m
-                            </label>
-                            <input
-                                type="range"
-                                min="10"
-                                max="30"
-                                step="1"
-                                value={lotDimensions[1]}
-                                onChange={(e) => handleLotDimensionChange('length', parseInt(e.target.value))}
-                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Ground Color
-                            </label>
-                            <input
-                                type="color"
-                                value={groundColor}
-                                onChange={(e) => setGroundColor(e.target.value)}
-                                className="w-full h-10 rounded-lg cursor-pointer"
-                            />
-                        </div>
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Wall Color
-                        </label>
-                        <input
-                            type="color"
-                            value={wallColor}
-                            onChange={(e) => setWallColor(e.target.value)}
-                            className="w-full h-10 rounded-lg cursor-pointer"
-                        />
-                    </div>
-
-                    <div className="pt-2">
-                        <button
-                            onClick={handleReset}
-                            className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200"
-                        >
-                            Reset to Default
-                        </button>
                     </div>
                 </div>
             </div>
 
+            {/* Navigation Instructions */}
+            <div className="absolute top-4 right-4 bg-black/70 text-white p-3 rounded-lg text-sm">
+                <div className="font-semibold mb-2">Navigation:</div>
+                <div>W/S - Forward/Back</div>
+                <div>A/D - Left/Right</div>
+                <div>Q/E - Up/Down</div>
+                <div>Mouse - Rotate/Zoom</div>
+            </div>
+
             <Canvas camera={{ position: [15, 15, 15] }}>
                 <Suspense fallback={null}>
+                    {/* WASD Controls */}
+                    <WASDControls />
+
                     {/* Lighting */}
                     <ambientLight intensity={0.5} />
                     <directionalLight position={[10, 10, 5]} intensity={1} />
