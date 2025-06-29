@@ -3,6 +3,7 @@ import { OrbitControls } from '@react-three/drei';
 import { Suspense, useState, useMemo } from 'react';
 import { calculateRoomLayout, type Room, type HouseDimensions, type Story } from '../utils/roomLayout';
 import { createHollowBox } from '../utils/hollowBox';
+import * as THREE from 'three';
 
 const Room = ({ position, dimensions, color, windows }: {
     position: [number, number, number];
@@ -46,6 +47,83 @@ const GroundPlane = ({ dimensions, color }: {
     );
 };
 
+const FlatRoof = ({ dimensions, color, yOffset }: {
+    dimensions: [number, number];
+    color: string;
+    yOffset: number;
+}) => {
+    const [width, length] = dimensions;
+    const roofThickness = 0.3; // 30cm roof thickness
+
+    return (
+        <mesh position={[0, yOffset + roofThickness / 2 + 0.01, 0]}>
+            <boxGeometry args={[width, roofThickness, length]} />
+            <meshStandardMaterial color={color} />
+        </mesh>
+    );
+};
+
+const PointedRoof = ({ dimensions, color, yOffset }: {
+    dimensions: [number, number];
+    color: string;
+    yOffset: number;
+}) => {
+    const [width, length] = dimensions;
+    const roofHeight = 2; // 2m roof height
+
+    // Create a triangular prism with rectangular base
+    const geometry = new THREE.BufferGeometry();
+
+    // Define vertices for triangular prism with rectangular base
+    const vertices = new Float32Array([
+        // Front triangle (at -length/2)
+        -width / 2, 0, -length / 2,      // bottom left
+        width / 2, 0, -length / 2,       // bottom right
+        0, roofHeight, -length / 2,    // top
+
+        // Back triangle (at +length/2)
+        -width / 2, 0, length / 2,       // bottom left
+        width / 2, 0, length / 2,        // bottom right
+        0, roofHeight, length / 2,     // top
+    ]);
+
+    // Define faces for triangular prism
+    const indices = new Uint16Array([
+        // Front face
+        0, 2, 1,
+        // Back face
+        3, 4, 5,
+        // Left face
+        0, 3, 2,
+        2, 3, 5,
+        // Right face
+        1, 2, 4,
+        4, 2, 5,
+        // Bottom face (rectangular)
+        0, 1, 3,
+        3, 1, 4,
+    ]);
+
+    geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+    geometry.setIndex(new THREE.BufferAttribute(indices, 1));
+    geometry.computeVertexNormals();
+
+    return (
+        <group position={[0, yOffset + 0.01, 0]}>
+            {/* Solid roof */}
+            <mesh geometry={geometry}>
+                <meshBasicMaterial color={color} />
+            </mesh>
+
+            {/* Wireframe outline */}
+            <lineSegments>
+                <wireframeGeometry args={[geometry]} />
+                <lineBasicMaterial color="#000000" linewidth={2} />
+            </lineSegments>
+        </group>
+    );
+};
+
 const HouseGen = () => {
     const [dimensions, setDimensions] = useState<HouseDimensions>({
         length: 10,
@@ -59,6 +137,8 @@ const HouseGen = () => {
     ]);
     const [wallColor, setWallColor] = useState('#D2D8E4');
     const [groundColor, setGroundColor] = useState('#8FBC8F');
+    const [roofType, setRoofType] = useState<'flat' | 'pointed'>('flat');
+    const [roofColor, setRoofColor] = useState('#8B4513');
 
     const defaultDimensions: HouseDimensions = {
         length: 10,
@@ -110,12 +190,19 @@ const HouseGen = () => {
         setStories(defaultStories);
         setWallColor('#D2D8E4');
         setGroundColor('#8FBC8F');
+        setRoofType('flat');
+        setRoofColor('#8B4513');
     };
 
     // Calculate room layout using the utility function
     const roomLayout = useMemo(() => {
         return calculateRoomLayout(stories, dimensions);
     }, [stories, dimensions]);
+
+    // Calculate total house height for roof positioning
+    const totalHouseHeight = useMemo(() => {
+        return stories.reduce((total, story) => total + story.height, 0);
+    }, [stories]);
 
     return (
         <div className="w-full h-screen relative">
@@ -234,6 +321,36 @@ const HouseGen = () => {
                     </div>
 
                     <div className="border-b border-gray-200 pb-3">
+                        <h3 className="text-md font-medium text-gray-700 mb-3">Roof</h3>
+
+                        <div className="mb-3">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Roof Type
+                            </label>
+                            <select
+                                value={roofType}
+                                onChange={(e) => setRoofType(e.target.value as 'flat' | 'pointed')}
+                                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            >
+                                <option value="flat">Flat Roof</option>
+                                <option value="pointed">Pointed Roof</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Roof Color
+                            </label>
+                            <input
+                                type="color"
+                                value={roofColor}
+                                onChange={(e) => setRoofColor(e.target.value)}
+                                className="w-full h-10 rounded-lg cursor-pointer"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="border-b border-gray-200 pb-3">
                         <h3 className="text-md font-medium text-gray-700 mb-3">Lot Area</h3>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -320,6 +437,21 @@ const HouseGen = () => {
                             windows={room.windows}
                         />
                     ))}
+
+                    {/* Roof */}
+                    {roofType === 'flat' ? (
+                        <FlatRoof
+                            dimensions={[dimensions.width, dimensions.length]}
+                            color={roofColor}
+                            yOffset={totalHouseHeight}
+                        />
+                    ) : (
+                        <PointedRoof
+                            dimensions={[dimensions.width, dimensions.length]}
+                            color={roofColor}
+                            yOffset={totalHouseHeight}
+                        />
+                    )}
 
                     {/* Camera Controls */}
                     <OrbitControls />
