@@ -254,13 +254,11 @@ const Room = ({ position, dimensions, externalColor, internalColor, windows, out
     // Check if this room has a door on the front side
     const hasDoorOnFront = () => {
         // The door is in the leftmost room, so check if this room is the leftmost
-        // We need to compare this room's position with other rooms
-        // For now, we'll use a simple heuristic: if this room is at the left edge of the house
         const roomXInHouse = position[0];
         const roomLeftEdge = roomXInHouse - width / 2;
 
-        // If this room's left edge is close to the house's left edge, it's likely the leftmost room
-        return roomLeftEdge <= -dimensions[0] / 2 + 1;
+        // If this room's left edge is close to the house's left edge, it's the leftmost room
+        return roomLeftEdge <= -dimensions[0] / 2 + 0.1;
     };
 
     // Add windows using pre-calculated positions
@@ -288,16 +286,20 @@ const Room = ({ position, dimensions, externalColor, internalColor, windows, out
 
         switch (wallType) {
             case 'front':
+                // Position at the front wall boundary
                 doorPosition = [0, -height / 2 + doorHeight / 2, -length / 2 + wallThickness / 2];
                 break;
             case 'back':
+                // Position at the back wall boundary
                 doorPosition = [0, -height / 2 + doorHeight / 2, length / 2 - wallThickness / 2];
                 break;
             case 'left':
+                // Position at the left wall boundary
                 doorPosition = [-width / 2 + wallThickness / 2, -height / 2 + doorHeight / 2, 0];
                 doorRotation = [0, Math.PI / 2, 0];
                 break;
             case 'right':
+                // Position at the right wall boundary
                 doorPosition = [width / 2 - wallThickness / 2, -height / 2 + doorHeight / 2, 0];
                 doorRotation = [0, Math.PI / 2, 0];
                 break;
@@ -352,14 +354,14 @@ const Door = ({ dimensions, yOffset, roomPosition }: {
     yOffset: number;
     roomPosition: [number, number, number];
 }) => {
-    const [width, length] = dimensions;
+    const [roomWidth, roomLength] = dimensions;
     const doorWidth = 1.0;
     const doorHeight = 2.1;
     const wallThickness = 0.2;
     const doorThickness = wallThickness * 1.5; // Make door thick enough to extend through wall
 
     return (
-        <mesh position={[roomPosition[0], yOffset + doorHeight / 2, -length / 2 + wallThickness / 2]}>
+        <mesh position={[roomPosition[0], yOffset + doorHeight / 2, roomPosition[2] - roomLength / 2 + wallThickness / 2]}>
             <boxGeometry args={[doorWidth, doorHeight, doorThickness]} />
             <meshStandardMaterial color="#8B4513" side={THREE.DoubleSide} />
         </mesh>
@@ -847,7 +849,7 @@ const HouseGen = () => {
 
                         return (
                             <Door
-                                dimensions={[dimensions.width, dimensions.length]}
+                                dimensions={[leftmostRoom.dimensions[0], leftmostRoom.dimensions[2]]}
                                 yOffset={0}
                                 roomPosition={leftmostRoom.position}
                             />

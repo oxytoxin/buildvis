@@ -43,6 +43,71 @@ const calculateInternalWalls = (outerWalls: { front: boolean; back: boolean; lef
     };
 };
 
+// Helper function to calculate internal walls ensuring adjacent rooms match
+const calculateInternalWallsForRoom = (
+    roomIndex: number,
+    numRooms: number,
+    outerWalls: { front: boolean; back: boolean; left: boolean; right: boolean },
+    layout: 'horizontal' | 'vertical' | 'grid' | 'complex'
+) => {
+    const internalWalls = {
+        front: !outerWalls.front,
+        back: !outerWalls.back,
+        left: !outerWalls.left,
+        right: !outerWalls.right,
+    };
+
+    // For complex layouts, we need to ensure walls match between adjacent rooms
+    if (layout === 'complex') {
+        if (numRooms === 3) {
+            // For 3 rooms, we need to handle the asymmetric layout
+            if (roomIndex === 0) { // Top-left room
+                internalWalls.right = true; // Always has internal wall to right
+                internalWalls.back = true;  // Always has internal wall to back
+            } else if (roomIndex === 1) { // Top-right room
+                internalWalls.left = true;  // Always has internal wall to left
+                internalWalls.back = true;  // Always has internal wall to back
+            } else if (roomIndex === 2) { // Bottom room
+                internalWalls.front = true; // Always has internal wall to front
+            }
+        } else if (numRooms === 5) {
+            // For 5 rooms: 3 on top, 2 on bottom
+            if (roomIndex < 3) { // Top row rooms
+                internalWalls.back = true; // Always has internal wall to back
+            } else { // Bottom row rooms
+                internalWalls.front = true; // Always has internal wall to front
+                if (roomIndex === 3) { // Bottom-left
+                    internalWalls.right = true; // Internal wall to right
+                } else if (roomIndex === 4) { // Bottom-right
+                    internalWalls.left = true; // Internal wall to left
+                }
+            }
+        } else if (numRooms === 7) {
+            // For 7 rooms: 3 on top, 2 in middle, 2 on bottom
+            if (roomIndex < 3) { // Top row rooms
+                internalWalls.back = true; // Always has internal wall to back
+            } else if (roomIndex < 5) { // Middle row rooms
+                internalWalls.front = true; // Always has internal wall to front
+                internalWalls.back = true;  // Always has internal wall to back
+                if (roomIndex === 3) { // Middle-left
+                    internalWalls.right = true; // Internal wall to right
+                } else if (roomIndex === 4) { // Middle-right
+                    internalWalls.left = true; // Internal wall to left
+                }
+            } else { // Bottom row rooms
+                internalWalls.front = true; // Always has internal wall to front
+                if (roomIndex === 5) { // Bottom-left
+                    internalWalls.right = true; // Internal wall to right
+                } else if (roomIndex === 6) { // Bottom-right
+                    internalWalls.left = true; // Internal wall to left
+                }
+            }
+        }
+    }
+
+    return internalWalls;
+};
+
 // Helper function to calculate window positions for a room
 const calculateWindowPositions = (
     roomDimensions: [number, number, number],
@@ -231,7 +296,7 @@ function calculateSingleStoryRooms(numRooms: number, dimensions: HouseDimensions
                 position: [-(dimensions.width / 4), yOffset + roomHeight / 2, -(dimensions.length / 4)],
                 dimensions: [topRoomWidth, roomHeight, topRoomLength],
                 outerWalls: topLeftOuterWalls,
-                internalWalls: calculateInternalWalls(topLeftOuterWalls),
+                internalWalls: calculateInternalWallsForRoom(0, 3, topLeftOuterWalls, 'complex'),
                 windows: calculateWindowPositions([topRoomWidth, roomHeight, topRoomLength], topLeftOuterWalls),
                 story: storyIndex
             };
@@ -242,7 +307,7 @@ function calculateSingleStoryRooms(numRooms: number, dimensions: HouseDimensions
                 position: [dimensions.width / 4, yOffset + roomHeight / 2, -(dimensions.length / 4)],
                 dimensions: [topRoomWidth, roomHeight, topRoomLength],
                 outerWalls: topRightOuterWalls,
-                internalWalls: calculateInternalWalls(topRightOuterWalls),
+                internalWalls: calculateInternalWallsForRoom(1, 3, topRightOuterWalls, 'complex'),
                 windows: calculateWindowPositions([topRoomWidth, roomHeight, topRoomLength], topRightOuterWalls),
                 story: storyIndex
             };
@@ -253,7 +318,7 @@ function calculateSingleStoryRooms(numRooms: number, dimensions: HouseDimensions
                 position: [0, yOffset + roomHeight / 2, dimensions.length / 4],
                 dimensions: [dimensions.width, roomHeight, dimensions.length / 2],
                 outerWalls: bottomOuterWalls,
-                internalWalls: calculateInternalWalls(bottomOuterWalls),
+                internalWalls: calculateInternalWallsForRoom(2, 3, bottomOuterWalls, 'complex'),
                 windows: calculateWindowPositions([dimensions.width, roomHeight, dimensions.length / 2], bottomOuterWalls),
                 story: storyIndex
             };
@@ -269,7 +334,7 @@ function calculateSingleStoryRooms(numRooms: number, dimensions: HouseDimensions
                 position: [-(dimensions.width / 4), yOffset + roomHeight / 2, 0],
                 dimensions: [leftRoomWidth, roomHeight, dimensions.length],
                 outerWalls: leftOuterWalls,
-                internalWalls: calculateInternalWalls(leftOuterWalls),
+                internalWalls: calculateInternalWallsForRoom(0, 3, leftOuterWalls, 'complex'),
                 windows: calculateWindowPositions([leftRoomWidth, roomHeight, dimensions.length], leftOuterWalls),
                 story: storyIndex
             };
@@ -280,7 +345,7 @@ function calculateSingleStoryRooms(numRooms: number, dimensions: HouseDimensions
                 position: [dimensions.width / 4, yOffset + roomHeight / 2, -(dimensions.length / 4)],
                 dimensions: [rightRoomWidth, roomHeight, rightRoomLength],
                 outerWalls: topRightOuterWalls,
-                internalWalls: calculateInternalWalls(topRightOuterWalls),
+                internalWalls: calculateInternalWallsForRoom(1, 3, topRightOuterWalls, 'complex'),
                 windows: calculateWindowPositions([rightRoomWidth, roomHeight, rightRoomLength], topRightOuterWalls),
                 story: storyIndex
             };
@@ -291,7 +356,7 @@ function calculateSingleStoryRooms(numRooms: number, dimensions: HouseDimensions
                 position: [dimensions.width / 4, yOffset + roomHeight / 2, dimensions.length / 4],
                 dimensions: [rightRoomWidth, roomHeight, rightRoomLength],
                 outerWalls: bottomRightOuterWalls,
-                internalWalls: calculateInternalWalls(bottomRightOuterWalls),
+                internalWalls: calculateInternalWallsForRoom(2, 3, bottomRightOuterWalls, 'complex'),
                 windows: calculateWindowPositions([rightRoomWidth, roomHeight, rightRoomLength], bottomRightOuterWalls),
                 story: storyIndex
             };
@@ -387,7 +452,7 @@ function calculateSingleStoryRooms(numRooms: number, dimensions: HouseDimensions
                 position: [x, yOffset + roomHeight / 2, -(dimensions.length / 4)],
                 dimensions: [roomWidth, roomHeight, roomLength],
                 outerWalls,
-                internalWalls: calculateInternalWalls(outerWalls),
+                internalWalls: calculateInternalWallsForRoom(i, 5, outerWalls, 'complex'),
                 windows: calculateWindowPositions([roomWidth, roomHeight, roomLength], outerWalls),
                 story: storyIndex
             };
@@ -409,7 +474,7 @@ function calculateSingleStoryRooms(numRooms: number, dimensions: HouseDimensions
             position: [-(dimensions.width / 4), yOffset + roomHeight / 2, dimensions.length / 4],
             dimensions: [bottomRoomWidth, roomHeight, bottomRoomLength],
             outerWalls: bottomLeftOuterWalls,
-            internalWalls: calculateInternalWalls(bottomLeftOuterWalls),
+            internalWalls: calculateInternalWallsForRoom(3, 5, bottomLeftOuterWalls, 'complex'),
             windows: calculateWindowPositions([bottomRoomWidth, roomHeight, bottomRoomLength], bottomLeftOuterWalls),
             story: storyIndex
         };
@@ -426,7 +491,7 @@ function calculateSingleStoryRooms(numRooms: number, dimensions: HouseDimensions
             position: [dimensions.width / 4, yOffset + roomHeight / 2, dimensions.length / 4],
             dimensions: [bottomRoomWidth, roomHeight, bottomRoomLength],
             outerWalls: bottomRightOuterWalls,
-            internalWalls: calculateInternalWalls(bottomRightOuterWalls),
+            internalWalls: calculateInternalWallsForRoom(4, 5, bottomRightOuterWalls, 'complex'),
             windows: calculateWindowPositions([bottomRoomWidth, roomHeight, bottomRoomLength], bottomRightOuterWalls),
             story: storyIndex
         };
@@ -494,7 +559,7 @@ function calculateSingleStoryRooms(numRooms: number, dimensions: HouseDimensions
                 position: [x, yOffset + roomHeight / 2, -(dimensions.length / 3)],
                 dimensions: [roomWidth, roomHeight, roomLength],
                 outerWalls,
-                internalWalls: calculateInternalWalls(outerWalls),
+                internalWalls: calculateInternalWallsForRoom(i, 7, outerWalls, 'complex'),
                 windows: calculateWindowPositions([roomWidth, roomHeight, roomLength], outerWalls),
                 story: storyIndex
             };
@@ -516,7 +581,7 @@ function calculateSingleStoryRooms(numRooms: number, dimensions: HouseDimensions
             position: [-(dimensions.width / 4), yOffset + roomHeight / 2, 0],
             dimensions: [middleRoomWidth, roomHeight, middleRoomLength],
             outerWalls: middleLeftOuterWalls,
-            internalWalls: calculateInternalWalls(middleLeftOuterWalls),
+            internalWalls: calculateInternalWallsForRoom(3, 7, middleLeftOuterWalls, 'complex'),
             windows: calculateWindowPositions([middleRoomWidth, roomHeight, middleRoomLength], middleLeftOuterWalls),
             story: storyIndex
         };
@@ -533,7 +598,7 @@ function calculateSingleStoryRooms(numRooms: number, dimensions: HouseDimensions
             position: [dimensions.width / 4, yOffset + roomHeight / 2, 0],
             dimensions: [middleRoomWidth, roomHeight, middleRoomLength],
             outerWalls: middleRightOuterWalls,
-            internalWalls: calculateInternalWalls(middleRightOuterWalls),
+            internalWalls: calculateInternalWallsForRoom(4, 7, middleRightOuterWalls, 'complex'),
             windows: calculateWindowPositions([middleRoomWidth, roomHeight, middleRoomLength], middleRightOuterWalls),
             story: storyIndex
         };
@@ -554,7 +619,7 @@ function calculateSingleStoryRooms(numRooms: number, dimensions: HouseDimensions
             position: [-(dimensions.width / 4), yOffset + roomHeight / 2, dimensions.length / 3],
             dimensions: [bottomRoomWidth, roomHeight, bottomRoomLength],
             outerWalls: bottomLeftOuterWalls,
-            internalWalls: calculateInternalWalls(bottomLeftOuterWalls),
+            internalWalls: calculateInternalWallsForRoom(5, 7, bottomLeftOuterWalls, 'complex'),
             windows: calculateWindowPositions([bottomRoomWidth, roomHeight, bottomRoomLength], bottomLeftOuterWalls),
             story: storyIndex
         };
@@ -571,7 +636,7 @@ function calculateSingleStoryRooms(numRooms: number, dimensions: HouseDimensions
             position: [dimensions.width / 4, yOffset + roomHeight / 2, dimensions.length / 3],
             dimensions: [bottomRoomWidth, roomHeight, bottomRoomLength],
             outerWalls: bottomRightOuterWalls,
-            internalWalls: calculateInternalWalls(bottomRightOuterWalls),
+            internalWalls: calculateInternalWallsForRoom(6, 7, bottomRightOuterWalls, 'complex'),
             windows: calculateWindowPositions([bottomRoomWidth, roomHeight, bottomRoomLength], bottomRightOuterWalls),
             story: storyIndex
         };
