@@ -107,24 +107,24 @@ const Room = ({ position, dimensions, externalColor, internalColor, windows, out
             case 'front':
                 planeWidth = width - wallThickness * 2;
                 planeHeight = height;
-                planePosition = [0, 0, -length / 2 + wallThickness * 1.5];
+                planePosition = [0, 0, -length / 2 + wallThickness];
                 break;
             case 'back':
                 planeWidth = width - wallThickness * 2;
                 planeHeight = height;
-                planePosition = [0, 0, length / 2 - wallThickness * 1.5];
+                planePosition = [0, 0, length / 2 - wallThickness];
                 planeRotation = [0, Math.PI, 0];
                 break;
             case 'left':
                 planeWidth = length - wallThickness * 2;
                 planeHeight = height;
-                planePosition = [-width / 2 + wallThickness * 1.5, 0, 0];
+                planePosition = [-width / 2 + wallThickness, 0, 0];
                 planeRotation = [0, Math.PI / 2, 0];
                 break;
             case 'right':
                 planeWidth = length - wallThickness * 2;
                 planeHeight = height;
-                planePosition = [width / 2 - wallThickness * 1.5, 0, 0];
+                planePosition = [width / 2 - wallThickness, 0, 0];
                 planeRotation = [0, -Math.PI / 2, 0];
                 break;
         }
@@ -147,21 +147,25 @@ const Room = ({ position, dimensions, externalColor, internalColor, windows, out
     if (outerWalls.front) {
         const wall = createWall('front', true);
         wall.material = new THREE.MeshStandardMaterial({ color: externalColor });
+        wall.position.z -= 0.01; // Offset slightly outward
         group.add(wall);
     }
     if (outerWalls.back) {
         const wall = createWall('back', true);
         wall.material = new THREE.MeshStandardMaterial({ color: externalColor });
+        wall.position.z += 0.01; // Offset slightly outward
         group.add(wall);
     }
     if (outerWalls.left) {
         const wall = createWall('left', true);
         wall.material = new THREE.MeshStandardMaterial({ color: externalColor });
+        wall.position.x -= 0.01; // Offset slightly outward
         group.add(wall);
     }
     if (outerWalls.right) {
         const wall = createWall('right', true);
         wall.material = new THREE.MeshStandardMaterial({ color: externalColor });
+        wall.position.x += 0.01; // Offset slightly outward
         group.add(wall);
     }
 
