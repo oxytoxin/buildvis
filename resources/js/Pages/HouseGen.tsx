@@ -310,10 +310,11 @@ const Door = ({ dimensions, yOffset }: {
     const doorWidth = 1.0;
     const doorHeight = 2.1;
     const wallThickness = 0.2;
+    const doorThickness = wallThickness * 1.5; // Make door thick enough to extend through wall
 
     return (
-        <mesh position={[0, yOffset + doorHeight / 2, -length / 2 - wallThickness * 0.75]}>
-            <boxGeometry args={[doorWidth, doorHeight, wallThickness * 1.5]} />
+        <mesh position={[0, yOffset + doorHeight / 2, -length / 2 + wallThickness / 2]}>
+            <boxGeometry args={[doorWidth, doorHeight, doorThickness]} />
             <meshStandardMaterial color="#8B4513" side={THREE.DoubleSide} />
         </mesh>
     );
