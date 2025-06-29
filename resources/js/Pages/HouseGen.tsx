@@ -198,35 +198,71 @@ const Room = ({ position, dimensions, externalColor, internalColor, windows, out
     }
 
     // Add windows (only on external walls)
-    const createWindow = (windowPosition: [number, number, number], rotation: number) => {
+    const createWindow = (windowPosition: [number, number, number], rotation: number, wallType: 'front' | 'back' | 'left' | 'right') => {
         const windowWidth = 1.2;
         const windowHeight = 1.0;
+        const paneThickness = wallThickness * 1.5;
+        const gap = 0.05;
 
-        const windowGeometry = new THREE.BoxGeometry(windowWidth, windowHeight, wallThickness * 1.5);
+        // Calculate proper window position based on wall type
+        let adjustedPosition = [...windowPosition] as [number, number, number];
+        if (wallType === 'front') {
+            adjustedPosition[2] = -length / 2 + wallThickness / 2;
+        } else if (wallType === 'back') {
+            adjustedPosition[2] = length / 2 - wallThickness / 2;
+        } else if (wallType === 'left') {
+            adjustedPosition[0] = -width / 2 + wallThickness / 2;
+        } else if (wallType === 'right') {
+            adjustedPosition[0] = width / 2 - wallThickness / 2;
+        }
+
+        // Create window group
+        const windowGroup = new THREE.Group();
+
+        // Create left pane
+        const leftPaneGeometry = new THREE.BoxGeometry(windowWidth / 2 - 0.025, windowHeight, paneThickness);
         const windowMaterial = new THREE.MeshStandardMaterial({
             color: '#87CEEB',
             transparent: true,
             opacity: 0.8,
             side: THREE.DoubleSide
         });
-        const window = new THREE.Mesh(windowGeometry, windowMaterial);
-        window.position.set(windowPosition[0], windowPosition[1], windowPosition[2]);
-        window.rotation.y = rotation;
-        group.add(window);
+        const leftPane = new THREE.Mesh(leftPaneGeometry, windowMaterial);
+        leftPane.position.set(-windowWidth / 4, 0, -gap / 2);
+        windowGroup.add(leftPane);
+
+        // Create right pane
+        const rightPaneGeometry = new THREE.BoxGeometry(windowWidth / 2 - 0.025, windowHeight, paneThickness);
+        const rightPane = new THREE.Mesh(rightPaneGeometry, windowMaterial);
+        rightPane.position.set(windowWidth / 4, 0, -gap / 2);
+        windowGroup.add(rightPane);
+
+        // Create black divider (positioned slightly in front to prevent z-fighting)
+        const dividerWidth = 0.05;
+        const dividerGeometry = new THREE.BoxGeometry(dividerWidth, windowHeight, paneThickness);
+        const dividerMaterial = new THREE.MeshStandardMaterial({ color: '#000000' });
+        const divider = new THREE.Mesh(dividerGeometry, dividerMaterial);
+        divider.position.set(0, 0, -gap / 2 + 0.01);
+        windowGroup.add(divider);
+
+        // Position and rotate the entire window group
+        windowGroup.position.set(adjustedPosition[0], adjustedPosition[1], adjustedPosition[2]);
+        windowGroup.rotation.y = rotation;
+        group.add(windowGroup);
     };
 
     // Add windows using pre-calculated positions
     if (windows.front && outerWalls.front) {
-        createWindow(windows.front, 0);
+        createWindow(windows.front, 0, 'front');
     }
     if (windows.back && outerWalls.back) {
-        createWindow(windows.back, 0);
+        createWindow(windows.back, 0, 'back');
     }
     if (windows.left && outerWalls.left) {
-        createWindow(windows.left, Math.PI / 2);
+        createWindow(windows.left, Math.PI / 2, 'left');
     }
     if (windows.right && outerWalls.right) {
-        createWindow(windows.right, Math.PI / 2);
+        createWindow(windows.right, Math.PI / 2, 'right');
     }
 
     return (
@@ -244,6 +280,23 @@ const GroundPlane = ({ dimensions, color }: {
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]}>
             <planeGeometry args={[width, length]} />
             <meshStandardMaterial color={color} />
+        </mesh>
+    );
+};
+
+const Door = ({ dimensions, yOffset }: {
+    dimensions: [number, number];
+    yOffset: number;
+}) => {
+    const [width, length] = dimensions;
+    const doorWidth = 1.0;
+    const doorHeight = 2.1;
+    const wallThickness = 0.2;
+
+    return (
+        <mesh position={[0, yOffset + doorHeight / 2, -length / 2 - wallThickness * 0.75]}>
+            <boxGeometry args={[doorWidth, doorHeight, wallThickness * 1.5]} />
+            <meshStandardMaterial color="#8B4513" side={THREE.DoubleSide} />
         </mesh>
     );
 };
@@ -719,6 +772,9 @@ const HouseGen = () => {
 
                     {/* Ground Plane */}
                     <GroundPlane dimensions={lotDimensions} color={groundColor} />
+
+                    {/* Door */}
+                    <Door dimensions={[dimensions.width, dimensions.length]} yOffset={0} />
 
                     {/* Rooms */}
                     {roomLayout.map((room, index) => (
