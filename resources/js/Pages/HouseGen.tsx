@@ -251,26 +251,20 @@ const Room = ({ position, dimensions, externalColor, internalColor, windows, out
         group.add(windowGroup);
     };
 
-    // Check if window overlaps with door (only for the room containing the door)
-    const isWindowOverlappingDoor = (windowPosition: [number, number, number]) => {
-        const doorWidth = 1.0;
-        const doorHeight = 2.1;
-        const doorX = 0;
-        const doorY = -height / 2 + doorHeight / 2;
+    // Check if this room has a door on the front side
+    const hasDoorOnFront = () => {
+        // The door is in the leftmost room, so check if this room is the leftmost
+        // We need to compare this room's position with other rooms
+        // For now, we'll use a simple heuristic: if this room is at the left edge of the house
+        const roomXInHouse = position[0];
+        const roomLeftEdge = roomXInHouse - width / 2;
 
-        // Only check for door overlap if this room is the exact front room (door is centered at x=0, z=-length/2)
-        // Check if this room's position is at the front center where the door is
-        const isDoorRoom = Math.abs(position[0]) < 1 && Math.abs(position[2] - (-dimensions[2] / 2)) < 1;
-
-        if (!isDoorRoom) return false;
-
-        // Check if window is on front wall and overlaps with door
-        return Math.abs(windowPosition[0] - doorX) < (doorWidth / 2 + 0.6) &&
-            Math.abs(windowPosition[1] - doorY) < (doorHeight / 2 + 0.5);
+        // If this room's left edge is close to the house's left edge, it's likely the leftmost room
+        return roomLeftEdge <= -dimensions[0] / 2 + 1;
     };
 
     // Add windows using pre-calculated positions
-    if (windows.front && outerWalls.front && !isWindowOverlappingDoor(windows.front)) {
+    if (windows.front && outerWalls.front && !hasDoorOnFront()) {
         createWindow(windows.front, 0, 'front');
     }
     if (windows.back && outerWalls.back) {
@@ -353,9 +347,10 @@ const GroundPlane = ({ dimensions, color }: {
     );
 };
 
-const Door = ({ dimensions, yOffset }: {
+const Door = ({ dimensions, yOffset, roomPosition }: {
     dimensions: [number, number];
     yOffset: number;
+    roomPosition: [number, number, number];
 }) => {
     const [width, length] = dimensions;
     const doorWidth = 1.0;
@@ -364,7 +359,7 @@ const Door = ({ dimensions, yOffset }: {
     const doorThickness = wallThickness * 1.5; // Make door thick enough to extend through wall
 
     return (
-        <mesh position={[0, yOffset + doorHeight / 2, -length / 2 + wallThickness / 2]}>
+        <mesh position={[roomPosition[0], yOffset + doorHeight / 2, -length / 2 + wallThickness / 2]}>
             <boxGeometry args={[doorWidth, doorHeight, doorThickness]} />
             <meshStandardMaterial color="#8B4513" side={THREE.DoubleSide} />
         </mesh>
@@ -844,7 +839,20 @@ const HouseGen = () => {
                     <GroundPlane dimensions={lotDimensions} color={groundColor} />
 
                     {/* Door */}
-                    <Door dimensions={[dimensions.width, dimensions.length]} yOffset={0} />
+                    {(() => {
+                        // Find the leftmost room (minimum X position)
+                        const leftmostRoom = roomLayout.reduce((leftmost, current) =>
+                            current.position[0] < leftmost.position[0] ? current : leftmost
+                        );
+
+                        return (
+                            <Door
+                                dimensions={[dimensions.width, dimensions.length]}
+                                yOffset={0}
+                                roomPosition={leftmostRoom.position}
+                            />
+                        );
+                    })()}
 
                     {/* Rooms */}
                     {roomLayout.map((room, index) => (
