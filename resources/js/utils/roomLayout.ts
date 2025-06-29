@@ -13,11 +13,17 @@ export interface Room {
         left?: [number, number, number];
         right?: [number, number, number];
     };
+    story: number; // Add story number to track which floor the room is on
 }
 
 export interface HouseDimensions {
     length: number;
     width: number;
+    height: number;
+}
+
+export interface Story {
+    numRooms: number;
     height: number;
 }
 
@@ -82,7 +88,25 @@ const calculateOuterWallsFor3Rooms = (
     }
 };
 
-export function calculateRoomLayout(numRooms: number, dimensions: HouseDimensions): Room[] {
+export function calculateRoomLayout(stories: Story[], dimensions: HouseDimensions): Room[] {
+    const rooms: Room[] = [];
+    let currentY = 0; // Track the current Y position for stacking stories
+
+    stories.forEach((story, storyIndex) => {
+        const storyRooms = calculateSingleStoryRooms(story.numRooms, {
+            ...dimensions,
+            height: story.height
+        }, currentY, storyIndex);
+
+        rooms.push(...storyRooms);
+        currentY += story.height; // Move up for next story
+    });
+
+    return rooms;
+}
+
+// Helper function to calculate rooms for a single story
+function calculateSingleStoryRooms(numRooms: number, dimensions: HouseDimensions, yOffset: number, storyIndex: number): Room[] {
     const rooms: Room[] = [];
     const roomHeight = dimensions.height;
 
@@ -95,10 +119,11 @@ export function calculateRoomLayout(numRooms: number, dimensions: HouseDimension
         };
 
         const room: Room = {
-            position: [0, roomHeight / 2, 0],
+            position: [0, yOffset + roomHeight / 2, 0],
             dimensions: [dimensions.width, roomHeight, dimensions.length],
             outerWalls,
             windows: calculateWindowPositions([dimensions.width, roomHeight, dimensions.length], outerWalls),
+            story: storyIndex
         };
         rooms.push(room);
     } else if (numRooms === 2) {
@@ -116,10 +141,11 @@ export function calculateRoomLayout(numRooms: number, dimensions: HouseDimension
             };
 
             const leftRoom: Room = {
-                position: [-(dimensions.width / 4), roomHeight / 2, 0],
+                position: [-(dimensions.width / 4), yOffset + roomHeight / 2, 0],
                 dimensions: [roomWidth, roomHeight, dimensions.length],
                 outerWalls: leftOuterWalls,
                 windows: calculateWindowPositions([roomWidth, roomHeight, dimensions.length], leftOuterWalls),
+                story: storyIndex
             };
             rooms.push(leftRoom);
 
@@ -131,10 +157,11 @@ export function calculateRoomLayout(numRooms: number, dimensions: HouseDimension
             };
 
             const rightRoom: Room = {
-                position: [dimensions.width / 4, roomHeight / 2, 0],
+                position: [dimensions.width / 4, yOffset + roomHeight / 2, 0],
                 dimensions: [roomWidth, roomHeight, dimensions.length],
                 outerWalls: rightOuterWalls,
                 windows: calculateWindowPositions([roomWidth, roomHeight, dimensions.length], rightOuterWalls),
+                story: storyIndex
             };
             rooms.push(rightRoom);
         } else {
@@ -147,10 +174,11 @@ export function calculateRoomLayout(numRooms: number, dimensions: HouseDimension
             };
 
             const topRoom: Room = {
-                position: [0, roomHeight / 2, -(dimensions.length / 4)],
+                position: [0, yOffset + roomHeight / 2, -(dimensions.length / 4)],
                 dimensions: [dimensions.width, roomHeight, roomLength],
                 outerWalls: topOuterWalls,
                 windows: calculateWindowPositions([dimensions.width, roomHeight, roomLength], topOuterWalls),
+                story: storyIndex
             };
             rooms.push(topRoom);
 
@@ -162,10 +190,11 @@ export function calculateRoomLayout(numRooms: number, dimensions: HouseDimension
             };
 
             const bottomRoom: Room = {
-                position: [0, roomHeight / 2, dimensions.length / 4],
+                position: [0, yOffset + roomHeight / 2, dimensions.length / 4],
                 dimensions: [dimensions.width, roomHeight, dimensions.length / 2],
                 outerWalls: bottomOuterWalls,
                 windows: calculateWindowPositions([dimensions.width, roomHeight, dimensions.length / 2], bottomOuterWalls),
+                story: storyIndex
             };
             rooms.push(bottomRoom);
         }
@@ -179,28 +208,31 @@ export function calculateRoomLayout(numRooms: number, dimensions: HouseDimension
 
             const topLeftOuterWalls = calculateOuterWallsFor3Rooms(0, true);
             const topLeftRoom: Room = {
-                position: [-(dimensions.width / 4), roomHeight / 2, -(dimensions.length / 4)],
+                position: [-(dimensions.width / 4), yOffset + roomHeight / 2, -(dimensions.length / 4)],
                 dimensions: [topRoomWidth, roomHeight, topRoomLength],
                 outerWalls: topLeftOuterWalls,
                 windows: calculateWindowPositions([topRoomWidth, roomHeight, topRoomLength], topLeftOuterWalls),
+                story: storyIndex
             };
             rooms.push(topLeftRoom);
 
             const topRightOuterWalls = calculateOuterWallsFor3Rooms(1, true);
             const topRightRoom: Room = {
-                position: [dimensions.width / 4, roomHeight / 2, -(dimensions.length / 4)],
+                position: [dimensions.width / 4, yOffset + roomHeight / 2, -(dimensions.length / 4)],
                 dimensions: [topRoomWidth, roomHeight, topRoomLength],
                 outerWalls: topRightOuterWalls,
                 windows: calculateWindowPositions([topRoomWidth, roomHeight, topRoomLength], topRightOuterWalls),
+                story: storyIndex
             };
             rooms.push(topRightRoom);
 
             const bottomOuterWalls = calculateOuterWallsFor3Rooms(2, true);
             const bottomRoom: Room = {
-                position: [0, roomHeight / 2, dimensions.length / 4],
+                position: [0, yOffset + roomHeight / 2, dimensions.length / 4],
                 dimensions: [dimensions.width, roomHeight, dimensions.length / 2],
                 outerWalls: bottomOuterWalls,
                 windows: calculateWindowPositions([dimensions.width, roomHeight, dimensions.length / 2], bottomOuterWalls),
+                story: storyIndex
             };
             rooms.push(bottomRoom);
         } else {
@@ -211,28 +243,31 @@ export function calculateRoomLayout(numRooms: number, dimensions: HouseDimension
 
             const leftOuterWalls = calculateOuterWallsFor3Rooms(0, false);
             const leftRoom: Room = {
-                position: [-(dimensions.width / 4), roomHeight / 2, 0],
+                position: [-(dimensions.width / 4), yOffset + roomHeight / 2, 0],
                 dimensions: [leftRoomWidth, roomHeight, dimensions.length],
                 outerWalls: leftOuterWalls,
                 windows: calculateWindowPositions([leftRoomWidth, roomHeight, dimensions.length], leftOuterWalls),
+                story: storyIndex
             };
             rooms.push(leftRoom);
 
             const topRightOuterWalls = calculateOuterWallsFor3Rooms(1, false);
             const topRightRoom: Room = {
-                position: [dimensions.width / 4, roomHeight / 2, -(dimensions.length / 4)],
+                position: [dimensions.width / 4, yOffset + roomHeight / 2, -(dimensions.length / 4)],
                 dimensions: [rightRoomWidth, roomHeight, rightRoomLength],
                 outerWalls: topRightOuterWalls,
                 windows: calculateWindowPositions([rightRoomWidth, roomHeight, rightRoomLength], topRightOuterWalls),
+                story: storyIndex
             };
             rooms.push(topRightRoom);
 
             const bottomRightOuterWalls = calculateOuterWallsFor3Rooms(2, false);
             const bottomRightRoom: Room = {
-                position: [dimensions.width / 4, roomHeight / 2, dimensions.length / 4],
+                position: [dimensions.width / 4, yOffset + roomHeight / 2, dimensions.length / 4],
                 dimensions: [rightRoomWidth, roomHeight, rightRoomLength],
                 outerWalls: bottomRightOuterWalls,
                 windows: calculateWindowPositions([rightRoomWidth, roomHeight, rightRoomLength], bottomRightOuterWalls),
+                story: storyIndex
             };
             rooms.push(bottomRightRoom);
         }
@@ -249,10 +284,11 @@ export function calculateRoomLayout(numRooms: number, dimensions: HouseDimension
         };
 
         const topLeftRoom: Room = {
-            position: [-(dimensions.width / 4), roomHeight / 2, -(dimensions.length / 4)],
+            position: [-(dimensions.width / 4), yOffset + roomHeight / 2, -(dimensions.length / 4)],
             dimensions: [roomWidth, roomHeight, roomLength],
             outerWalls: topLeftOuterWalls,
             windows: calculateWindowPositions([roomWidth, roomHeight, roomLength], topLeftOuterWalls),
+            story: storyIndex
         };
         rooms.push(topLeftRoom);
 
@@ -264,10 +300,11 @@ export function calculateRoomLayout(numRooms: number, dimensions: HouseDimension
         };
 
         const topRightRoom: Room = {
-            position: [dimensions.width / 4, roomHeight / 2, -(dimensions.length / 4)],
+            position: [dimensions.width / 4, yOffset + roomHeight / 2, -(dimensions.length / 4)],
             dimensions: [roomWidth, roomHeight, roomLength],
             outerWalls: topRightOuterWalls,
             windows: calculateWindowPositions([roomWidth, roomHeight, roomLength], topRightOuterWalls),
+            story: storyIndex
         };
         rooms.push(topRightRoom);
 
@@ -279,10 +316,11 @@ export function calculateRoomLayout(numRooms: number, dimensions: HouseDimension
         };
 
         const bottomLeftRoom: Room = {
-            position: [-(dimensions.width / 4), roomHeight / 2, dimensions.length / 4],
+            position: [-(dimensions.width / 4), yOffset + roomHeight / 2, dimensions.length / 4],
             dimensions: [roomWidth, roomHeight, roomLength],
             outerWalls: bottomLeftOuterWalls,
             windows: calculateWindowPositions([roomWidth, roomHeight, roomLength], bottomLeftOuterWalls),
+            story: storyIndex
         };
         rooms.push(bottomLeftRoom);
 
@@ -294,10 +332,11 @@ export function calculateRoomLayout(numRooms: number, dimensions: HouseDimension
         };
 
         const bottomRightRoom: Room = {
-            position: [dimensions.width / 4, roomHeight / 2, dimensions.length / 4],
+            position: [dimensions.width / 4, yOffset + roomHeight / 2, dimensions.length / 4],
             dimensions: [roomWidth, roomHeight, roomLength],
             outerWalls: bottomRightOuterWalls,
             windows: calculateWindowPositions([roomWidth, roomHeight, roomLength], bottomRightOuterWalls),
+            story: storyIndex
         };
         rooms.push(bottomRightRoom);
     } else if (numRooms === 5) {
@@ -315,10 +354,11 @@ export function calculateRoomLayout(numRooms: number, dimensions: HouseDimension
             };
 
             const room: Room = {
-                position: [x, roomHeight / 2, -(dimensions.length / 4)],
+                position: [x, yOffset + roomHeight / 2, -(dimensions.length / 4)],
                 dimensions: [roomWidth, roomHeight, roomLength],
                 outerWalls,
                 windows: calculateWindowPositions([roomWidth, roomHeight, roomLength], outerWalls),
+                story: storyIndex
             };
             rooms.push(room);
         }
@@ -335,10 +375,11 @@ export function calculateRoomLayout(numRooms: number, dimensions: HouseDimension
         };
 
         const bottomLeftRoom: Room = {
-            position: [-(dimensions.width / 4), roomHeight / 2, dimensions.length / 4],
+            position: [-(dimensions.width / 4), yOffset + roomHeight / 2, dimensions.length / 4],
             dimensions: [bottomRoomWidth, roomHeight, bottomRoomLength],
             outerWalls: bottomLeftOuterWalls,
             windows: calculateWindowPositions([bottomRoomWidth, roomHeight, bottomRoomLength], bottomLeftOuterWalls),
+            story: storyIndex
         };
         rooms.push(bottomLeftRoom);
 
@@ -350,10 +391,11 @@ export function calculateRoomLayout(numRooms: number, dimensions: HouseDimension
         };
 
         const bottomRightRoom: Room = {
-            position: [dimensions.width / 4, roomHeight / 2, dimensions.length / 4],
+            position: [dimensions.width / 4, yOffset + roomHeight / 2, dimensions.length / 4],
             dimensions: [bottomRoomWidth, roomHeight, bottomRoomLength],
             outerWalls: bottomRightOuterWalls,
             windows: calculateWindowPositions([bottomRoomWidth, roomHeight, bottomRoomLength], bottomRightOuterWalls),
+            story: storyIndex
         };
         rooms.push(bottomRightRoom);
     } else if (numRooms === 6) {
@@ -371,10 +413,11 @@ export function calculateRoomLayout(numRooms: number, dimensions: HouseDimension
             };
 
             const room: Room = {
-                position: [x, roomHeight / 2, -(dimensions.length / 4)],
+                position: [x, yOffset + roomHeight / 2, -(dimensions.length / 4)],
                 dimensions: [roomWidth, roomHeight, roomLength],
                 outerWalls,
                 windows: calculateWindowPositions([roomWidth, roomHeight, roomLength], outerWalls),
+                story: storyIndex
             };
             rooms.push(room);
         }
@@ -390,10 +433,11 @@ export function calculateRoomLayout(numRooms: number, dimensions: HouseDimension
             };
 
             const room: Room = {
-                position: [x, roomHeight / 2, dimensions.length / 4],
+                position: [x, yOffset + roomHeight / 2, dimensions.length / 4],
                 dimensions: [roomWidth, roomHeight, roomLength],
                 outerWalls,
                 windows: calculateWindowPositions([roomWidth, roomHeight, roomLength], outerWalls),
+                story: storyIndex
             };
             rooms.push(room);
         }
@@ -412,10 +456,11 @@ export function calculateRoomLayout(numRooms: number, dimensions: HouseDimension
             };
 
             const room: Room = {
-                position: [x, roomHeight / 2, -(dimensions.length / 3)],
+                position: [x, yOffset + roomHeight / 2, -(dimensions.length / 3)],
                 dimensions: [roomWidth, roomHeight, roomLength],
                 outerWalls,
                 windows: calculateWindowPositions([roomWidth, roomHeight, roomLength], outerWalls),
+                story: storyIndex
             };
             rooms.push(room);
         }
@@ -432,10 +477,11 @@ export function calculateRoomLayout(numRooms: number, dimensions: HouseDimension
         };
 
         const middleLeftRoom: Room = {
-            position: [-(dimensions.width / 4), roomHeight / 2, 0],
+            position: [-(dimensions.width / 4), yOffset + roomHeight / 2, 0],
             dimensions: [middleRoomWidth, roomHeight, middleRoomLength],
             outerWalls: middleLeftOuterWalls,
             windows: calculateWindowPositions([middleRoomWidth, roomHeight, middleRoomLength], middleLeftOuterWalls),
+            story: storyIndex
         };
         rooms.push(middleLeftRoom);
 
@@ -447,10 +493,11 @@ export function calculateRoomLayout(numRooms: number, dimensions: HouseDimension
         };
 
         const middleRightRoom: Room = {
-            position: [dimensions.width / 4, roomHeight / 2, 0],
+            position: [dimensions.width / 4, yOffset + roomHeight / 2, 0],
             dimensions: [middleRoomWidth, roomHeight, middleRoomLength],
             outerWalls: middleRightOuterWalls,
             windows: calculateWindowPositions([middleRoomWidth, roomHeight, middleRoomLength], middleRightOuterWalls),
+            story: storyIndex
         };
         rooms.push(middleRightRoom);
 
@@ -466,10 +513,11 @@ export function calculateRoomLayout(numRooms: number, dimensions: HouseDimension
         };
 
         const bottomLeftRoom: Room = {
-            position: [-(dimensions.width / 4), roomHeight / 2, dimensions.length / 3],
+            position: [-(dimensions.width / 4), yOffset + roomHeight / 2, dimensions.length / 3],
             dimensions: [bottomRoomWidth, roomHeight, bottomRoomLength],
             outerWalls: bottomLeftOuterWalls,
             windows: calculateWindowPositions([bottomRoomWidth, roomHeight, bottomRoomLength], bottomLeftOuterWalls),
+            story: storyIndex
         };
         rooms.push(bottomLeftRoom);
 
@@ -481,10 +529,11 @@ export function calculateRoomLayout(numRooms: number, dimensions: HouseDimension
         };
 
         const bottomRightRoom: Room = {
-            position: [dimensions.width / 4, roomHeight / 2, dimensions.length / 3],
+            position: [dimensions.width / 4, yOffset + roomHeight / 2, dimensions.length / 3],
             dimensions: [bottomRoomWidth, roomHeight, bottomRoomLength],
             outerWalls: bottomRightOuterWalls,
             windows: calculateWindowPositions([bottomRoomWidth, roomHeight, bottomRoomLength], bottomRightOuterWalls),
+            story: storyIndex
         };
         rooms.push(bottomRightRoom);
     } else if (numRooms === 8) {
@@ -502,10 +551,11 @@ export function calculateRoomLayout(numRooms: number, dimensions: HouseDimension
             };
 
             const room: Room = {
-                position: [x, roomHeight / 2, -(dimensions.length / 3)],
+                position: [x, yOffset + roomHeight / 2, -(dimensions.length / 3)],
                 dimensions: [roomWidth, roomHeight, roomLength],
                 outerWalls,
                 windows: calculateWindowPositions([roomWidth, roomHeight, roomLength], outerWalls),
+                story: storyIndex
             };
             rooms.push(room);
         }
@@ -522,10 +572,11 @@ export function calculateRoomLayout(numRooms: number, dimensions: HouseDimension
         };
 
         const middleLeftRoom: Room = {
-            position: [-(dimensions.width / 4), roomHeight / 2, 0],
+            position: [-(dimensions.width / 4), yOffset + roomHeight / 2, 0],
             dimensions: [middleRoomWidth, roomHeight, middleRoomLength],
             outerWalls: middleLeftOuterWalls,
             windows: calculateWindowPositions([middleRoomWidth, roomHeight, middleRoomLength], middleLeftOuterWalls),
+            story: storyIndex
         };
         rooms.push(middleLeftRoom);
 
@@ -537,10 +588,11 @@ export function calculateRoomLayout(numRooms: number, dimensions: HouseDimension
         };
 
         const middleRightRoom: Room = {
-            position: [dimensions.width / 4, roomHeight / 2, 0],
+            position: [dimensions.width / 4, yOffset + roomHeight / 2, 0],
             dimensions: [middleRoomWidth, roomHeight, middleRoomLength],
             outerWalls: middleRightOuterWalls,
             windows: calculateWindowPositions([middleRoomWidth, roomHeight, middleRoomLength], middleRightOuterWalls),
+            story: storyIndex
         };
         rooms.push(middleRightRoom);
 
@@ -555,10 +607,11 @@ export function calculateRoomLayout(numRooms: number, dimensions: HouseDimension
             };
 
             const room: Room = {
-                position: [x, roomHeight / 2, dimensions.length / 3],
+                position: [x, yOffset + roomHeight / 2, dimensions.length / 3],
                 dimensions: [roomWidth, roomHeight, roomLength],
                 outerWalls,
                 windows: calculateWindowPositions([roomWidth, roomHeight, roomLength], outerWalls),
+                story: storyIndex
             };
             rooms.push(room);
         }
@@ -580,10 +633,11 @@ export function calculateRoomLayout(numRooms: number, dimensions: HouseDimension
                 };
 
                 const room: Room = {
-                    position: [x, roomHeight / 2, z],
+                    position: [x, yOffset + roomHeight / 2, z],
                     dimensions: [roomWidth, roomHeight, roomLength],
                     outerWalls,
                     windows: calculateWindowPositions([roomWidth, roomHeight, roomLength], outerWalls),
+                    story: storyIndex
                 };
                 rooms.push(room);
             }
@@ -607,10 +661,11 @@ export function calculateRoomLayout(numRooms: number, dimensions: HouseDimension
             };
 
             const room: Room = {
-                position: [x, roomHeight / 2, z],
+                position: [x, yOffset + roomHeight / 2, z],
                 dimensions: [roomWidth, roomHeight, roomLength],
                 outerWalls,
                 windows: calculateWindowPositions([roomWidth, roomHeight, roomLength], outerWalls),
+                story: storyIndex
             };
             rooms.push(room);
         }

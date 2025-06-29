@@ -1,7 +1,7 @@
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { Suspense, useState, useMemo } from 'react';
-import { calculateRoomLayout, type Room, type HouseDimensions } from '../utils/roomLayout';
+import { calculateRoomLayout, type Room, type HouseDimensions, type Story } from '../utils/roomLayout';
 import { createHollowBox } from '../utils/hollowBox';
 
 const Room = ({ position, dimensions, color, windows }: {
@@ -54,7 +54,9 @@ const HouseGen = () => {
     });
 
     const [lotDimensions, setLotDimensions] = useState<[number, number]>([15, 15]);
-    const [numRooms, setNumRooms] = useState(4);
+    const [stories, setStories] = useState<Story[]>([
+        { numRooms: 4, height: 3 }
+    ]);
     const [wallColor, setWallColor] = useState('#D2D8E4');
     const [groundColor, setGroundColor] = useState('#8FBC8F');
 
@@ -65,6 +67,7 @@ const HouseGen = () => {
     };
 
     const defaultLotDimensions: [number, number] = [15, 15];
+    const defaultStories: Story[] = [{ numRooms: 4, height: 3 }];
 
     const handleDimensionChange = (dimension: 'length' | 'width' | 'height', value: number) => {
         setDimensions(prev => ({
@@ -83,18 +86,36 @@ const HouseGen = () => {
         });
     };
 
+    const handleStoryChange = (storyIndex: number, field: 'numRooms' | 'height', value: number) => {
+        setStories(prev => prev.map((story, index) =>
+            index === storyIndex
+                ? { ...story, [field]: value }
+                : story
+        ));
+    };
+
+    const addStory = () => {
+        setStories(prev => [...prev, { numRooms: 2, height: 3 }]);
+    };
+
+    const removeStory = (storyIndex: number) => {
+        if (stories.length > 1) {
+            setStories(prev => prev.filter((_, index) => index !== storyIndex));
+        }
+    };
+
     const handleReset = () => {
         setDimensions(defaultDimensions);
         setLotDimensions(defaultLotDimensions);
-        setNumRooms(4);
+        setStories(defaultStories);
         setWallColor('#D2D8E4');
         setGroundColor('#8FBC8F');
     };
 
     // Calculate room layout using the utility function
     const roomLayout = useMemo(() => {
-        return calculateRoomLayout(numRooms, dimensions);
-    }, [numRooms, dimensions]);
+        return calculateRoomLayout(stories, dimensions);
+    }, [stories, dimensions]);
 
     return (
         <div className="w-full h-screen relative">
@@ -152,6 +173,67 @@ const HouseGen = () => {
                     </div>
 
                     <div className="border-b border-gray-200 pb-3">
+                        <h3 className="text-md font-medium text-gray-700 mb-3">Stories ({stories.length})</h3>
+
+                        {stories.map((story, storyIndex) => (
+                            <div key={storyIndex} className="mb-4 p-3 bg-gray-50 rounded-lg">
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className="text-sm font-medium text-gray-700">
+                                        Story {storyIndex + 1}
+                                    </span>
+                                    {stories.length > 1 && (
+                                        <button
+                                            onClick={() => removeStory(storyIndex)}
+                                            className="text-red-500 hover:text-red-700 text-sm"
+                                        >
+                                            Remove
+                                        </button>
+                                    )}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-600 mb-1">
+                                            Rooms: {story.numRooms}
+                                        </label>
+                                        <input
+                                            type="range"
+                                            min="1"
+                                            max="9"
+                                            step="1"
+                                            value={story.numRooms}
+                                            onChange={(e) => handleStoryChange(storyIndex, 'numRooms', parseInt(e.target.value))}
+                                            className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-600 mb-1">
+                                            Height: {story.height}m
+                                        </label>
+                                        <input
+                                            type="range"
+                                            min="2.5"
+                                            max="6"
+                                            step="0.1"
+                                            value={story.height}
+                                            onChange={(e) => handleStoryChange(storyIndex, 'height', parseFloat(e.target.value))}
+                                            className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+
+                        <button
+                            onClick={addStory}
+                            className="w-full bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 text-sm"
+                        >
+                            Add Story
+                        </button>
+                    </div>
+
+                    <div className="border-b border-gray-200 pb-3">
                         <h3 className="text-md font-medium text-gray-700 mb-3">Lot Area</h3>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -194,21 +276,6 @@ const HouseGen = () => {
                                 className="w-full h-10 rounded-lg cursor-pointer"
                             />
                         </div>
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Number of Rooms: {numRooms}
-                        </label>
-                        <input
-                            type="range"
-                            min="1"
-                            max="9"
-                            step="1"
-                            value={numRooms}
-                            onChange={(e) => setNumRooms(parseInt(e.target.value))}
-                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
-                        />
                     </div>
 
                     <div>
