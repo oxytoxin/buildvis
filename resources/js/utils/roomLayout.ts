@@ -145,7 +145,6 @@ function calculateSingleStoryRooms(numRooms: number, dimensions: HouseDimensions
         rooms.push(room);
     } else if (numRooms === 2) {
         const roomWidth = dimensions.width / 2;
-        const roomLength = dimensions.length;
 
         // Check if we should split horizontally or vertically
         if (dimensions.width >= dimensions.length) {
