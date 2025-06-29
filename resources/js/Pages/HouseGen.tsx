@@ -283,6 +283,57 @@ const Room = ({ position, dimensions, externalColor, internalColor, windows, out
         createWindow(windows.right, Math.PI / 2, 'right');
     }
 
+    // Add interior doors (on internal walls)
+    const createInteriorDoor = (wallType: 'front' | 'back' | 'left' | 'right') => {
+        const doorWidth = 1.0;
+        const doorHeight = 2.1;
+        const doorThickness = wallThickness * 1.5;
+
+        let doorPosition: [number, number, number];
+        let doorRotation: [number, number, number] = [0, 0, 0];
+
+        switch (wallType) {
+            case 'front':
+                doorPosition = [0, -height / 2 + doorHeight / 2, -length / 2 + wallThickness / 2];
+                break;
+            case 'back':
+                doorPosition = [0, -height / 2 + doorHeight / 2, length / 2 - wallThickness / 2];
+                break;
+            case 'left':
+                doorPosition = [-width / 2 + wallThickness / 2, -height / 2 + doorHeight / 2, 0];
+                doorRotation = [0, Math.PI / 2, 0];
+                break;
+            case 'right':
+                doorPosition = [width / 2 - wallThickness / 2, -height / 2 + doorHeight / 2, 0];
+                doorRotation = [0, Math.PI / 2, 0];
+                break;
+        }
+
+        const doorGeometry = new THREE.BoxGeometry(doorWidth, doorHeight, doorThickness);
+        const doorMaterial = new THREE.MeshStandardMaterial({
+            color: '#8B4513',
+            side: THREE.DoubleSide
+        });
+        const door = new THREE.Mesh(doorGeometry, doorMaterial);
+        door.position.set(...doorPosition);
+        door.rotation.set(...doorRotation);
+        group.add(door);
+    };
+
+    // Add interior doors on internal walls
+    if (internalWalls.front) {
+        createInteriorDoor('front');
+    }
+    if (internalWalls.back) {
+        createInteriorDoor('back');
+    }
+    if (internalWalls.left) {
+        createInteriorDoor('left');
+    }
+    if (internalWalls.right) {
+        createInteriorDoor('right');
+    }
+
     return (
         <primitive object={group} position={position} />
     );
