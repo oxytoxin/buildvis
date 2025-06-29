@@ -251,8 +251,26 @@ const Room = ({ position, dimensions, externalColor, internalColor, windows, out
         group.add(windowGroup);
     };
 
+    // Check if window overlaps with door (only for the room containing the door)
+    const isWindowOverlappingDoor = (windowPosition: [number, number, number]) => {
+        const doorWidth = 1.0;
+        const doorHeight = 2.1;
+        const doorX = 0;
+        const doorY = -height / 2 + doorHeight / 2;
+
+        // Only check for door overlap if this room is the exact front room (door is centered at x=0, z=-length/2)
+        // Check if this room's position is at the front center where the door is
+        const isDoorRoom = Math.abs(position[0]) < 1 && Math.abs(position[2] - (-dimensions[2] / 2)) < 1;
+
+        if (!isDoorRoom) return false;
+
+        // Check if window is on front wall and overlaps with door
+        return Math.abs(windowPosition[0] - doorX) < (doorWidth / 2 + 0.6) &&
+            Math.abs(windowPosition[1] - doorY) < (doorHeight / 2 + 0.5);
+    };
+
     // Add windows using pre-calculated positions
-    if (windows.front && outerWalls.front) {
+    if (windows.front && outerWalls.front && !isWindowOverlappingDoor(windows.front)) {
         createWindow(windows.front, 0, 'front');
     }
     if (windows.back && outerWalls.back) {
