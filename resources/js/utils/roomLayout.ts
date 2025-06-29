@@ -175,9 +175,9 @@ function calculateSingleStoryRooms(numRooms: number, dimensions: HouseDimensions
 
             const topRoom: Room = {
                 position: [0, yOffset + roomHeight / 2, -(dimensions.length / 4)],
-                dimensions: [dimensions.width, roomHeight, roomLength],
+                dimensions: [dimensions.width, roomHeight, dimensions.length / 2],
                 outerWalls: topOuterWalls,
-                windows: calculateWindowPositions([dimensions.width, roomHeight, roomLength], topOuterWalls),
+                windows: calculateWindowPositions([dimensions.width, roomHeight, dimensions.length / 2], topOuterWalls),
                 story: storyIndex
             };
             rooms.push(topRoom);
