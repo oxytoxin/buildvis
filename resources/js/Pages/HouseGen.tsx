@@ -737,13 +737,13 @@ const HouseGen = () => {
                     {/* Roof */}
                     {roofType === 'flat' ? (
                         <FlatRoof
-                            dimensions={[dimensions.width, dimensions.length]}
+                            dimensions={[dimensions.width + 1, dimensions.length + 1]}
                             color={roofColor}
                             yOffset={totalHouseHeight}
                         />
                     ) : (
                         <PointedRoof
-                            dimensions={[dimensions.width, dimensions.length]}
+                            dimensions={[dimensions.width + 1, dimensions.length + 1]}
                             color={roofColor}
                             yOffset={totalHouseHeight}
                         />
