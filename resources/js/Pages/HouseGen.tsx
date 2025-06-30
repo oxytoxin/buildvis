@@ -5,7 +5,7 @@ import { calculateRoomLayout, type Room, type HouseDimensions, type Story } from
 import { createHollowBox } from '../utils/hollowBox';
 import * as THREE from 'three';
 
-const Room = ({ position, dimensions, externalColor, internalColor, windows, outerWalls, internalWalls }: {
+const Room = ({ position, dimensions, externalColor, internalColor, windows, outerWalls, internalWalls, floorType, tileSize, tileColor, groutColor, carpetColor, ceilingColor }: {
     position: [number, number, number];
     dimensions: [number, number, number];
     externalColor: string;
@@ -28,6 +28,12 @@ const Room = ({ position, dimensions, externalColor, internalColor, windows, out
         left: boolean;
         right: boolean;
     };
+    floorType: 'carpet' | 'tiles';
+    tileSize?: number;
+    tileColor?: string;
+    groutColor?: string;
+    carpetColor?: string;
+    ceilingColor?: string;
 }) => {
     const wallThickness = 0.2; // 20cm wall thickness
     const [width, height, length] = dimensions;
@@ -330,6 +336,101 @@ const Room = ({ position, dimensions, externalColor, internalColor, windows, out
         createInteriorDoor('right');
     }
 
+    // Add floor
+    const createFloor = () => {
+        if (floorType === 'tiles') {
+            // Create tiled floor with visible grout
+            const groutWidth = 0.02; // 2cm grout lines
+            const maxTileSize = tileSize || 0.5;
+
+            // Calculate optimal number of tiles to fit the room
+            const numTilesX = Math.max(1, Math.floor(width / (maxTileSize + groutWidth)));
+            const numTilesZ = Math.max(1, Math.floor(length / (maxTileSize + groutWidth)));
+
+            // Calculate actual tile size to fit perfectly
+            const actualTileSizeX = (width - (numTilesX - 1) * groutWidth) / numTilesX;
+            const actualTileSizeZ = (length - (numTilesZ - 1) * groutWidth) / numTilesZ;
+            const actualTileSize = Math.min(actualTileSizeX, actualTileSizeZ);
+
+            // Calculate total spacing including grout
+            const totalSpacingX = actualTileSize + groutWidth;
+            const totalSpacingZ = actualTileSize + groutWidth;
+
+            // Create individual tiles
+            for (let x = 0; x < numTilesX; x++) {
+                for (let z = 0; z < numTilesZ; z++) {
+                    const tileX = (x - (numTilesX - 1) / 2) * totalSpacingX;
+                    const tileZ = (z - (numTilesZ - 1) / 2) * totalSpacingZ;
+
+                    // Create tile
+                    const tileGeometry = new THREE.PlaneGeometry(actualTileSize, actualTileSize);
+                    const tileMaterial = new THREE.MeshStandardMaterial({
+                        color: tileColor || '#FFFFFF',
+                        roughness: 0.3,
+                        metalness: 0.1
+                    });
+                    const tile = new THREE.Mesh(tileGeometry, tileMaterial);
+                    tile.rotation.x = -Math.PI / 2;
+                    tile.position.set(tileX, -height / 2 + 0.01, tileZ);
+                    group.add(tile);
+                }
+            }
+
+            // Add a solid floor base to prevent seeing through (acts as grout)
+            const baseFloorGeometry = new THREE.PlaneGeometry(width, length);
+            const baseFloorMaterial = new THREE.MeshStandardMaterial({
+                color: groutColor || '#CCCCCC',
+                roughness: 0.9,
+                metalness: 0.0
+            });
+            const baseFloor = new THREE.Mesh(baseFloorGeometry, baseFloorMaterial);
+            baseFloor.rotation.x = -Math.PI / 2;
+            baseFloor.position.set(0, -height / 2 + 0.001, 0);
+            group.add(baseFloor);
+
+            // Add a thicker solid floor underneath to ensure no see-through
+            const solidFloorGeometry = new THREE.BoxGeometry(width, 0.1, length);
+            const solidFloorMaterial = new THREE.MeshStandardMaterial({
+                color: groutColor || '#CCCCCC',
+                roughness: 0.9,
+                metalness: 0.0
+            });
+            const solidFloor = new THREE.Mesh(solidFloorGeometry, solidFloorMaterial);
+            solidFloor.position.set(0, -height / 2 - 0.05, 0);
+            group.add(solidFloor);
+        } else {
+            // Create carpet floor
+            const floorGeometry = new THREE.PlaneGeometry(width, length);
+            const floorMaterial = new THREE.MeshStandardMaterial({
+                color: carpetColor || '#E0E0E0', // Light gray carpet color
+                roughness: 0.8,
+                metalness: 0.0
+            });
+            const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+            floor.rotation.x = -Math.PI / 2;
+            floor.position.set(0, -height / 2 + 0.01, 0);
+            group.add(floor);
+        }
+    };
+
+    createFloor();
+
+    // Add ceiling
+    const createCeiling = () => {
+        const ceilingGeometry = new THREE.PlaneGeometry(width, length);
+        const ceilingMaterial = new THREE.MeshStandardMaterial({
+            color: ceilingColor || '#F5F5F5',
+            roughness: 0.8,
+            metalness: 0.0
+        });
+        const ceiling = new THREE.Mesh(ceilingGeometry, ceilingMaterial);
+        ceiling.rotation.x = Math.PI / 2; // Rotate to face downward
+        ceiling.position.set(0, height / 2 - 0.5, 0); // Position much lower, in the middle of the room
+        group.add(ceiling);
+    };
+
+    createCeiling();
+
     return (
         <primitive object={group} position={position} />
     );
@@ -340,13 +441,72 @@ const GroundPlane = ({ dimensions, color }: {
     color: string;
 }) => {
     const [width, length] = dimensions;
+    const groundThickness = 1.0; // 1m thick ground
 
     return (
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]}>
-            <planeGeometry args={[width, length]} />
+        <mesh position={[0, -groundThickness / 2, 0]}>
+            <boxGeometry args={[width, groundThickness, length]} />
             <meshStandardMaterial color={color} />
         </mesh>
     );
+};
+
+const Ceiling = ({ dimensions, color, yOffset }: {
+    dimensions: [number, number];
+    color: string;
+    yOffset: number;
+}) => {
+    const [width, length] = dimensions;
+    const ceilingThickness = 0.1; // 10cm thick ceiling
+
+    return (
+        <mesh position={[0, yOffset + ceilingThickness / 2, 0]}>
+            <boxGeometry args={[width, ceilingThickness, length]} />
+            <meshStandardMaterial color={color} />
+        </mesh>
+    );
+};
+
+const TiledFloor = ({ dimensions, tileSize = 0.5, tileColor = '#FFFFFF', groutColor = '#CCCCCC', yOffset = 0 }: {
+    dimensions: [number, number];
+    tileSize?: number;
+    tileColor?: string;
+    groutColor?: string;
+    yOffset?: number;
+}) => {
+    const [width, length] = dimensions;
+    const groutWidth = 0.02; // 2cm grout lines
+
+    // Calculate number of tiles needed
+    const numTilesX = Math.ceil(width / (tileSize + groutWidth));
+    const numTilesZ = Math.ceil(length / (tileSize + groutWidth));
+
+    // Create a group to hold all tiles
+    const floorGroup = new THREE.Group();
+
+    // Create individual tiles
+    for (let x = 0; x < numTilesX; x++) {
+        for (let z = 0; z < numTilesZ; z++) {
+            const tileX = (x - numTilesX / 2) * (tileSize + groutWidth) + (tileSize + groutWidth) / 2;
+            const tileZ = (z - numTilesZ / 2) * (tileSize + groutWidth) + (tileSize + groutWidth) / 2;
+
+            // Check if tile is within the room boundaries
+            if (tileX >= -width / 2 && tileX <= width / 2 && tileZ >= -length / 2 && tileZ <= length / 2) {
+                const tileGeometry = new THREE.PlaneGeometry(tileSize, tileSize);
+                const tileMaterial = new THREE.MeshStandardMaterial({
+                    color: tileColor,
+                    roughness: 0.3,
+                    metalness: 0.1
+                });
+                const tile = new THREE.Mesh(tileGeometry, tileMaterial);
+                tile.rotation.x = -Math.PI / 2;
+                tile.position.set(tileX, yOffset + 0.01, tileZ);
+                floorGroup.add(tile);
+            }
+        }
+    }
+
+    return <primitive object={floorGroup} />;
 };
 
 const Door = ({ dimensions, yOffset, roomPosition }: {
@@ -521,6 +681,12 @@ const HouseGen = () => {
     const [groundColor, setGroundColor] = useState('#8FBC8F');
     const [roofType, setRoofType] = useState<'flat' | 'pointed'>('flat');
     const [roofColor, setRoofColor] = useState('#8B4513');
+    const [floorType, setFloorType] = useState<'carpet' | 'tiles'>('carpet');
+    const [tileSize, setTileSize] = useState(0.5);
+    const [tileColor, setTileColor] = useState('#FFFFFF');
+    const [groutColor, setGroutColor] = useState('#CCCCCC');
+    const [carpetColor, setCarpetColor] = useState('#E0E0E0');
+    const [ceilingColor, setCeilingColor] = useState('#F5F5F5');
 
     const defaultDimensions: HouseDimensions = {
         length: 10,
@@ -575,6 +741,12 @@ const HouseGen = () => {
         setGroundColor('#8FBC8F');
         setRoofType('flat');
         setRoofColor('#8B4513');
+        setFloorType('carpet');
+        setTileSize(0.5);
+        setTileColor('#FFFFFF');
+        setGroutColor('#CCCCCC');
+        setCarpetColor('#E0E0E0');
+        setCeilingColor('#F5F5F5');
     };
 
     // Calculate room layout using the utility function
@@ -624,21 +796,6 @@ const HouseGen = () => {
                                     step="0.5"
                                     value={dimensions.width}
                                     onChange={(e) => handleDimensionChange('width', parseFloat(e.target.value))}
-                                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Height: {dimensions.height}m
-                                </label>
-                                <input
-                                    type="range"
-                                    min="2.5"
-                                    max="6"
-                                    step="0.1"
-                                    value={dimensions.height}
-                                    onChange={(e) => handleDimensionChange('height', parseFloat(e.target.value))}
                                     className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
                                 />
                             </div>
@@ -696,6 +853,93 @@ const HouseGen = () => {
                                 onChange={(e) => setInternalWallColor(e.target.value)}
                                 className="w-full h-10 rounded-lg cursor-pointer"
                             />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Ceiling Color
+                            </label>
+                            <input
+                                type="color"
+                                value={ceilingColor}
+                                onChange={(e) => setCeilingColor(e.target.value)}
+                                className="w-full h-10 rounded-lg cursor-pointer"
+                            />
+                        </div>
+
+                        <div className="border-b border-gray-200 pb-3">
+                            <h3 className="text-md font-medium text-gray-700 mb-3">Floor</h3>
+
+                            <div className="mb-3">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Floor Type
+                                </label>
+                                <select
+                                    value={floorType}
+                                    onChange={(e) => setFloorType(e.target.value as 'carpet' | 'tiles')}
+                                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                >
+                                    <option value="carpet">Carpet</option>
+                                    <option value="tiles">Tiles</option>
+                                </select>
+                            </div>
+
+                            {floorType === 'tiles' && (
+                                <>
+                                    <div className="mb-3">
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Tile Size: {tileSize}m
+                                        </label>
+                                        <input
+                                            type="range"
+                                            min="0.2"
+                                            max="1.0"
+                                            step="0.1"
+                                            value={tileSize}
+                                            onChange={(e) => setTileSize(parseFloat(e.target.value))}
+                                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                                        />
+                                    </div>
+
+                                    <div className="mb-3">
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Tile Color
+                                        </label>
+                                        <input
+                                            type="color"
+                                            value={tileColor}
+                                            onChange={(e) => setTileColor(e.target.value)}
+                                            className="w-full h-10 rounded-lg cursor-pointer"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Grout Color
+                                        </label>
+                                        <input
+                                            type="color"
+                                            value={groutColor}
+                                            onChange={(e) => setGroutColor(e.target.value)}
+                                            className="w-full h-10 rounded-lg cursor-pointer"
+                                        />
+                                    </div>
+                                </>
+                            )}
+
+                            {floorType === 'carpet' && (
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Carpet Color
+                                    </label>
+                                    <input
+                                        type="color"
+                                        value={carpetColor}
+                                        onChange={(e) => setCarpetColor(e.target.value)}
+                                        className="w-full h-10 rounded-lg cursor-pointer"
+                                    />
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -867,6 +1111,12 @@ const HouseGen = () => {
                             windows={room.windows}
                             outerWalls={room.outerWalls}
                             internalWalls={room.internalWalls}
+                            floorType={floorType}
+                            tileSize={tileSize}
+                            tileColor={tileColor}
+                            groutColor={groutColor}
+                            carpetColor={carpetColor}
+                            ceilingColor={ceilingColor}
                         />
                     ))}
 
