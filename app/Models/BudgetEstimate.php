@@ -14,17 +14,8 @@ class BudgetEstimate extends Model
 
     protected $casts = [
         'structured_data' => 'array',
+        'house_data' => 'array',
         'total_amount' => 'decimal:2',
-    ];
-
-    protected $fillable = [
-        'customer_id',
-        'name',
-        'description',
-        'structured_data',
-        'total_amount',
-        'status',
-        'notes',
     ];
 
     public function customer(): BelongsTo
@@ -43,12 +34,15 @@ class BudgetEstimate extends Model
             $estimate->status ??= 'draft';
             $estimate->total_amount ??= 0;
         });
+    }
 
-        // Update total amount when items are modified
-        static::updated(function ($estimate) {
-            $estimate->update([
-                'total_amount' => $estimate->items()->sum('subtotal')
-            ]);
-        });
+    /**
+     * Update the total amount based on items
+     */
+    public function updateTotalAmount(): void
+    {
+        $this->updateQuietly([
+            'total_amount' => $this->items()->sum('subtotal')
+        ]);
     }
 }

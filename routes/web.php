@@ -13,6 +13,7 @@ use Inertia\Inertia;
 use App\Http\Controllers\StoreController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\HouseGeneratorController;
+use App\Http\Controllers\BudgetEstimateController;
 
 Route::get('/', Welcome::class)->name('welcome');
 
@@ -43,10 +44,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('product/{product}', [StoreController::class, 'product_view'])
         ->name('product.view');
 
-    Route::get('house-generator', [HouseGeneratorController::class, 'index'])
+    Route::get('house-generator/{budgetEstimate}', [HouseGeneratorController::class, 'index'])
         ->name('house-generator.index');
-    Route::get('house-generator-2', [HouseGeneratorController::class, 'index2'])
-        ->name('house-generator.index2');
+    // Route::get('house-generator-2', [HouseGeneratorController::class, 'index2'])
+    //     ->name('house-generator.index2');
+
+    // Budget Estimate API routes
+    Route::post('/api/budget-estimates', [BudgetEstimateController::class, 'store']);
+    Route::get('/api/budget-estimates/{id}', [BudgetEstimateController::class, 'show']);
 
     Route::get('/stripe-checkout/{order}', [StripeController::class, 'checkout'])->name('stripe.checkout');
     Route::get('/stripe-cancel/{order}', [StripeController::class, 'cancel'])->name('stripe.cancel');

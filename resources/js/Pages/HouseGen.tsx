@@ -2,8 +2,17 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { Suspense, useState, useMemo, useEffect, useRef } from 'react';
 import { calculateRoomLayout, type Room, type HouseDimensions, type Story } from '../utils/roomLayout';
-import { createHollowBox } from '../utils/hollowBox';
 import * as THREE from 'three';
+
+interface HouseGenProps {
+    budgetEstimate: {
+        id: number;
+        name: string;
+        description?: string;
+        house_data?: any;
+        structured_data?: any;
+    };
+}
 
 const Room = ({ position, dimensions, externalColor, internalColor, windows, outerWalls, internalWalls, floorType, tileSize, tileColor, groutColor, carpetColor, ceilingColor }: {
     position: [number, number, number];
@@ -39,7 +48,7 @@ const Room = ({ position, dimensions, externalColor, internalColor, windows, out
     const [width, height, length] = dimensions;
 
     // Create individual wall meshes
-    const createWall = (wallType: 'front' | 'back' | 'left' | 'right', isOuter: boolean) => {
+    const createWall = (wallType: 'front' | 'back' | 'left' | 'right') => {
         let wallGeometry: THREE.BoxGeometry;
         let wallPosition: [number, number, number];
         let wallRotation: [number, number, number] = [0, 0, 0];
@@ -70,38 +79,6 @@ const Room = ({ position, dimensions, externalColor, internalColor, windows, out
         return wall;
     };
 
-    // Create internal wall meshes (positioned slightly inward to avoid z-fighting)
-    const createInternalWall = (wallType: 'front' | 'back' | 'left' | 'right') => {
-        let wallGeometry: THREE.BoxGeometry;
-        let wallPosition: [number, number, number];
-        let wallRotation: [number, number, number] = [0, 0, 0];
-        const offset = wallThickness * 0.1; // Small offset to prevent z-fighting
-
-        switch (wallType) {
-            case 'front':
-                wallGeometry = new THREE.BoxGeometry(width - wallThickness * 2, height, wallThickness);
-                wallPosition = [0, 0, -length / 2 + wallThickness * 1.5 + offset];
-                break;
-            case 'back':
-                wallGeometry = new THREE.BoxGeometry(width - wallThickness * 2, height, wallThickness);
-                wallPosition = [0, 0, length / 2 - wallThickness * 1.5 - offset];
-                break;
-            case 'left':
-                wallGeometry = new THREE.BoxGeometry(wallThickness, height, length - wallThickness * 2);
-                wallPosition = [-width / 2 + wallThickness * 1.5 + offset, 0, 0];
-                break;
-            case 'right':
-                wallGeometry = new THREE.BoxGeometry(wallThickness, height, length - wallThickness * 2);
-                wallPosition = [width / 2 - wallThickness * 1.5 - offset, 0, 0];
-                break;
-        }
-
-        const wall = new THREE.Mesh(wallGeometry);
-        wall.position.set(...wallPosition);
-        wall.rotation.set(...wallRotation);
-
-        return wall;
-    };
 
     // Create interior wallpaper plane
     const createWallpaperPlane = (wallType: 'front' | 'back' | 'left' | 'right') => {
@@ -151,25 +128,25 @@ const Room = ({ position, dimensions, externalColor, internalColor, windows, out
 
     // Add external walls (single color)
     if (outerWalls.front) {
-        const wall = createWall('front', true);
+        const wall = createWall('front');
         wall.material = new THREE.MeshStandardMaterial({ color: externalColor });
         wall.position.z -= 0.01; // Offset slightly outward
         group.add(wall);
     }
     if (outerWalls.back) {
-        const wall = createWall('back', true);
+        const wall = createWall('back');
         wall.material = new THREE.MeshStandardMaterial({ color: externalColor });
         wall.position.z += 0.01; // Offset slightly outward
         group.add(wall);
     }
     if (outerWalls.left) {
-        const wall = createWall('left', true);
+        const wall = createWall('left');
         wall.material = new THREE.MeshStandardMaterial({ color: externalColor });
         wall.position.x -= 0.01; // Offset slightly outward
         group.add(wall);
     }
     if (outerWalls.right) {
-        const wall = createWall('right', true);
+        const wall = createWall('right');
         wall.material = new THREE.MeshStandardMaterial({ color: externalColor });
         wall.position.x += 0.01; // Offset slightly outward
         group.add(wall);
@@ -183,22 +160,22 @@ const Room = ({ position, dimensions, externalColor, internalColor, windows, out
 
     // Add internal walls (both sides use internal color)
     if (internalWalls.front) {
-        const wall = createWall('front', false);
+        const wall = createWall('front');
         wall.material = new THREE.MeshStandardMaterial({ color: internalColor });
         group.add(wall);
     }
     if (internalWalls.back) {
-        const wall = createWall('back', false);
+        const wall = createWall('back');
         wall.material = new THREE.MeshStandardMaterial({ color: internalColor });
         group.add(wall);
     }
     if (internalWalls.left) {
-        const wall = createWall('left', false);
+        const wall = createWall('left');
         wall.material = new THREE.MeshStandardMaterial({ color: internalColor });
         group.add(wall);
     }
     if (internalWalls.right) {
-        const wall = createWall('right', false);
+        const wall = createWall('right');
         wall.material = new THREE.MeshStandardMaterial({ color: internalColor });
         group.add(wall);
     }
@@ -451,70 +428,13 @@ const GroundPlane = ({ dimensions, color }: {
     );
 };
 
-const Ceiling = ({ dimensions, color, yOffset }: {
-    dimensions: [number, number];
-    color: string;
-    yOffset: number;
-}) => {
-    const [width, length] = dimensions;
-    const ceilingThickness = 0.1; // 10cm thick ceiling
-
-    return (
-        <mesh position={[0, yOffset + ceilingThickness / 2, 0]}>
-            <boxGeometry args={[width, ceilingThickness, length]} />
-            <meshStandardMaterial color={color} />
-        </mesh>
-    );
-};
-
-const TiledFloor = ({ dimensions, tileSize = 0.5, tileColor = '#FFFFFF', groutColor = '#CCCCCC', yOffset = 0 }: {
-    dimensions: [number, number];
-    tileSize?: number;
-    tileColor?: string;
-    groutColor?: string;
-    yOffset?: number;
-}) => {
-    const [width, length] = dimensions;
-    const groutWidth = 0.02; // 2cm grout lines
-
-    // Calculate number of tiles needed
-    const numTilesX = Math.ceil(width / (tileSize + groutWidth));
-    const numTilesZ = Math.ceil(length / (tileSize + groutWidth));
-
-    // Create a group to hold all tiles
-    const floorGroup = new THREE.Group();
-
-    // Create individual tiles
-    for (let x = 0; x < numTilesX; x++) {
-        for (let z = 0; z < numTilesZ; z++) {
-            const tileX = (x - numTilesX / 2) * (tileSize + groutWidth) + (tileSize + groutWidth) / 2;
-            const tileZ = (z - numTilesZ / 2) * (tileSize + groutWidth) + (tileSize + groutWidth) / 2;
-
-            // Check if tile is within the room boundaries
-            if (tileX >= -width / 2 && tileX <= width / 2 && tileZ >= -length / 2 && tileZ <= length / 2) {
-                const tileGeometry = new THREE.PlaneGeometry(tileSize, tileSize);
-                const tileMaterial = new THREE.MeshStandardMaterial({
-                    color: tileColor,
-                    roughness: 0.3,
-                    metalness: 0.1
-                });
-                const tile = new THREE.Mesh(tileGeometry, tileMaterial);
-                tile.rotation.x = -Math.PI / 2;
-                tile.position.set(tileX, yOffset + 0.01, tileZ);
-                floorGroup.add(tile);
-            }
-        }
-    }
-
-    return <primitive object={floorGroup} />;
-};
 
 const Door = ({ dimensions, yOffset, roomPosition }: {
     dimensions: [number, number];
     yOffset: number;
     roomPosition: [number, number, number];
 }) => {
-    const [roomWidth, roomLength] = dimensions;
+    const [roomLength] = dimensions;
     const doorWidth = 1.0;
     const doorHeight = 2.1;
     const wallThickness = 0.2;
@@ -665,7 +585,7 @@ const WASDControls = ({ moveSpeed = 0.15 }) => {
     return null; // This component doesn't render anything
 };
 
-const HouseGen = () => {
+const HouseGen: React.FC<HouseGenProps> = ({ budgetEstimate }) => {
     const [dimensions, setDimensions] = useState<HouseDimensions>({
         length: 10,
         width: 10,
@@ -687,6 +607,8 @@ const HouseGen = () => {
     const [groutColor, setGroutColor] = useState('#CCCCCC');
     const [carpetColor, setCarpetColor] = useState('#E0E0E0');
     const [ceilingColor, setCeilingColor] = useState('#F5F5F5');
+    const [savedHouseId, setSavedHouseId] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
 
     const defaultDimensions: HouseDimensions = {
         length: 10,
@@ -747,6 +669,86 @@ const HouseGen = () => {
         setGroutColor('#CCCCCC');
         setCarpetColor('#E0E0E0');
         setCeilingColor('#F5F5F5');
+    };
+
+    // Load house data from budget estimate on component mount
+    useEffect(() => {
+        let houseData = null;
+
+        // First try to load from house_data column
+        if (budgetEstimate?.house_data) {
+            houseData = budgetEstimate.house_data;
+        }
+        // Fallback to structured_data for backward compatibility
+        else if (budgetEstimate?.structured_data?.house_generator) {
+            houseData = budgetEstimate.structured_data.house_generator;
+        }
+
+        if (houseData) {
+            setDimensions(houseData.dimensions);
+            setLotDimensions(houseData.lotDimensions);
+            setStories(houseData.stories);
+            setExternalWallColor(houseData.externalWallColor);
+            setInternalWallColor(houseData.internalWallColor);
+            setGroundColor(houseData.groundColor);
+            setRoofType(houseData.roofType);
+            setRoofColor(houseData.roofColor);
+            setFloorType(houseData.floorType);
+            setTileSize(houseData.tileSize);
+            setTileColor(houseData.tileColor);
+            setGroutColor(houseData.groutColor);
+            setCarpetColor(houseData.carpetColor);
+            setCeilingColor(houseData.ceilingColor);
+            setSavedHouseId(budgetEstimate.id.toString());
+        }
+    }, [budgetEstimate]);
+
+    // Save house data to budget_estimates
+    const saveHouseData = async () => {
+        setIsLoading(true);
+        try {
+            const houseData = {
+                budget_estimate_id: budgetEstimate.id,
+                dimensions,
+                lotDimensions,
+                stories,
+                externalWallColor,
+                internalWallColor,
+                groundColor,
+                roofType,
+                roofColor,
+                floorType,
+                tileSize,
+                tileColor,
+                groutColor,
+                carpetColor,
+                ceilingColor
+            };
+
+            const response = await fetch('/api/budget-estimates', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+                body: JSON.stringify(houseData)
+            });
+            if (response.ok) {
+                const result = await response.json();
+                setSavedHouseId(result.id);
+
+                alert('House configuration saved to budget estimate successfully!');
+            } else {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to save house data');
+            }
+        } catch (error) {
+            console.error('Error saving house data:', error);
+            alert('Failed to save house configuration. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     // Calculate room layout using the utility function
@@ -1058,6 +1060,22 @@ const HouseGen = () => {
                             >
                                 Reset to Default
                             </button>
+                        </div>
+
+                        <div className="pt-2 space-y-2">
+                            <button
+                                onClick={saveHouseData}
+                                disabled={isLoading}
+                                className="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200"
+                            >
+                                {isLoading ? 'Saving...' : 'Save House Configuration'}
+                            </button>
+
+                            {savedHouseId && (
+                                <div className="text-xs text-gray-600 bg-gray-100 p-2 rounded">
+                                    Saved to Budget Estimate: {savedHouseId}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

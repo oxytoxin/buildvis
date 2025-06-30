@@ -4,22 +4,20 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use App\Models\BudgetEstimate;
+use Illuminate\Support\Facades\Auth;
 
 class HouseGeneratorController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, BudgetEstimate $budgetEstimate)
     {
-        $width = $request->query('width', 5);
-        $length = $request->query('length', 5);
+        // Ensure the budget estimate belongs to the authenticated user
+        if ($budgetEstimate->customer_id !== Auth::user()->customer->id) {
+            abort(403, 'Unauthorized access to budget estimate');
+        }
 
-        return Inertia::render('HouseGenerator', [
-            'width' => $width,
-            'length' => $length,
+        return Inertia::render('HouseGen', [
+            'budgetEstimate' => $budgetEstimate,
         ]);
-    }
-
-    public function index2(Request $request)
-    {
-        return Inertia::render('HouseGen');
     }
 }

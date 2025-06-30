@@ -386,8 +386,7 @@ class BudgetEstimate extends Page implements HasTable
                 Action::make('generateHouse')
                     ->icon('heroicon-o-home')
                     ->url(fn(BudgetEstimateModel $record) => route('house-generator.index', [
-                        'width' => $record->structured_data['width'] ?? 40,
-                        'length' => $record->structured_data['length'] ?? 40,
+                        'budgetEstimate' => $record,
                     ]))
                     ->color('success'),
                 Action::make('delete')
@@ -463,6 +462,8 @@ class BudgetEstimate extends Page implements HasTable
      */
     public function estimate(): void
     {
+        set_time_limit(180); // Set max execution time to 3 minutes
+
         $this->validate();
 
         try {
