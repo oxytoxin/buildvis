@@ -64,14 +64,14 @@ class ProductVariation extends Model implements HasMedia
     {
         parent::boot();
 
-        static::created(function ($variation) {
+        static::created(function (ProductVariation $variation) {
             $variation->product_name = $variation->product->name;
-            $variation->save();
+            $variation->saveQuietly();
         });
 
-        static::updated(function ($variation) {
+        static::updated(function (ProductVariation $variation) {
             $variation->product_name = $variation->product->name;
-            $variation->save();
+            $variation->saveQuietly();
         });
     }
 }

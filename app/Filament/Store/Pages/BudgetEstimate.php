@@ -411,10 +411,14 @@ class BudgetEstimate extends Page implements HasTable
     {
         $this->selectedEstimateId = $estimate->id;
         $this->description = $estimate->description;
-        $this->budget = $estimate->total_amount;
         $this->quotation = $estimate->structured_data;
 
         // Load dimension data from structured data
+        if (isset($estimate->structured_data['budget'])) {
+            $this->budget = $estimate->structured_data['budget'];
+        } else {
+            $this->budget = $estimate->total_amount;
+        }
         if (isset($estimate->structured_data['lot_length'])) {
             $this->lotLength = $estimate->structured_data['lot_length'];
         }
