@@ -52,10 +52,12 @@ class ProductResource extends Resource
                         ->schema([
                             SpatieMediaLibraryFileUpload::make('model')
                                 ->collection('model')
+                                ->disk('s3')
                                 ->acceptedFileTypes(['model/gltf-binary'])
                                 ->columnSpanFull(),
                             SpatieMediaLibraryFileUpload::make('images')
                                 ->collection('images')
+                                ->disk('s3')
                                 ->multiple()
                                 ->maxFiles(5)
                                 ->image()

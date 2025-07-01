@@ -55,7 +55,7 @@ class StoreController extends Controller
         }
 
         return Inertia::render('ProductView', [
-            'product' => $product->load(['variations.featured_image', 'variations.images']),
+            'product' => $product->load(['variations.featured_image', 'variations.images', 'featured_image']),
             'model' => $product->getFirstMedia('model'),
             'cartData' => $cartData,
         ]);

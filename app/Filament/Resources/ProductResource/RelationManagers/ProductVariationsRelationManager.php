@@ -9,6 +9,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 
 class ProductVariationsRelationManager extends RelationManager
 {
@@ -37,6 +38,14 @@ class ProductVariationsRelationManager extends RelationManager
                     ->required()
                     ->numeric()
                     ->default(0),
+                SpatieMediaLibraryFileUpload::make('images')
+                    ->collection('images')
+                    ->disk('s3')
+                    ->multiple()
+                    ->maxFiles(5)
+                    ->image()
+                    ->imageEditor()
+                    ->columnSpanFull(),
             ]);
     }
 

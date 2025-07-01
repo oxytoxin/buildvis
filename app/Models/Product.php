@@ -33,8 +33,7 @@ class Product extends Model implements HasMedia
     public function featured_image()
     {
         return $this->morphOne(Media::class, 'model')
-            ->where('collection_name', 'images')
-            ->oldestOfMany();
+            ->where('collection_name', 'images');
     }
 
     public function images()

@@ -14,7 +14,7 @@ type Variation = {
     stock_quantity: number;
     price: number;
     featured_image: {
-        url: string;
+        original_url: string;
     };
 }
 
@@ -26,7 +26,7 @@ type ProductProps = {
         description: string;
         unit: string;
         featured_image: {
-            url: string;
+            original_url: string;
         };
     };
     model: {
@@ -51,7 +51,7 @@ export default function ProductView() {
         }
         return product.variations[0] || null;
     };
-
+    console.log(product.featured_image);
     const [selectedVariation, setSelectedVariation] = useState(getInitialVariation);
 
     // Get cart quantity for selected variation
@@ -153,7 +153,7 @@ export default function ProductView() {
                             ) : (
                                 <div className="h-full flex items-center justify-center bg-gray-100">
                                     <img
-                                        src={selectedVariation?.featured_image?.url ?? 'https://placehold.co/600x400'}
+                                        src={selectedVariation?.featured_image?.original_url ?? product.featured_image?.original_url ?? 'https://placehold.co/600x400'}
                                         alt={selectedVariation?.name ?? product.name}
                                         className="max-h-full max-w-full object-contain"
                                     />
@@ -257,7 +257,7 @@ export default function ProductView() {
                                                 }`}
                                         >
                                             <img
-                                                src={variation.featured_image?.url ?? 'https://placehold.co/600x400'}
+                                                src={variation.featured_image?.original_url ?? 'https://placehold.co/600x400'}
                                                 alt={variation.name}
                                                 className="w-full h-20 md:h-24 object-cover rounded-lg mb-1"
                                             />
