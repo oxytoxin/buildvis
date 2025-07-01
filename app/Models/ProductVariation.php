@@ -9,7 +9,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class ProductVariation extends Model implements HasMedia
 {
@@ -18,8 +17,6 @@ class ProductVariation extends Model implements HasMedia
 
     protected $guarded = [];
 
-    protected $with = ['product'];
-
     protected $casts = [
         'price' => 'decimal:2',
         'stock_quantity' => 'integer',
@@ -27,8 +24,6 @@ class ProductVariation extends Model implements HasMedia
         'minimum_order_quantity' => 'integer',
         'is_active' => 'boolean',
     ];
-
-    protected $appends = ['product_slug'];
 
 
     public function registerMediaCollections(): void
@@ -63,13 +58,6 @@ class ProductVariation extends Model implements HasMedia
     {
         return $this->belongsToMany(WorkCategory::class)
             ->withTimestamps();
-    }
-
-    public function productSlug(): Attribute
-    {
-        return Attribute::make(
-            get: fn($value) => $this->product->name . '-' . $this->name,
-        );
     }
 
     public static function boot()

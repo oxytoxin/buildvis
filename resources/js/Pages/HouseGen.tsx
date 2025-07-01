@@ -1,6 +1,6 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
-import { Suspense, useState, useMemo, useEffect, useRef } from 'react';
+import React, { Suspense, useState, useMemo, useEffect, useRef } from 'react';
 import { calculateRoomLayout, type Room, type HouseDimensions, type Story } from '../utils/roomLayout';
 import * as THREE from 'three';
 
