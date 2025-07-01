@@ -680,9 +680,15 @@ const HouseGen: React.FC<HouseGenProps> = ({ budgetEstimate }) => {
             houseData = budgetEstimate.house_data;
         }
         // Fallback to structured_data for backward compatibility
-        else if (budgetEstimate?.structured_data?.house_generator) {
-            houseData = budgetEstimate.structured_data.house_generator;
+        else {
+            let stories = [];
+            const data = budgetEstimate.structured_data;
+            for (let index = 0; index < budgetEstimate.structured_data.number_of_stories; index++) {
+                stories.push({ numRooms: data.number_of_rooms, height: 3 });
+            }
+            setStories(stories);
         }
+
 
         if (houseData) {
             setDimensions(houseData.dimensions);
