@@ -13,7 +13,6 @@ return new class extends Migration
             $table->foreignId('product_id')->constrained()->onDelete('cascade');
             $table->string('product_name')->nullable()->default(null);
             $table->string('name'); // e.g., "1/2 inch", "Red", "Steel"
-            $table->string('product_slug')->storedAs('CONCAT(COALESCE(product_name, ""), "-", name)');
             $table->decimal('price', 12, 2);
             $table->string('sku')->nullable()->unique(); // Stock Keeping Unit
             $table->integer('stock_quantity')->default(0);
