@@ -17,6 +17,7 @@ use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 use GuzzleHttp\Client;
+use IbrahimBougaoua\FilamentRatingStar\Forms\Components\RatingStar;
 use Illuminate\Support\Facades\Auth;
 use OpenAI;
 
@@ -417,12 +418,17 @@ class BudgetEstimate extends Page implements HasTable
                     Action::make('rate')
                         ->icon('heroicon-o-user-group')
                         ->form(fn (BudgetEstimateModel $record) => [
+                            RatingStar::make('rating')->label(false),
                         ])
-                        ->action(function (BudgetEstimateModel $record): void {
-                            $record->project_manager_id = null;
-                            $record->save();
+                        ->action(function (BudgetEstimateModel $record, array $data): void {
+                            $project_manager = $record->project_manager;
+                            $project_manager->ratings()->create([
+                                'role' => 'project manager',
+                                'value' => $data['rating'],
+                                'customer_id' => $record->customer_id,
+                            ]);
                             Notification::make()
-                                ->title('Project manager unassigned')
+                                ->title('Project manager rated')
                                 ->success()
                                 ->send();
                         })
