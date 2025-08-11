@@ -18,6 +18,11 @@ class BudgetEstimate extends Model
         'total_amount' => 'decimal:2',
     ];
 
+    public function project_manager(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'project_manager_id', 'id');
+    }
+
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
@@ -42,7 +47,7 @@ class BudgetEstimate extends Model
     public function updateTotalAmount(): void
     {
         $this->updateQuietly([
-            'total_amount' => $this->items()->sum('subtotal')
+            'total_amount' => $this->items()->sum('subtotal'),
         ]);
     }
 }

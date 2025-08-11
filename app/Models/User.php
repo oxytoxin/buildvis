@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Spatie\Permission\Traits\HasRoles;
 
 /**
  * @mixin IdeHelperUser
@@ -17,7 +18,7 @@ use Illuminate\Notifications\Notifiable;
 class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, HasRoles, Notifiable;
 
     /**
      * The attributes that should be hidden for serialization.
@@ -42,6 +43,8 @@ class User extends Authenticatable implements FilamentUser
         ];
     }
 
+    protected $appends = ['name'];
+
     public function canAccessPanel(Panel $panel): bool
     {
         return true;
@@ -49,11 +52,12 @@ class User extends Authenticatable implements FilamentUser
 
     protected static function booted(): void
     {
-        static::deleted(function (User $user) {
+        static::deleting(function (User $user) {
             $user->customer?->delete();
         });
 
         static::created(function (User $user) {
+            $user->assignRole('customer');
             $user->customer()->create([]);
         });
     }
@@ -66,7 +70,7 @@ class User extends Authenticatable implements FilamentUser
     public function name(): Attribute
     {
         return new Attribute(
-            get: fn() => implode(' ', array_filter([$this->first_name, $this->middle_name, $this->last_name])),
+            get: fn () => implode(' ', array_filter([$this->first_name, $this->middle_name, $this->last_name])),
         );
     }
 }

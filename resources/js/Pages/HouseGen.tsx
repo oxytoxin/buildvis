@@ -80,7 +80,7 @@ const Room = ({ position, dimensions, externalColor, internalColor, windows, out
     };
 
 
-    // Create interior wallpaper plane
+    // Create an interior wallpaper plane
     const createWallpaperPlane = (wallType: 'front' | 'back' | 'left' | 'right') => {
         let planeWidth: number, planeHeight: number;
         let planePosition: [number, number, number];
@@ -199,10 +199,10 @@ const Room = ({ position, dimensions, externalColor, internalColor, windows, out
             adjustedPosition[0] = width / 2 - wallThickness / 2;
         }
 
-        // Create window group
+        // Create a window group
         const windowGroup = new THREE.Group();
 
-        // Create left pane
+        // Create the left pane
         const leftPaneGeometry = new THREE.BoxGeometry(windowWidth / 2 - 0.025, windowHeight, paneThickness);
         const windowMaterial = new THREE.MeshStandardMaterial({
             color: '#87CEEB',
@@ -214,13 +214,13 @@ const Room = ({ position, dimensions, externalColor, internalColor, windows, out
         leftPane.position.set(-windowWidth / 4, 0, -gap / 2);
         windowGroup.add(leftPane);
 
-        // Create right pane
+        // Create the right pane
         const rightPaneGeometry = new THREE.BoxGeometry(windowWidth / 2 - 0.025, windowHeight, paneThickness);
         const rightPane = new THREE.Mesh(rightPaneGeometry, windowMaterial);
         rightPane.position.set(windowWidth / 4, 0, -gap / 2);
         windowGroup.add(rightPane);
 
-        // Create black divider (positioned slightly in front to prevent z-fighting)
+        // Create a black divider (positioned slightly in front to prevent z-fighting)
         const dividerWidth = 0.05;
         const dividerGeometry = new THREE.BoxGeometry(dividerWidth, windowHeight, paneThickness);
         const dividerMaterial = new THREE.MeshStandardMaterial({ color: '#000000' });
@@ -324,7 +324,7 @@ const Room = ({ position, dimensions, externalColor, internalColor, windows, out
             const numTilesX = Math.max(1, Math.floor(width / (maxTileSize + groutWidth)));
             const numTilesZ = Math.max(1, Math.floor(length / (maxTileSize + groutWidth)));
 
-            // Calculate actual tile size to fit perfectly
+            // Calculate the actual tile size to fit perfectly
             const actualTileSizeX = (width - (numTilesX - 1) * groutWidth) / numTilesX;
             const actualTileSizeZ = (length - (numTilesZ - 1) * groutWidth) / numTilesZ;
             const actualTileSize = Math.min(actualTileSizeX, actualTileSizeZ);
@@ -438,7 +438,7 @@ const Door = ({ dimensions, yOffset, roomPosition }: {
     const doorWidth = 1.0;
     const doorHeight = 2.1;
     const wallThickness = 0.2;
-    const doorThickness = wallThickness * 1.5; // Make door thick enough to extend through wall
+    const doorThickness = wallThickness * 1.5; // Make the door thick enough to extend through the wall
 
     return (
         <mesh position={[roomPosition[0], yOffset + doorHeight / 2, roomPosition[2] - roomLength / 2 + wallThickness / 2]}>
@@ -454,7 +454,7 @@ const FlatRoof = ({ dimensions, color, yOffset }: {
     yOffset: number;
 }) => {
     const [width, length] = dimensions;
-    const roofThickness = 0.3; // 30cm roof thickness
+    const roofThickness = 0.3; // 30 cm roof thickness
 
     return (
         <mesh position={[0, yOffset + roofThickness / 2 + 0.01, 0]}>
@@ -472,7 +472,7 @@ const PointedRoof = ({ dimensions, color, yOffset }: {
     const [width, length] = dimensions;
     const roofHeight = 2; // 2m roof height
 
-    // Create a triangular prism with rectangular base
+    // Create a triangular prism with a rectangular base
     const geometry = new THREE.BufferGeometry();
 
     // Define vertices for triangular prism with rectangular base

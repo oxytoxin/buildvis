@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+
+// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
 class DatabaseSeeder extends Seeder
 {
@@ -13,16 +13,9 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        User::create([
-            'first_name' => 'Mark John Lerry',
-            'middle_name' => 'Acosta',
-            'last_name' => 'Casero',
-            'email' => 'markjohnlerrycasero@gmail.com',
-            'gender' => 'male',
-            'phone_number' => '09123456789',
-            'password' => 'password'
-        ]);
+
         $this->call([
+            UserAccountsSeeder::class,
             RegionSeeder::class,
             ProvinceSeeder::class,
             CityMunicipalitySeeder::class,

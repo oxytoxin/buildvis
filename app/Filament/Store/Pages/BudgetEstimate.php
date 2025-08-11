@@ -2,36 +2,27 @@
 
 namespace App\Filament\Store\Pages;
 
-use App\Models\Product;
-use App\Models\WorkCategory;
-use Filament\Pages\Page;
-use GuzzleHttp\Client;
-use GuzzleHttp\Psr7\Request;
-use Http;
-use League\CommonMark\Environment\Environment;
-use League\CommonMark\Extension\CommonMark\CommonMarkCoreExtension;
-use League\CommonMark\Extension\GithubFlavoredMarkdownExtension;
-use League\CommonMark\MarkdownConverter;
-use OpenAI;
-use Spatie\LaravelMarkdown\MarkdownRenderer;
-use Filament\Notifications\Notification;
-use Illuminate\Validation\ValidationException;
 use App\Models\BudgetEstimate as BudgetEstimateModel;
 use App\Models\BudgetEstimateItem;
-use Illuminate\Support\Facades\Auth;
+use App\Models\Product;
+use App\Models\User;
+use App\Models\WorkCategory;
+use Filament\Forms\Components\Select;
+use Filament\Notifications\Notification;
+use Filament\Pages\Page;
+use Filament\Tables\Actions\Action;
+use Filament\Tables\Actions\ActionGroup;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Actions\Action;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Filament\Actions\Action as PageAction;
+use GuzzleHttp\Client;
+use Illuminate\Support\Facades\Auth;
+use OpenAI;
 
 /**
  * BudgetEstimate Page
- * 
+ *
  * This page handles the budget estimation functionality for construction projects
  * using AI to generate practical floor areas and cost estimates based on user input.
  */
@@ -40,43 +31,33 @@ class BudgetEstimate extends Page implements HasTable
     use InteractsWithTable;
 
     protected static ?string $navigationIcon = 'heroicon-o-banknotes';
+
     protected static string $view = 'filament.store.pages.budget-estimate';
+
     protected static ?int $navigationSort = 3;
 
-    /** @var array */
     public array $quotation = [];
 
-    /** @var int */
     public int $budget = 2_000_000;
 
-    /** @var string */
     public string $description = 'two-story residential building';
 
-    /** @var array */
     public array $messages = [];
 
-    /** @var array */
     public array $savedEstimates = [];
 
-    /** @var ?int */
     public ?int $selectedEstimateId = null;
 
-    /** @var int */
     public int $lotLength = 20;
 
-    /** @var int */
     public int $lotWidth = 20;
 
-    /** @var int */
     public int $floorLength = 15;
 
-    /** @var int */
     public int $floorWidth = 15;
 
-    /** @var int */
     public int $numberOfRooms = 3;
 
-    /** @var int */
     public int $numberOfStories = 1;
 
     /**
@@ -90,6 +71,7 @@ class BudgetEstimate extends Page implements HasTable
                 ->body('Please enter a project description first.')
                 ->warning()
                 ->send();
+
             return;
         }
 
@@ -101,7 +83,7 @@ class BudgetEstimate extends Page implements HasTable
                 'messages' => [
                     [
                         'role' => 'user',
-                        'content' => "Extract building specifications from this project description: {$this->description}"
+                        'content' => "Extract building specifications from this project description: {$this->description}",
                     ],
                 ],
                 'response_format' => [
@@ -114,43 +96,43 @@ class BudgetEstimate extends Page implements HasTable
                             'properties' => [
                                 'lot_length' => [
                                     'type' => ['integer', 'null'],
-                                    'description' => 'Lot length in meters. Return the value if mentioned in the description, otherwise return null.'
+                                    'description' => 'Lot length in meters. Return the value if mentioned in the description, otherwise return null.',
                                 ],
                                 'lot_width' => [
                                     'type' => ['integer', 'null'],
-                                    'description' => 'Lot width in meters. Return the value if mentioned in the description, otherwise return null.'
+                                    'description' => 'Lot width in meters. Return the value if mentioned in the description, otherwise return null.',
                                 ],
                                 'floor_length' => [
                                     'type' => ['integer', 'null'],
-                                    'description' => 'Floor length in meters. Return the value if mentioned in the description, otherwise return null.'
+                                    'description' => 'Floor length in meters. Return the value if mentioned in the description, otherwise return null.',
                                 ],
                                 'floor_width' => [
                                     'type' => ['integer', 'null'],
-                                    'description' => 'Floor width in meters. Return the value if mentioned in the description, otherwise return null.'
+                                    'description' => 'Floor width in meters. Return the value if mentioned in the description, otherwise return null.',
                                 ],
                                 'number_of_rooms' => [
                                     'type' => ['integer', 'null'],
-                                    'description' => 'Number of rooms/bedrooms. Return the value if mentioned in the description, otherwise return null.'
+                                    'description' => 'Number of rooms/bedrooms. Return the value if mentioned in the description, otherwise return null.',
                                 ],
                                 'number_of_stories' => [
                                     'type' => ['integer', 'null'],
-                                    'description' => 'Number of stories/floors. Return the value if mentioned in the description, otherwise return null.'
+                                    'description' => 'Number of stories/floors. Return the value if mentioned in the description, otherwise return null.',
                                 ],
                                 'budget' => [
                                     'type' => ['integer', 'null'],
-                                    'description' => 'Budget in pesos. Return the value if mentioned in the description, otherwise return null.'
+                                    'description' => 'Budget in pesos. Return the value if mentioned in the description, otherwise return null.',
                                 ],
                             ],
                             'required' => ['lot_length', 'lot_width', 'floor_length', 'floor_width', 'number_of_rooms', 'number_of_stories', 'budget'],
-                            'additionalProperties' => false
-                        ]
-                    ]
-                ]
+                            'additionalProperties' => false,
+                        ],
+                    ],
+                ],
             ]);
 
             $specifications = json_decode($response->choices[0]->message->content, true);
 
-            if (!$specifications) {
+            if (! $specifications) {
                 throw new \Exception('Failed to parse AI response');
             }
 
@@ -197,7 +179,7 @@ class BudgetEstimate extends Page implements HasTable
             if ($specifications['budget'] !== null) {
                 $this->budget = $specifications['budget'];
                 $updated = true;
-                $foundItems[] = "Budget: ₱" . number_format($specifications['budget']);
+                $foundItems[] = 'Budget: ₱'.number_format($specifications['budget']);
             }
 
             if ($updated) {
@@ -217,7 +199,7 @@ class BudgetEstimate extends Page implements HasTable
         } catch (\Exception $e) {
             Notification::make()
                 ->title('Error')
-                ->body('Failed to parse description: ' . $e->getMessage())
+                ->body('Failed to parse description: '.$e->getMessage())
                 ->danger()
                 ->send();
         }
@@ -298,12 +280,12 @@ class BudgetEstimate extends Page implements HasTable
                     'labor_cost_rate' => $wc->labor_cost_rate,
                     'products' => $wc->product_variations->map(function ($pv) {
                         return [
-                            'name' => $pv->product_name . ' - ' . $pv->name,
+                            'name' => $pv->product_name.' - '.$pv->name,
                             'price' => $pv->price,
                             'unit' => $pv->product->unit,
-                            'sku' => $pv->sku
+                            'sku' => $pv->sku,
                         ];
-                    })->toArray()
+                    })->toArray(),
                 ];
             })
             ->filter(function ($wc) {
@@ -315,11 +297,11 @@ class BudgetEstimate extends Page implements HasTable
         $this->messages = [
             [
                 'type' => 'text',
-                'text' => $this->getInitialPrompt()
+                'text' => $this->getInitialPrompt(),
             ],
             [
                 'type' => 'text',
-                'text' => $this->getWorkCategoriesPrompt($items)
+                'text' => $this->getWorkCategoriesPrompt($items),
             ],
         ];
     }
@@ -332,7 +314,7 @@ class BudgetEstimate extends Page implements HasTable
         $totalFloorArea = $this->floorLength * $this->floorWidth * $this->numberOfStories;
         $budgetPerSqm = $this->budget / $totalFloorArea;
 
-        return "Budget: ₱{$this->budget} | Floor: {$totalFloorArea} sq.m | Budget/sq.m: ₱" . number_format($budgetPerSqm, 2) . " | Rooms: {$this->numberOfRooms} | Stories: {$this->numberOfStories}. Select products from available list and calculate realistic quantities based on floor area. Stay within budget.";
+        return "Budget: ₱{$this->budget} | Floor: {$totalFloorArea} sq.m | Budget/sq.m: ₱".number_format($budgetPerSqm, 2)." | Rooms: {$this->numberOfRooms} | Stories: {$this->numberOfStories}. Select products from available list and calculate realistic quantities based on floor area. Stay within budget.";
     }
 
     /**
@@ -366,7 +348,7 @@ class BudgetEstimate extends Page implements HasTable
                     ->sortable(),
                 TextColumn::make('status')
                     ->badge()
-                    ->color(fn(string $state): string => match ($state) {
+                    ->color(fn (string $state): string => match ($state) {
                         'draft' => 'gray',
                         'submitted' => 'warning',
                         'approved' => 'success',
@@ -383,23 +365,70 @@ class BudgetEstimate extends Page implements HasTable
                     ->action(function (BudgetEstimateModel $record): void {
                         $this->loadEstimate($record);
                     }),
-                Action::make('generateHouse')
-                    ->icon('heroicon-o-home')
-                    ->url(fn(BudgetEstimateModel $record) => route('house-generator.index', [
-                        'budgetEstimate' => $record,
-                    ]))
-                    ->color('success'),
-                Action::make('delete')
-                    ->icon('heroicon-o-trash')
-                    ->color('danger')
-                    ->requiresConfirmation()
-                    ->action(function (BudgetEstimateModel $record): void {
-                        $record->delete();
-                        Notification::make()
-                            ->title('Estimate deleted')
-                            ->success()
-                            ->send();
-                    }),
+                ActionGroup::make([
+                    Action::make('generateHouse')
+                        ->icon('heroicon-o-home')
+                        ->url(fn (BudgetEstimateModel $record) => route('house-generator.index', [
+                            'budgetEstimate' => $record,
+                        ]))
+                        ->color('success'),
+                    Action::make('delete')
+                        ->icon('heroicon-o-trash')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->action(function (BudgetEstimateModel $record): void {
+                            $record->delete();
+                            Notification::make()
+                                ->title('Estimate deleted')
+                                ->success()
+                                ->send();
+                        }),
+                    Action::make('assign')
+                        ->label(fn (BudgetEstimateModel $record) => $record->project_manager_id ? 'Reassign' : 'Assign')
+                        ->icon('heroicon-o-user-group')
+                        ->form(fn (BudgetEstimateModel $record) => [
+                            Select::make('project_manager_id')
+                                ->label('Project manager')
+                                ->options(
+                                    User::whereRelation('roles', 'name', 'project manager')
+                                        ->selectRaw('*, concat(first_name, " ", last_name) as fullname')
+                                        ->pluck('fullname', 'id')
+                                ),
+                        ])
+                        ->action(function (BudgetEstimateModel $record, array $data): void {
+                            $record->project_manager_id = $data['project_manager_id'];
+                            $record->save();
+                            Notification::make()
+                                ->title('Project manager assigned')
+                                ->success()
+                                ->send();
+                        }),
+                    Action::make('unassign')
+                        ->icon('heroicon-o-user-group')
+                        ->action(function (BudgetEstimateModel $record): void {
+                            $record->project_manager_id = null;
+                            $record->save();
+                            Notification::make()
+                                ->title('Project manager unassigned')
+                                ->success()
+                                ->send();
+                        })
+                        ->visible(fn (BudgetEstimateModel $record) => $record->project_manager_id),
+                    Action::make('rate')
+                        ->icon('heroicon-o-user-group')
+                        ->form(fn (BudgetEstimateModel $record) => [
+                        ])
+                        ->action(function (BudgetEstimateModel $record): void {
+                            $record->project_manager_id = null;
+                            $record->save();
+                            Notification::make()
+                                ->title('Project manager unassigned')
+                                ->success()
+                                ->send();
+                        })
+                        ->visible(fn (BudgetEstimateModel $record) => $record->project_manager_id),
+                ]),
+
             ])
             ->defaultSort('created_at', 'desc');
     }
@@ -469,52 +498,38 @@ class BudgetEstimate extends Page implements HasTable
         set_time_limit(180); // Set max execution time to 3 minutes
 
         $this->validate();
+        $client = $this->createOpenAIClient();
+        $this->resetMessages();
 
-        try {
-            DB::beginTransaction();
-
-            $client = $this->createOpenAIClient();
-            $this->resetMessages();
-
-            $response = $client->chat()->create([
-                'model' => 'o4-mini',
-                'messages' => [
-                    [
-                        'role' => 'user',
-                        'content' => $this->messages
-                    ],
+        $response = $client->chat()->create([
+            'model' => 'o4-mini',
+            'messages' => [
+                [
+                    'role' => 'user',
+                    'content' => $this->messages,
                 ],
-                'response_format' => $this->getResponseFormat(),
-            ]);
+            ],
+            'response_format' => $this->getResponseFormat(),
+        ]);
 
-            $quotation = json_decode($response->choices[0]->message->content, true);
+        $quotation = json_decode($response->choices[0]->message->content, true);
 
-            if (!$quotation) {
-                throw new \Exception('Failed to parse AI response');
-            }
-
-            // Save the generated estimate
-            $this->saveEstimate($quotation);
-
-            // Update the quotation property with the generated data
-            $this->quotation = $quotation;
-
-            DB::commit();
-
-            Notification::make()
-                ->title('Success')
-                ->body('Estimate generated and saved successfully.')
-                ->success()
-                ->send();
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            Notification::make()
-                ->title('Error')
-                ->body('Failed to generate estimate: ' . $e->getMessage())
-                ->danger()
-                ->send();
+        if (! $quotation) {
+            throw new \Exception('Failed to parse AI response');
         }
+
+        // Save the generated estimate
+        $this->saveEstimate($quotation);
+
+        // Update the quotation property with the generated data
+        $this->quotation = $quotation;
+
+        Notification::make()
+            ->title('Success')
+            ->body('Estimate generated and saved successfully.')
+            ->success()
+            ->send();
+
     }
 
     /**
@@ -550,10 +565,9 @@ class BudgetEstimate extends Page implements HasTable
         foreach ($quotation['itemized_costs'] as $category) {
             $workCategory = $workCategories->get($category['name']);
 
-            if (!$workCategory) {
+            if (! $workCategory) {
                 continue;
             }
-
             // Add product items
             foreach ($category['products'] as $product) {
                 $itemsToInsert[] = [
@@ -588,7 +602,7 @@ class BudgetEstimate extends Page implements HasTable
         }
 
         // Bulk insert all items at once
-        if (!empty($itemsToInsert)) {
+        if (! empty($itemsToInsert)) {
             BudgetEstimateItem::insert($itemsToInsert);
         }
 
@@ -650,16 +664,16 @@ class BudgetEstimate extends Page implements HasTable
                                                 'unit' => ['type' => 'string'],
                                                 'quantity' => ['type' => 'number'],
                                                 'unit_price' => ['type' => 'number'],
-                                                'total_price' => ['type' => 'number']
+                                                'total_price' => ['type' => 'number'],
                                             ],
                                             'required' => ['product_name', 'sku', 'unit', 'quantity', 'unit_price', 'total_price'],
-                                            'additionalProperties' => false
-                                        ]
-                                    ]
+                                            'additionalProperties' => false,
+                                        ],
+                                    ],
                                 ],
                                 'required' => ['name', 'category_total', 'labor_cost', 'products'],
-                                'additionalProperties' => false
-                            ]
+                                'additionalProperties' => false,
+                            ],
                         ],
                         'budget' => ['type' => 'number'],
                         'total_cost' => ['type' => 'number'],
@@ -667,9 +681,9 @@ class BudgetEstimate extends Page implements HasTable
                         'labor_cost_total' => ['type' => 'number'],
                     ],
                     'required' => ['length', 'width', 'total_area', 'lot_length', 'lot_width', 'floor_length', 'floor_width', 'number_of_rooms', 'number_of_stories', 'itemized_costs', 'budget', 'total_cost', 'materials_cost', 'labor_cost_total'],
-                    'additionalProperties' => false
-                ]
-            ]
+                    'additionalProperties' => false,
+                ],
+            ],
         ];
     }
 }

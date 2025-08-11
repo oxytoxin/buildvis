@@ -49,25 +49,25 @@ class CartController extends Controller
             ]
         );
 
-        // Check if item already exists in cart
+        // Check if an item already exists in the cart
         $existingItem = $order->items()
             ->where('product_variation_id', $variation->id)
             ->first();
 
         if ($existingItem) {
-            // Check if new total quantity exceeds stock
+            // Check if the new total quantity exceeds stock
             $newQuantity = $existingItem->quantity + $request->quantity;
             if ($variation->stock_quantity < $newQuantity) {
                 throw ValidationException::withMessages([
                     'variation_id' => 'Adding this quantity would exceed available stock'
                 ]);
             }
-            // Update quantity if item exists
+            // Update quantity if the item exists
             $existingItem->update([
                 'quantity' => $newQuantity,
             ]);
         } else {
-            // Create new order item
+            // Create a new order item
             OrderItem::create([
                 'order_id' => $order->id,
                 'product_variation_id' => $variation->id,

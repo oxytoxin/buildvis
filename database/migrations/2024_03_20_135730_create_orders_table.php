@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->foreignId('customer_id')->constrained('users')->onDelete('restrict');
+            $table->foreignId('customer_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('status')->default('pending'); // pending, processing, shipped, delivered, cancelled
             $table->decimal('total_amount', 12, 2)->default(0);
             $table->text('shipping_address')->nullable();

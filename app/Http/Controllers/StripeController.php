@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use App\Models\OrderItem;
 use DB;
+use Filament\Notifications\Notification;
 use Illuminate\Http\Request;
 use Stripe\Checkout\Session;
 use Stripe\Stripe;
@@ -13,26 +14,36 @@ class StripeController extends Controller
 {
     public function checkout(Request $request, Order $order)
     {
-        Stripe::setApiKey(config('stripe.sk'));
-        $session = Session::create([
-            'line_items' => [
-                [
-                    'price_data' => [
-                        'currency' => 'php',
-                        'product_data' => [
-                            'name' => 'BuildVis Products',
-                        ],
-                        'unit_amount' => $order->total_amount * 100,
-                    ],
-                    'quantity' => 1,
-                ]
-            ],
-            'mode' => 'payment',
-            'success_url' => route('stripe.success', ['order' => $request->order]),
-            'cancel_url' => route('stripe.cancel', ['order' => $request->order]),
-        ]);
+        if($order->items()->count() < 1) {
+            Notification::make()->title('Your order is empty.')->warning()->send();
 
-        return redirect($session->url);
+            return redirect(route('filament.store.pages.cart-index'));
+        }
+        Stripe::setApiKey(config('stripe.sk'));
+        try {
+            $session = Session::create([
+                'line_items' => [
+                    [
+                        'price_data' => [
+                            'currency' => 'php',
+                            'product_data' => [
+                                'name' => 'BuildVis Products',
+                            ],
+                            'unit_amount' => $order->total_amount * 100,
+                        ],
+                        'quantity' => 1,
+                    ]
+                ],
+                'mode' => 'payment',
+                'success_url' => route('stripe.success', ['order' => $request->order]),
+                'cancel_url' => route('stripe.cancel', ['order' => $request->order]),
+            ]);
+
+            return redirect($session->url);
+        } catch (\Exception $e) {
+            Notification::make()->title('Something went wrong with STRIPE.')->danger()->send();
+            return redirect(route('filament.store.pages.cart-index'));
+        }
     }
 
     public function success(Request $request, Order $order)
