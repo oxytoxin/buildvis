@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->foreignId('customer_id')->nullable()->constrained('users')->nullOnDelete();
-            $table->string('status')->default('pending'); // pending, processing, shipped, delivered, cancelled
+            $table->string('status')->default('cart'); // cart, pending, processing, shipped, delivered, cancelled
             $table->decimal('total_amount', 12, 2)->default(0);
             $table->text('shipping_address')->nullable();
             $table->text('billing_address')->nullable();

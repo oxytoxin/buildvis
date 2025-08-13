@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
-import { StorePageProps } from '../../types/store';
-import { Head, Link } from '@inertiajs/react';
+import {useState} from 'react';
+import {StorePageProps} from '../../types/store';
+import {Head} from '@inertiajs/react';
 import ProductCard from '../../Components/Store/ProductCard';
 import Layout from '../../Components/Layouts/Layout';
-import store from '../../routes/store';
 
-export default function Index({ products, cartData }: StorePageProps) {
+export default function Index({products, cartData}: StorePageProps) {
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedVariations, setSelectedVariations] = useState<Record<number, number>>({});
@@ -40,7 +39,7 @@ export default function Index({ products, cartData }: StorePageProps) {
 
     return (
         <Layout>
-            <Head title="Store" />
+            <Head title="Store"/>
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                 {/* Header */}
@@ -101,4 +100,4 @@ export default function Index({ products, cartData }: StorePageProps) {
             </div>
         </Layout>
     );
-} 
+}

@@ -1,15 +1,16 @@
 <?php
 
-namespace App\Filament\Store\Pages;
+namespace App\Filament\Store\Resources\ProjectResource\Pages;
 
-use App\Models\BudgetEstimate as BudgetEstimateModel;
+use App\Filament\Store\Resources\ProjectResource;
+use App\Models\BudgetEstimate;
 use App\Models\BudgetEstimateItem;
 use App\Models\Product;
+use App\Models\Project;
 use App\Models\User;
 use App\Models\WorkCategory;
-use Filament\Forms\Components\Select;
 use Filament\Notifications\Notification;
-use Filament\Pages\Page;
+use Filament\Resources\Pages\Page;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Columns\TextColumn;
@@ -17,8 +18,7 @@ use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 use GuzzleHttp\Client;
-use IbrahimBougaoua\FilamentRatingStar\Forms\Components\RatingStar;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Contracts\Support\Htmlable;
 use OpenAI;
 
 /**
@@ -27,13 +27,22 @@ use OpenAI;
  * This page handles the budget estimation functionality for construction projects
  * using AI to generate practical floor areas and cost estimates based on user input.
  */
-class BudgetEstimate extends Page implements HasTable
+class ShowProject extends Page implements HasTable
 {
     use InteractsWithTable;
 
-    protected static ?string $navigationIcon = 'heroicon-o-banknotes';
+    protected static string $resource = ProjectResource::class;
 
-    protected static string $view = 'filament.store.pages.budget-estimate';
+    protected static ?string $navigationIcon = 'heroicon-o-document';
+
+    protected static string $view = 'filament.store.resources.project-resource.pages.show-project';
+
+    public Project $project;
+
+    public function getTitle(): string|Htmlable
+    {
+        return $this->project->name;
+    }
 
     protected static ?int $navigationSort = 3;
 
@@ -76,132 +85,124 @@ class BudgetEstimate extends Page implements HasTable
             return;
         }
 
-        try {
-            $client = $this->createOpenAIClient();
+        $client = $this->createOpenAIClient();
 
-            $response = $client->chat()->create([
-                'model' => 'o4-mini',
-                'messages' => [
-                    [
-                        'role' => 'user',
-                        'content' => "Extract building specifications from this project description: {$this->description}",
-                    ],
+        $response = $client->chat()->create([
+            'model' => 'o3-mini',
+            'messages' => [
+                [
+                    'role' => 'user',
+                    'content' => "Extract building specifications from this project description: {$this->description}",
                 ],
-                'response_format' => [
-                    'type' => 'json_schema',
-                    'json_schema' => [
-                        'name' => 'specifications_extraction',
-                        'strict' => true,
-                        'schema' => [
-                            'type' => 'object',
-                            'properties' => [
-                                'lot_length' => [
-                                    'type' => ['integer', 'null'],
-                                    'description' => 'Lot length in meters. Return the value if mentioned in the description, otherwise return null.',
-                                ],
-                                'lot_width' => [
-                                    'type' => ['integer', 'null'],
-                                    'description' => 'Lot width in meters. Return the value if mentioned in the description, otherwise return null.',
-                                ],
-                                'floor_length' => [
-                                    'type' => ['integer', 'null'],
-                                    'description' => 'Floor length in meters. Return the value if mentioned in the description, otherwise return null.',
-                                ],
-                                'floor_width' => [
-                                    'type' => ['integer', 'null'],
-                                    'description' => 'Floor width in meters. Return the value if mentioned in the description, otherwise return null.',
-                                ],
-                                'number_of_rooms' => [
-                                    'type' => ['integer', 'null'],
-                                    'description' => 'Number of rooms/bedrooms. Return the value if mentioned in the description, otherwise return null.',
-                                ],
-                                'number_of_stories' => [
-                                    'type' => ['integer', 'null'],
-                                    'description' => 'Number of stories/floors. Return the value if mentioned in the description, otherwise return null.',
-                                ],
-                                'budget' => [
-                                    'type' => ['integer', 'null'],
-                                    'description' => 'Budget in pesos. Return the value if mentioned in the description, otherwise return null.',
-                                ],
+            ],
+            'response_format' => [
+                'type' => 'json_schema',
+                'json_schema' => [
+                    'name' => 'specifications_extraction',
+                    'strict' => true,
+                    'schema' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'lot_length' => [
+                                'type' => ['integer', 'null'],
+                                'description' => 'Lot length in meters. Return the value if mentioned in the description, otherwise return null.',
                             ],
-                            'required' => ['lot_length', 'lot_width', 'floor_length', 'floor_width', 'number_of_rooms', 'number_of_stories', 'budget'],
-                            'additionalProperties' => false,
+                            'lot_width' => [
+                                'type' => ['integer', 'null'],
+                                'description' => 'Lot width in meters. Return the value if mentioned in the description, otherwise return null.',
+                            ],
+                            'floor_length' => [
+                                'type' => ['integer', 'null'],
+                                'description' => 'Floor length in meters. Return the value if mentioned in the description, otherwise return null.',
+                            ],
+                            'floor_width' => [
+                                'type' => ['integer', 'null'],
+                                'description' => 'Floor width in meters. Return the value if mentioned in the description, otherwise return null.',
+                            ],
+                            'number_of_rooms' => [
+                                'type' => ['integer', 'null'],
+                                'description' => 'Number of rooms/bedrooms. Return the value if mentioned in the description, otherwise return null.',
+                            ],
+                            'number_of_stories' => [
+                                'type' => ['integer', 'null'],
+                                'description' => 'Number of stories/floors. Return the value if mentioned in the description, otherwise return null.',
+                            ],
+                            'budget' => [
+                                'type' => ['integer', 'null'],
+                                'description' => 'Budget in pesos. Return the value if mentioned in the description, otherwise return null.',
+                            ],
                         ],
+                        'required' => ['lot_length', 'lot_width', 'floor_length', 'floor_width', 'number_of_rooms', 'number_of_stories', 'budget'],
+                        'additionalProperties' => false,
                     ],
                 ],
-            ]);
+            ],
+        ]);
 
-            $specifications = json_decode($response->choices[0]->message->content, true);
+        $specifications = json_decode($response->choices[-1]->message->content, true);
 
-            if (! $specifications) {
-                throw new \Exception('Failed to parse AI response');
-            }
+        if (! $specifications) {
+            throw new \Exception('Failed to parse AI response');
+        }
 
-            $updated = false;
-            $foundItems = [];
+        $updated = false;
+        $foundItems = [];
 
-            // Update form fields with extracted specifications (only if found)
-            if ($specifications['lot_length'] !== null) {
-                $this->lotLength = $specifications['lot_length'];
-                $updated = true;
-                $foundItems[] = "Lot length: {$specifications['lot_length']}m";
-            }
+        // Update form fields with extracted specifications (only if found)
+        if ($specifications['lot_length'] !== null) {
+            $this->lotLength = $specifications['lot_length'];
+            $updated = true;
+            $foundItems[] = "Lot length: {$specifications['lot_length']}m";
+        }
 
-            if ($specifications['lot_width'] !== null) {
-                $this->lotWidth = $specifications['lot_width'];
-                $updated = true;
-                $foundItems[] = "Lot width: {$specifications['lot_width']}m";
-            }
+        if ($specifications['lot_width'] !== null) {
+            $this->lotWidth = $specifications['lot_width'];
+            $updated = true;
+            $foundItems[] = "Lot width: {$specifications['lot_width']}m";
+        }
 
-            if ($specifications['floor_length'] !== null) {
-                $this->floorLength = $specifications['floor_length'];
-                $updated = true;
-                $foundItems[] = "Floor length: {$specifications['floor_length']}m";
-            }
+        if ($specifications['floor_length'] !== null) {
+            $this->floorLength = $specifications['floor_length'];
+            $updated = true;
+            $foundItems[] = "Floor length: {$specifications['floor_length']}m";
+        }
 
-            if ($specifications['floor_width'] !== null) {
-                $this->floorWidth = $specifications['floor_width'];
-                $updated = true;
-                $foundItems[] = "Floor width: {$specifications['floor_width']}m";
-            }
+        if ($specifications['floor_width'] !== null) {
+            $this->floorWidth = $specifications['floor_width'];
+            $updated = true;
+            $foundItems[] = "Floor width: {$specifications['floor_width']}m";
+        }
 
-            if ($specifications['number_of_rooms'] !== null) {
-                $this->numberOfRooms = $specifications['number_of_rooms'];
-                $updated = true;
-                $foundItems[] = "Rooms: {$specifications['number_of_rooms']}";
-            }
+        if ($specifications['number_of_rooms'] !== null) {
+            $this->numberOfRooms = $specifications['number_of_rooms'];
+            $updated = true;
+            $foundItems[] = "Rooms: {$specifications['number_of_rooms']}";
+        }
 
-            if ($specifications['number_of_stories'] !== null) {
-                $this->numberOfStories = $specifications['number_of_stories'];
-                $updated = true;
-                $foundItems[] = "Stories: {$specifications['number_of_stories']}";
-            }
+        if ($specifications['number_of_stories'] !== null) {
+            $this->numberOfStories = $specifications['number_of_stories'];
+            $updated = true;
+            $foundItems[] = "Stories: {$specifications['number_of_stories']}";
+        }
 
-            if ($specifications['budget'] !== null) {
-                $this->budget = $specifications['budget'];
-                $updated = true;
-                $foundItems[] = 'Budget: ₱'.number_format($specifications['budget']);
-            }
+        if ($specifications['budget'] !== null) {
+            $this->budget = $specifications['budget'];
+            $updated = true;
+            $foundItems[] = 'Budget: ₱'.number_format($specifications['budget']);
+        }
 
-            if ($updated) {
-                $foundText = implode(', ', $foundItems);
-                Notification::make()
-                    ->title('Form updated')
-                    ->body("Specifications extracted: {$foundText}")
-                    ->success()
-                    ->send();
-            } else {
-                Notification::make()
-                    ->title('No specifications found')
-                    ->body('No building specifications were found in your description. Please enter them manually.')
-                    ->info()
-                    ->send();
-            }
-        } catch (\Exception $e) {
+        if ($updated) {
+            $foundText = implode(', ', $foundItems);
             Notification::make()
-                ->title('Error')
-                ->body('Failed to parse description: '.$e->getMessage())
-                ->danger()
+                ->title('Form updated')
+                ->body("Specifications extracted: {$foundText}")
+                ->success()
+                ->send();
+        } else {
+            Notification::make()
+                ->title('No specifications found')
+                ->body('No building specifications were found in your description. Please enter them manually.')
+                ->info()
                 ->send();
         }
     }
@@ -333,8 +334,8 @@ class BudgetEstimate extends Page implements HasTable
     {
         return $table
             ->query(
-                BudgetEstimateModel::query()
-                    ->where('customer_id', Auth::user()->customer->id)
+                BudgetEstimate::query()
+                    ->where('project_id', $this->project->id)
                     ->latest()
             )
             ->columns([
@@ -363,13 +364,13 @@ class BudgetEstimate extends Page implements HasTable
             ->actions([
                 Action::make('load')
                     ->icon('heroicon-o-arrow-down-tray')
-                    ->action(function (BudgetEstimateModel $record): void {
+                    ->action(function (BudgetEstimate $record): void {
                         $this->loadEstimate($record);
                     }),
                 ActionGroup::make([
                     Action::make('generateHouse')
                         ->icon('heroicon-o-home')
-                        ->url(fn (BudgetEstimateModel $record) => route('house-generator.index', [
+                        ->url(fn (BudgetEstimate $record) => route('house-generator.index', [
                             'budgetEstimate' => $record,
                         ]))
                         ->color('success'),
@@ -377,62 +378,14 @@ class BudgetEstimate extends Page implements HasTable
                         ->icon('heroicon-o-trash')
                         ->color('danger')
                         ->requiresConfirmation()
-                        ->action(function (BudgetEstimateModel $record): void {
+                        ->action(function (BudgetEstimate $record): void {
                             $record->delete();
                             Notification::make()
                                 ->title('Estimate deleted')
                                 ->success()
                                 ->send();
                         }),
-                    Action::make('assign')
-                        ->label(fn (BudgetEstimateModel $record) => $record->project_manager_id ? 'Reassign' : 'Assign')
-                        ->icon('heroicon-o-user-group')
-                        ->form(fn (BudgetEstimateModel $record) => [
-                            Select::make('project_manager_id')
-                                ->label('Project manager')
-                                ->options(
-                                    User::whereRelation('roles', 'name', 'project manager')
-                                        ->selectRaw('*, concat(first_name, " ", last_name) as fullname')
-                                        ->pluck('fullname', 'id')
-                                ),
-                        ])
-                        ->action(function (BudgetEstimateModel $record, array $data): void {
-                            $record->project_manager_id = $data['project_manager_id'];
-                            $record->save();
-                            Notification::make()
-                                ->title('Project manager assigned')
-                                ->success()
-                                ->send();
-                        }),
-                    Action::make('unassign')
-                        ->icon('heroicon-o-user-group')
-                        ->action(function (BudgetEstimateModel $record): void {
-                            $record->project_manager_id = null;
-                            $record->save();
-                            Notification::make()
-                                ->title('Project manager unassigned')
-                                ->success()
-                                ->send();
-                        })
-                        ->visible(fn (BudgetEstimateModel $record) => $record->project_manager_id),
-                    Action::make('rate')
-                        ->icon('heroicon-o-user-group')
-                        ->form(fn (BudgetEstimateModel $record) => [
-                            RatingStar::make('rating')->label(false),
-                        ])
-                        ->action(function (BudgetEstimateModel $record, array $data): void {
-                            $project_manager = $record->project_manager;
-                            $project_manager->ratings()->create([
-                                'role' => 'project manager',
-                                'value' => $data['rating'],
-                                'customer_id' => $record->customer_id,
-                            ]);
-                            Notification::make()
-                                ->title('Project manager rated')
-                                ->success()
-                                ->send();
-                        })
-                        ->visible(fn (BudgetEstimateModel $record) => $record->project_manager_id),
+
                 ]),
 
             ])
@@ -442,7 +395,7 @@ class BudgetEstimate extends Page implements HasTable
     /**
      * Load an estimate into the form
      */
-    public function loadEstimate(BudgetEstimateModel $estimate): void
+    public function loadEstimate(BudgetEstimate $estimate): void
     {
         $this->selectedEstimateId = $estimate->id;
         $this->description = $estimate->description;
@@ -551,8 +504,8 @@ class BudgetEstimate extends Page implements HasTable
         $quotation['number_of_rooms'] = $this->numberOfRooms;
         $quotation['number_of_stories'] = $this->numberOfStories;
 
-        $estimate = BudgetEstimateModel::create([
-            'customer_id' => Auth::user()->customer->id,
+        $estimate = BudgetEstimate::create([
+            'project_id' => $this->project->id,
             'name' => "Estimate for {$this->description}",
             'description' => $this->description,
             'structured_data' => $quotation,

@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('budget_estimates', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('customer_id')->constrained()->onDelete('cascade');
+            $table->foreignId('project_id')->constrained()->onDelete('cascade');
             $table->string('name');
             $table->text('description')->nullable();
             $table->json('structured_data'); // Stores the generated structured output

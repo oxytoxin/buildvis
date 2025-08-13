@@ -14,7 +14,7 @@ class StripeController extends Controller
 {
     public function checkout(Request $request, Order $order)
     {
-        if($order->items()->count() < 1) {
+        if ($order->items()->count() < 1) {
             Notification::make()->title('Your order is empty.')->warning()->send();
 
             return redirect(route('filament.store.pages.cart-index'));
@@ -32,7 +32,7 @@ class StripeController extends Controller
                             'unit_amount' => $order->total_amount * 100,
                         ],
                         'quantity' => 1,
-                    ]
+                    ],
                 ],
                 'mode' => 'payment',
                 'success_url' => route('stripe.success', ['order' => $request->order]),
@@ -42,6 +42,7 @@ class StripeController extends Controller
             return redirect($session->url);
         } catch (\Exception $e) {
             Notification::make()->title('Something went wrong with STRIPE.')->danger()->send();
+
             return redirect(route('filament.store.pages.cart-index'));
         }
     }
@@ -51,7 +52,7 @@ class StripeController extends Controller
         DB::beginTransaction();
 
         $order->update([
-            'status' => 'processing',
+            'status' => 'pending',
         ]);
         $order->items()->with('product_variation')->each(function (OrderItem $orderItem) {
             $orderItem->product_variation->update([
@@ -71,6 +72,7 @@ class StripeController extends Controller
             'order_id' => $request->order_id,
         ]);
     }
+
     public function cancel(Request $request)
     {
         return view('stripe-cancel', [

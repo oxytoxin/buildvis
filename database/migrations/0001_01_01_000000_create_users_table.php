@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('first_name');
             $table->string('middle_name')->nullable();
             $table->string('last_name');
+            $table->string('name')->storedAs("CONCAT(first_name, IF(middle_name IS NULL, '', CONCAT(' ', middle_name)), ' ', last_name)");
             $table->enum('gender', ['male', 'female', 'other'])->nullable();
             $table->string('phone_number')->nullable();
             $table->string('email')->unique();

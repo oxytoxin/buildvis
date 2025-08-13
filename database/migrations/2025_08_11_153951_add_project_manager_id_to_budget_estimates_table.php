@@ -8,8 +8,6 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('budget_estimates', function (Blueprint $table) {
-            $table->foreignId('project_manager_id')->nullable()->after('customer_id')->constrained('users')->nullOnDelete();
-        });
+        Schema::table('budget_estimates', function (Blueprint $table) {});
     }
 };

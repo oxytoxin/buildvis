@@ -4,18 +4,18 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\OrderResource\Pages;
 use App\Models\Order;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
 use Filament\Resources\Resource;
 use Filament\Tables;
-use Filament\Tables\Table;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\Filter;
-use Illuminate\Database\Eloquent\Builder;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\DatePicker;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Actions\BulkAction;
 use Filament\Tables\Actions\BulkActionGroup;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
 class OrderResource extends Resource
@@ -24,17 +24,16 @@ class OrderResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-shopping-cart';
 
-
     protected static ?int $navigationSort = 1;
 
     protected static ?string $modelLabel = 'Order';
 
     protected static ?string $pluralModelLabel = 'Orders';
 
-
     public static function table(Table $table): Table
     {
         return $table
+            ->query(Order::query()->whereNot('status', 'cart'))
             ->columns([
                 TextColumn::make('id')
                     ->label('Order ID')
@@ -65,7 +64,7 @@ class OrderResource extends Resource
                         'success' => 'delivered',
                         'danger' => 'cancelled',
                     ])
-                    ->formatStateUsing(fn(string $state): string => ucfirst($state)),
+                    ->formatStateUsing(fn (string $state): string => ucfirst($state)),
                 TextColumn::make('payment_status')
                     ->badge()
                     ->colors([
@@ -74,7 +73,7 @@ class OrderResource extends Resource
                         'danger' => 'failed',
                         'secondary' => 'refunded',
                     ])
-                    ->formatStateUsing(fn(string $state): string => ucfirst($state)),
+                    ->formatStateUsing(fn (string $state): string => ucfirst($state)),
                 TextColumn::make('payment_method')
                     ->label('Payment Method')
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -121,11 +120,11 @@ class OrderResource extends Resource
                         return $query
                             ->when(
                                 $data['created_from'],
-                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
+                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
                             )
                             ->when(
                                 $data['created_until'],
-                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
+                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
                             );
                     })
                     ->label('Order Date Range'),

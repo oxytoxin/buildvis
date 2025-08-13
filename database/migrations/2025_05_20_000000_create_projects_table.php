@@ -8,19 +8,17 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('ratings', function (Blueprint $table) {
+        Schema::create('projects', function (Blueprint $table) {
             $table->id();
+            $table->string('name');
             $table->foreignId('user_id')->constrained('users');
-            $table->foreignId('project_id')->nullable()->constrained('projects');
-            $table->foreignId('customer_id')->constrained('customers');
-            $table->string('role');
-            $table->decimal('value');
+            $table->foreignId('project_manager_id')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('ratings');
+        Schema::dropIfExists('projects');
     }
 };

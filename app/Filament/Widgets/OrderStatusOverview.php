@@ -15,23 +15,23 @@ class OrderStatusOverview extends BaseWidget
     {
         $userId = Auth::id();
 
-        $totalOrders = Order::whereHas('customer', function ($query) use ($userId) {
+        $totalOrders = Order::query()->notInCart()->whereHas('customer', function ($query) use ($userId) {
             $query->where('user_id', $userId);
         })->count();
 
-        $pendingOrders = Order::whereHas('customer', function ($query) use ($userId) {
+        $pendingOrders = Order::query()->notInCart()->whereHas('customer', function ($query) use ($userId) {
             $query->where('user_id', $userId);
         })->where('status', 'pending')->count();
 
-        $processingOrders = Order::whereHas('customer', function ($query) use ($userId) {
+        $processingOrders = Order::query()->notInCart()->whereHas('customer', function ($query) use ($userId) {
             $query->where('user_id', $userId);
         })->where('status', 'processing')->count();
 
-        $shippedOrders = Order::whereHas('customer', function ($query) use ($userId) {
+        $shippedOrders = Order::query()->notInCart()->whereHas('customer', function ($query) use ($userId) {
             $query->where('user_id', $userId);
         })->where('status', 'shipped')->count();
 
-        $deliveredOrders = Order::whereHas('customer', function ($query) use ($userId) {
+        $deliveredOrders = Order::query()->notInCart()->whereHas('customer', function ($query) use ($userId) {
             $query->where('user_id', $userId);
         })->where('status', 'delivered')->count();
 

@@ -44,7 +44,7 @@ class User extends Authenticatable implements FilamentUser
         ];
     }
 
-    protected $appends = ['name'];
+    //    protected $appends = ['name'];
 
     public function canAccessPanel(Panel $panel): bool
     {
@@ -73,10 +73,10 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasMany(Rating::class, 'user_id');
     }
 
-    public function name(): Attribute
-    {
-        return new Attribute(
-            get: fn () => implode(' ', array_filter([$this->first_name, $this->middle_name, $this->last_name])),
-        );
-    }
+    //    public function name(): Attribute
+    //    {
+    //        return new Attribute(
+    //            get: fn () => implode(' ', array_filter([$this->first_name, $this->middle_name, $this->last_name])),
+    //        );
+    //    }
 }
