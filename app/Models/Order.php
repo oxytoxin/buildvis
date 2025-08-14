@@ -31,7 +31,7 @@ class Order extends Model
         return $this->hasMany(OrderItem::class);
     }
 
-    public static function booted()
+    public static function booted(): void
     {
         static::creating(function ($order) {
             $order->name ??= 'Default';
