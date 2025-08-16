@@ -1,7 +1,15 @@
 <x-filament-panels::page>
-
+    @php
+        $tasks_count = $project->tasks()->count();
+        $completed_tasks_count = $project->completed_tasks()->count();
+    @endphp
     <x-filament::card>
-        <p>Project Manager: {{ $project->project_manager?->name ?? 'Unassigned' }}</p>
+        <div class="flex gap-4 flex-col sm:flex-row">
+            <p class="flex-1">Project Manager: {{ $project->project_manager?->name ?? 'Unassigned' }}</p>
+            <div class="flex-1">
+                @include('extras.project-tasks.project-progress-details')
+            </div>
+        </div>
     </x-filament::card>
     <div>
         <h3 class="mt-4 mb-2 font-semibold text-lg">Budget Estimates</h3>

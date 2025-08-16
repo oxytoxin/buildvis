@@ -4,6 +4,7 @@ namespace App\Filament\ProjectManager\Resources\ProjectResource\Pages;
 
 use App\Enums\ProjectTaskStatuses;
 use App\Filament\ProjectManager\Resources\ProjectResource;
+use App\Models\Project;
 use Filament\Forms;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Form;
@@ -18,6 +19,8 @@ class ProjectTasks extends ManageRelatedRecords
     protected static string $relationship = 'tasks';
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+
+    public Project $project;
 
     public static function getNavigationLabel(): string
     {
@@ -38,8 +41,19 @@ class ProjectTasks extends ManageRelatedRecords
 
     public function table(Table $table): Table
     {
+        $project = $this->getRecord();
+
         return $table
             ->recordTitleAttribute('name')
+            ->header(function () use ($project) {
+                $completed_tasks_count = $project->completed_tasks()->count();
+                $total_tasks_count = $project->tasks()->count();
+
+                return view('extras.project-tasks.project-progress-header', [
+                    'completed_tasks_count' => $completed_tasks_count,
+                    'tasks_count' => $total_tasks_count,
+                ]);
+            })
             ->columns([
                 Tables\Columns\TextColumn::make('name'),
                 Tables\Columns\TextColumn::make('status'),
