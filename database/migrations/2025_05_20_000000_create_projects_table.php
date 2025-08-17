@@ -13,6 +13,7 @@ return new class extends Migration
             $table->string('name');
             $table->foreignId('user_id')->constrained('users');
             $table->foreignId('project_manager_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->integer('rating')->nullable();
             $table->timestamps();
         });
     }
