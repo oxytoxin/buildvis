@@ -23,9 +23,9 @@ class BudgetEstimate extends Model
         return $this->belongsTo(User::class, 'project_manager_id', 'id');
     }
 
-    public function customer(): BelongsTo
+    public function project(): BelongsTo
     {
-        return $this->belongsTo(Customer::class);
+        return $this->belongsTo(Project::class);
     }
 
     public function items(): HasMany

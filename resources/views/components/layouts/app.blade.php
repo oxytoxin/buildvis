@@ -7,13 +7,17 @@
 
     <title>{{ $title ?? config('app.name') }}</title>
     <link rel="preconnect" href="https://fonts.gstatic.com">
-    <link href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300..900;1,300..900&display=swap"
+          rel="stylesheet">
     <link rel="icon" type="image/png" sizes="32x32" href="shuffle-for-tailwind.png">
     @vite(['resources/css/app.css', 'resources/js/app.jsx'])
 </head>
 
 <body class="antialiased bg-body text-body font-body">
-    {{ $slot }}
+{{ $slot }}
+
+@livewire('notifications')
+@filamentScripts
 </body>
 
 </html>

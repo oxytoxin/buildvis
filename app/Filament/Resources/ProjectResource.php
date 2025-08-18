@@ -33,8 +33,8 @@ class ProjectResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('name'),
                 Tables\Columns\TextColumn::make('customer.name'),
-                Tables\Columns\TextColumn::make('project_manager.name'),
-                Tables\Columns\TextColumn::make('rating')->suffix(' ⭐'),
+                Tables\Columns\TextColumn::make('project_manager.name')->default('Unassigned'),
+                Tables\Columns\TextColumn::make('rating')->default('Unrated')->suffix(' ⭐'),
                 Tables\Columns\TextColumn::make('created_at')->date('M d, Y'),
             ])
             ->filters([

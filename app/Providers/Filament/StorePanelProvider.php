@@ -2,26 +2,22 @@
 
 namespace App\Providers\Filament;
 
+use App\Http\Middleware\CheckIfHasValidShippingInfoMiddleware;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Navigation\NavigationItem;
-use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
-use Filament\Support\Assets\Js;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\MaxWidth;
-use Filament\Support\Facades\FilamentAsset;
-use Filament\View\PanelsRenderHook;
 use Filament\Widgets;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
-use Illuminate\Support\Facades\Blade;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class StorePanelProvider extends PanelProvider
@@ -38,7 +34,7 @@ class StorePanelProvider extends PanelProvider
             ->font('Figtree')
             ->navigationItems([
                 NavigationItem::make('Store')
-                    ->url(fn() => route('store.index'))
+                    ->url(fn () => route('store.index'))
                     ->icon('heroicon-o-building-storefront'),
             ])
             ->discoverResources(in: app_path('Filament/Store/Resources'), for: 'App\\Filament\\Store\\Resources')
@@ -59,6 +55,7 @@ class StorePanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
+                CheckIfHasValidShippingInfoMiddleware::class,
             ])
             ->topNavigation()
             ->maxContentWidth(MaxWidth::Full)

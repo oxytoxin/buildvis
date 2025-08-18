@@ -53,6 +53,7 @@ class AdminPanelProvider extends PanelProvider
             ->authMiddleware([
                 CheckIfAdminMiddleware::class,
                 Authenticate::class,
-            ]);
+            ])
+            ->darkMode(false);
     }
 }

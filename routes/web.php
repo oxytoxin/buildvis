@@ -1,19 +1,17 @@
 <?php
 
-use App\Livewire\Login;
-use Livewire\Volt\Volt;
-use App\Livewire\Profile;
-use App\Livewire\Welcome;
-use App\Livewire\Register;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\VerifyEmailController;
-use App\Http\Controllers\StripeController;
-use App\Models\Product;
-use Inertia\Inertia;
-use App\Http\Controllers\StoreController;
+use App\Http\Controllers\BudgetEstimateController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\HouseGeneratorController;
-use App\Http\Controllers\BudgetEstimateController;
+use App\Http\Controllers\StoreController;
+use App\Http\Controllers\StripeController;
+use App\Http\Middleware\CheckIfHasValidShippingInfoMiddleware;
+use App\Livewire\Login;
+use App\Livewire\Register;
+use App\Livewire\Welcome;
+use Illuminate\Support\Facades\Route;
+use Livewire\Volt\Volt;
 
 Route::get('/', Welcome::class)->name('welcome');
 
@@ -53,9 +51,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/api/budget-estimates', [BudgetEstimateController::class, 'store']);
     Route::get('/api/budget-estimates/{id}', [BudgetEstimateController::class, 'show']);
 
-    Route::get('/stripe-checkout/{order}', [StripeController::class, 'checkout'])->name('stripe.checkout');
-    Route::get('/stripe-cancel/{order}', [StripeController::class, 'cancel'])->name('stripe.cancel');
-    Route::get('/stripe-success/{order}', [StripeController::class, 'success'])->name('stripe.success');
+    Route::group(['middleware' => ['auth', CheckIfHasValidShippingInfoMiddleware::class]], function () {
+        Route::get('/stripe-checkout/{order}', [StripeController::class, 'checkout'])->name('stripe.checkout');
+        Route::get('/stripe-cancel/{order}', [StripeController::class, 'cancel'])->name('stripe.cancel');
+        Route::get('/stripe-success/{order}', [StripeController::class, 'success'])->name('stripe.success');
+
+    });
 
     // Cart routes
     Route::post('/cart/add', [CartController::class, 'add'])

@@ -1,4 +1,5 @@
 <div class="font-semibold">
+    <p class="text-xl">Project Manager: {{ $project->project_manager?->name ?? 'Unassigned' }}</p>
     <h4 class="text-lg">Project Progress</h4>
     <div class="flex gap-2">
         <h5>Tasks Done:</h5>

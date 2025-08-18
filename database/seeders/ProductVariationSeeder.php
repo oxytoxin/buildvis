@@ -14,8 +14,8 @@ class ProductVariationSeeder extends Seeder
     public function run(): void
     {
         $supplier = Supplier::first();
-        $categories = Category::all()->mapWithKeys(fn($m) => [$m->name => $m->id])->toArray();
-        $workCategories = WorkCategory::all()->mapWithKeys(fn($m) => [$m->name => $m->id])->toArray();
+        $categories = Category::all()->mapWithKeys(fn ($m) => [$m->name => $m->id])->toArray();
+        $workCategories = WorkCategory::all()->mapWithKeys(fn ($m) => [$m->name => $m->id])->toArray();
 
         // Define all products with their variations and work categories
         $products = [
@@ -29,7 +29,7 @@ class ProductVariationSeeder extends Seeder
                     '1/2 inch' => 75,
                     '3/4 inch' => 90,
                     '1 inch' => 120,
-                ]
+                ],
             ],
             [
                 'name' => 'Pannel Box',
@@ -42,7 +42,7 @@ class ProductVariationSeeder extends Seeder
                     '8 holes' => 650,
                     '10 holes' => 1100,
                     '16 holes' => 1900,
-                ]
+                ],
             ],
             [
                 'name' => 'Thhn',
@@ -55,7 +55,7 @@ class ProductVariationSeeder extends Seeder
                     '10' => 5250,
                     '12' => 3750,
                     '14' => 2550,
-                ]
+                ],
             ],
             [
                 'name' => 'Cicuit Breaker',
@@ -69,7 +69,7 @@ class ProductVariationSeeder extends Seeder
                     '40Amps' => 380,
                     '60Amps' => 380,
                     '100Amps' => 500,
-                ]
+                ],
             ],
             // Plumbing Products
             [
@@ -81,7 +81,7 @@ class ProductVariationSeeder extends Seeder
                     '2' => 250,
                     '3' => 520,
                     '4' => 580,
-                ]
+                ],
             ],
             [
                 'name' => 'Blue Pipe',
@@ -92,7 +92,7 @@ class ProductVariationSeeder extends Seeder
                     '1/2 inch' => 90,
                     '3/4 inch' => 130,
                     '1 inch' => 150,
-                ]
+                ],
             ],
             [
                 'name' => 'Elbow',
@@ -106,7 +106,7 @@ class ProductVariationSeeder extends Seeder
                     '3x90' => 75,
                     '4x45' => 80,
                     '4x90' => 85,
-                ]
+                ],
             ],
             [
                 'name' => 'Tee',
@@ -120,7 +120,7 @@ class ProductVariationSeeder extends Seeder
                     '4x2' => 110,
                     '4x3' => 110,
                     '4x4' => 120,
-                ]
+                ],
             ],
             [
                 'name' => 'Wye',
@@ -134,7 +134,7 @@ class ProductVariationSeeder extends Seeder
                     '4x2' => 110,
                     '4x3' => 120,
                     '4x4' => 130,
-                ]
+                ],
             ],
             // Steel Products
             [
@@ -147,7 +147,7 @@ class ProductVariationSeeder extends Seeder
                     '10 mm' => 130,
                     '12 mm' => 175,
                     '16 mm' => 318,
-                ]
+                ],
             ],
             [
                 'name' => 'Tubular',
@@ -161,7 +161,7 @@ class ProductVariationSeeder extends Seeder
                     '2x1x2.0' => 530,
                     '2x2x1.5' => 420,
                     '2x2x2.0' => 550,
-                ]
+                ],
             ],
             [
                 'name' => 'C purlins',
@@ -173,7 +173,7 @@ class ProductVariationSeeder extends Seeder
                     '2x3x1.5' => 400,
                     '2x4x1.5' => 500,
                     '2x6x1.5' => 550,
-                ]
+                ],
             ],
             [
                 'name' => 'A/Bar',
@@ -184,7 +184,7 @@ class ProductVariationSeeder extends Seeder
                     '1/4 x 1' => 440,
                     '1/4 x1 1/2' => 650,
                     '1/4 x 2' => 850,
-                ]
+                ],
             ],
             [
                 'name' => 'Channel Bar',
@@ -194,7 +194,7 @@ class ProductVariationSeeder extends Seeder
                 'variations' => [
                     '2x3' => 1200,
                     '2x4' => 1350,
-                ]
+                ],
             ],
             // Painting Products
             [
@@ -207,7 +207,7 @@ class ProductVariationSeeder extends Seeder
                     '2' => 45,
                     '3' => 65,
                     '4' => 85,
-                ]
+                ],
             ],
             [
                 'name' => 'Roller Cotton',
@@ -217,7 +217,7 @@ class ProductVariationSeeder extends Seeder
                 'variations' => [
                     '4' => 65,
                     '7' => 90,
-                ]
+                ],
             ],
             [
                 'name' => 'Acrytex',
@@ -228,7 +228,7 @@ class ProductVariationSeeder extends Seeder
                     'Primer Pail' => 2350,
                     'Primer Galon' => 639,
                     'Red Galon' => 580,
-                ]
+                ],
             ],
             // Other Products
             [
@@ -241,7 +241,7 @@ class ProductVariationSeeder extends Seeder
                     '30x60' => 176,
                     '40x40' => 85,
                     '60x60' => 365,
-                ]
+                ],
             ],
             [
                 'name' => 'Marine',
@@ -252,7 +252,7 @@ class ProductVariationSeeder extends Seeder
                     '1/4' => 350,
                     '1/2' => 550,
                     '3/4' => 900,
-                ]
+                ],
             ],
             [
                 'name' => 'Pinolic',
@@ -262,7 +262,7 @@ class ProductVariationSeeder extends Seeder
                 'variations' => [
                     '1/2' => 500,
                     '3/4' => 780,
-                ]
+                ],
             ],
             // Additional Products (previously hardcoded)
             [
@@ -297,7 +297,6 @@ class ProductVariationSeeder extends Seeder
             ],
         ];
 
-
         foreach ($products as $productData) {
             // Create the product
             $product = Product::createQuietly([
@@ -315,8 +314,8 @@ class ProductVariationSeeder extends Seeder
                     'name' => $name,
                     'price' => $price,
                     'product_name' => $product->name,
-                    'sku' => strtoupper(substr($product->name, 0, 3)) . '-' . str_replace(['/', ' ', 'x'], '', $name),
-                    'stock_quantity' => 10,
+                    'sku' => strtoupper(substr($product->name, 0, 3)).'-'.str_replace(['/', ' ', 'x'], '', $name),
+                    'stock_quantity' => 100,
                     'minimum_stock_quantity' => 10,
                     'minimum_order_quantity' => 1,
                     'is_active' => true,

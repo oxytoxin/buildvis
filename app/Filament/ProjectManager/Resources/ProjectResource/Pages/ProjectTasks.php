@@ -4,8 +4,8 @@ namespace App\Filament\ProjectManager\Resources\ProjectResource\Pages;
 
 use App\Enums\ProjectTaskStatuses;
 use App\Filament\ProjectManager\Resources\ProjectResource;
-use App\Models\Project;
 use Filament\Forms;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Form;
 use Filament\Resources\Pages\ManageRelatedRecords;
@@ -19,8 +19,6 @@ class ProjectTasks extends ManageRelatedRecords
     protected static string $relationship = 'tasks';
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
-
-    public Project $project;
 
     public static function getNavigationLabel(): string
     {
@@ -36,6 +34,8 @@ class ProjectTasks extends ManageRelatedRecords
                     ->maxLength(255),
                 Select::make('status')->options(ProjectTaskStatuses::class)->default(ProjectTaskStatuses::PENDING)->required(),
                 Forms\Components\Textarea::make('description')->columnSpanFull(),
+                DatePicker::make('start_date')->required()->default(today()),
+                DatePicker::make('end_date')->required()->default(today()->addDays(7)),
             ]);
     }
 
@@ -45,6 +45,7 @@ class ProjectTasks extends ManageRelatedRecords
 
         return $table
             ->recordTitleAttribute('name')
+            ->modifyQueryUsing(fn ($query) => $query->orderBy('sort'))
             ->header(function () use ($project) {
                 $completed_tasks_count = $project->completed_tasks()->count();
                 $total_tasks_count = $project->tasks()->count();
@@ -57,6 +58,8 @@ class ProjectTasks extends ManageRelatedRecords
             ->columns([
                 Tables\Columns\TextColumn::make('name'),
                 Tables\Columns\TextColumn::make('status'),
+                Tables\Columns\TextColumn::make('start_date')->date(),
+                Tables\Columns\TextColumn::make('end_date')->date(),
             ])
             ->filters([
                 //
@@ -64,6 +67,7 @@ class ProjectTasks extends ManageRelatedRecords
             ->headerActions([
                 Tables\Actions\CreateAction::make(),
             ])
+            ->reorderable('sort')
             ->actions([
                 Tables\Actions\Action::make('complete')
                     ->visible(fn ($record) => $record->status === ProjectTaskStatuses::PENDING)

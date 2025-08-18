@@ -8,6 +8,7 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class ProjectResource extends Resource
 {
@@ -21,10 +22,14 @@ class ProjectResource extends Resource
             ->schema([]);
     }
 
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->where('project_manager_id', auth()->user()->id);
+    }
+
     public static function table(Table $table): Table
     {
         return $table
-            ->query(Project::query()->where('project_manager_id', auth()->user()->id))
             ->columns([
                 Tables\Columns\TextColumn::make('name'),
                 Tables\Columns\TextColumn::make('customer.name'),

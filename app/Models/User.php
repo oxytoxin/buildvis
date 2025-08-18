@@ -44,6 +44,11 @@ class User extends Authenticatable implements FilamentUser
         ];
     }
 
+    public function hasShippingInfo(): bool
+    {
+        return $this->customer->shipping_information()->exists();
+    }
+
     //    protected $appends = ['name'];
 
     public function canAccessPanel(Panel $panel): bool

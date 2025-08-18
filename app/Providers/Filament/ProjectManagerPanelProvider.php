@@ -53,6 +53,7 @@ class ProjectManagerPanelProvider extends PanelProvider
             ->authMiddleware([
                 CheckIfProjectManagerMiddleware::class,
                 Authenticate::class,
-            ]);
+            ])
+            ->darkMode(false);
     }
 }

@@ -1,13 +1,38 @@
 <x-filament-panels::page>
     @php
-        $tasks_count = $project->tasks()->count();
+        $project_tasks = $project->tasks()->orderBy('sort')->get();
+        $gantt_tasks = $project_tasks->map(function(\App\Models\Task $task){
+            return [
+                'id' => $task->id,
+                'name' => $task->name,
+                'start' => $task->start_date->format('Y-m-d'),
+                'end' => $task->end_date->format('Y-m-d'),
+                'progress' => $task->status === \App\Enums\ProjectTaskStatuses::COMPLETED ? 100 : 50,
+            ];
+        });
+        $tasks_count = $project_tasks->count();
         $completed_tasks_count = $project->completed_tasks()->count();
     @endphp
     <x-filament::card>
         <div class="flex gap-4 flex-col sm:flex-row">
-            <p class="flex-1">Project Manager: {{ $project->project_manager?->name ?? 'Unassigned' }}</p>
             <div class="flex-1">
                 @include('extras.project-tasks.project-progress-details')
+            </div>
+            <div class="flex-1">
+                @include('extras.project-tasks.project-tasks-list')
+            </div>
+        </div>
+        <div>
+            <h3 class="mb-4">Gantt Chart</h3>
+            @push('scripts')
+                <script src="https://cdn.jsdelivr.net/npm/frappe-gantt/dist/frappe-gantt.umd.js"></script>
+                <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/frappe-gantt/dist/frappe-gantt.css">
+            @endpush
+            <div class="" wire:ignore.self x-data x-init="
+                console.log({{ json_encode($project_tasks) }});
+                new Gantt('#gantt', {{ json_encode($gantt_tasks) }}, { readonly: true, view_mode: 'Week',infinite_padding: false, view_mode_select: true})
+            ">
+                <div class="px-4 border w-full" id="gantt"></div>
             </div>
         </div>
     </x-filament::card>
@@ -30,7 +55,7 @@
                             class="w-full rounded-lg border-gray-300 pl-7 focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
                             id="budget"
                             type="number"
-                            wire:model.live.debounce.500ms="budget"
+                            wire:model="budget"
                             min="100000"
                             step="10000"
                             required
@@ -50,7 +75,7 @@
                             class="mt-1 w-full rounded-lg border-gray-300 focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
                             id="lotLength"
                             type="number"
-                            wire:model.live.debounce.500ms="lotLength"
+                            wire:model.blur="lotLength"
                             min="5"
                             max="100"
                             required
@@ -66,7 +91,7 @@
                             class="mt-1 w-full rounded-lg border-gray-300 focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
                             id="lotWidth"
                             type="number"
-                            wire:model.live.debounce.500ms="lotWidth"
+                            wire:model.blur="lotWidth"
                             min="5"
                             max="100"
                             required
@@ -86,7 +111,7 @@
                             class="mt-1 w-full rounded-lg border-gray-300 focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
                             id="floorLength"
                             type="number"
-                            wire:model.live.debounce.500ms="floorLength"
+                            wire:model.blur="floorLength"
                             min="3"
                             max="50"
                             required
@@ -102,7 +127,7 @@
                             class="mt-1 w-full rounded-lg border-gray-300 focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
                             id="floorWidth"
                             type="number"
-                            wire:model.live.debounce.500ms="floorWidth"
+                            wire:model.blur="floorWidth"
                             min="3"
                             max="50"
                             required
@@ -116,13 +141,14 @@
                 <!-- Building Specifications -->
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label for="numberOfRooms" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Number
-                            of Rooms</label>
+                        <label for="numberOfRooms" class="block text-sm font-medium text-gray-700 dark:text-gray-200">
+                            Number of Rooms
+                        </label>
                         <input
                             class="mt-1 w-full rounded-lg border-gray-300 focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
                             id="numberOfRooms"
                             type="number"
-                            wire:model.live.debounce.500ms="numberOfRooms"
+                            wire:model.blur="numberOfRooms"
                             min="1"
                             max="20"
                             required
@@ -132,13 +158,14 @@
                         @enderror
                     </div>
                     <div>
-                        <label for="numberOfStories" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Number
-                            of Stories</label>
+                        <label for="numberOfStories" class="block text-sm font-medium text-gray-700 dark:text-gray-200">
+                            Number of Stories
+                        </label>
                         <input
                             class="mt-1 w-full rounded-lg border-gray-300 focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
                             id="numberOfStories"
                             type="number"
-                            wire:model.live.debounce.500ms="numberOfStories"
+                            wire:model.blur="numberOfStories"
                             min="1"
                             max="5"
                             required
@@ -164,14 +191,15 @@
                 </div>
 
                 <div>
-                    <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Project
-                        Description</label>
+                    <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-200">
+                        Project Description
+                    </label>
                     <textarea
                         class="mt-1 w-full rounded-lg border-gray-300 focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
                         rows="7"
                         required
                         placeholder="Describe your construction project in detail. Include lot size, floor dimensions, number of rooms, stories, and budget. The AI will automatically extract specifications from your description..."
-                        wire:model.live.debounce.500ms="description"
+                        wire:model.blur="description"
                     ></textarea>
                     <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
                         Tip: Describe your project naturally. The AI will extract specifications like "20x30 meter lot",
@@ -215,6 +243,7 @@
         </div>
 
         <div class="sm:w-1/2">
+
             <div class="flex w-full gap-8">
                 <div
                     class="h-[70vh] w-full overflow-y-auto rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-4">
@@ -222,12 +251,11 @@
                         class="text-sm text-gray-900 dark:text-gray-200 [&_table]:my-2 [&_table]:w-full [&_td]:border [&_td]:border-gray-300 [&_td]:dark:border-gray-600 [&_td]:px-2 [&_th]:border [&_th]:border-gray-300 [&_th]:dark:border-gray-600 [&_th]:px-2 [&_th]:text-left"
                         id="content" wire:stream="content">
                         @if (filled($quotation))
-                            <div class="space-y-4">
+                            <div id="estimate" class="space-y-4 p-8">
                                 <div class="border-b border-gray-200 dark:border-gray-600 pb-4">
                                     <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Sample Quotation
                                         for a <strong>{{ $description }}</strong></h2>
                                 </div>
-
                                 <div class="grid grid-cols-2 gap-4">
                                     <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
                                         <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400">Lot Length</h4>

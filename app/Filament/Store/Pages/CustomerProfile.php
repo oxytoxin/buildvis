@@ -13,25 +13,24 @@ use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Pages\Page;
 use Filament\Tables\Actions\CreateAction;
+use Filament\Tables\Actions\DeleteAction;
 use Filament\Tables\Actions\EditAction;
-use Filament\Tables\Columns\Layout\Stack;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 
-class CustomerProfile extends Page implements HasTable, HasForms
+class CustomerProfile extends Page implements HasForms, HasTable
 {
-    use InteractsWithTable, InteractsWithForms;
+    use InteractsWithForms, InteractsWithTable;
 
     protected static ?string $navigationIcon = 'heroicon-o-user-circle';
 
     protected static string $view = 'filament.store.pages.customer-profile';
 
-    protected static ?string $navigationLabel = "Profile";
+    protected static ?string $navigationLabel = 'Profile';
 
     protected static ?int $navigationSort = 10;
-
 
     public function table(Table $table)
     {
@@ -59,29 +58,30 @@ class CustomerProfile extends Page implements HasTable, HasForms
                             ->options(Region::pluck('name', 'code'))
                             ->label('Region')
                             ->reactive()
-                            ->afterStateUpdated(fn($set) => $set('province_code', null))
+                            ->afterStateUpdated(fn ($set) => $set('province_code', null))
                             ->required(),
                         Select::make('province_code')
-                            ->options(fn($get) => Province::where('region_code', $get('region_code'))->pluck('name', 'code'))
+                            ->options(fn ($get) => Province::where('region_code', $get('region_code'))->pluck('name', 'code'))
                             ->label('Province')
-                            ->disabled(fn($get) => !$get('region_code'))
-                            ->afterStateUpdated(fn($set) => $set('city_municipality_code', null))
+                            ->disabled(fn ($get) => ! $get('region_code'))
+                            ->afterStateUpdated(fn ($set) => $set('city_municipality_code', null))
                             ->reactive()
                             ->required(),
                         Select::make('city_municipality_code')
-                            ->options(fn($get) => CityMunicipality::where('province_code', $get('province_code'))->pluck('name', 'code'))
+                            ->options(fn ($get) => CityMunicipality::where('province_code', $get('province_code'))->pluck('name', 'code'))
                             ->label('City/Municipality')
-                            ->disabled(fn($get) => !$get('province_code'))
+                            ->disabled(fn ($get) => ! $get('province_code'))
                             ->reactive()
                             ->required(),
                         TextInput::make('address_line_1')
                             ->required(),
                         TextInput::make('address_line_2'),
                     ]),
+                DeleteAction::make(),
             ])
             ->headerActions([
                 CreateAction::make('create')
-                    ->mutateFormDataUsing(fn($data) => array_merge($data, [
+                    ->mutateFormDataUsing(fn ($data) => array_merge($data, [
                         'customer_id' => Auth::user()->customer->id,
                     ]))
                     ->form([
@@ -91,15 +91,15 @@ class CustomerProfile extends Page implements HasTable, HasForms
                             ->reactive()
                             ->required(),
                         Select::make('province_code')
-                            ->options(fn($get) => Province::where('region_code', $get('region_code'))->pluck('name', 'code'))
+                            ->options(fn ($get) => Province::where('region_code', $get('region_code'))->pluck('name', 'code'))
                             ->label('Province')
-                            ->disabled(fn($get) => !$get('region_code'))
+                            ->disabled(fn ($get) => ! $get('region_code'))
                             ->reactive()
                             ->required(),
                         Select::make('city_municipality_code')
-                            ->options(fn($get) => CityMunicipality::where('province_code', $get('province_code'))->pluck('name', 'code'))
+                            ->options(fn ($get) => CityMunicipality::where('province_code', $get('province_code'))->pluck('name', 'code'))
                             ->label('City/Municipality')
-                            ->disabled(fn($get) => !$get('province_code'))
+                            ->disabled(fn ($get) => ! $get('province_code'))
                             ->reactive()
                             ->required(),
                         TextInput::make('address_line_1')

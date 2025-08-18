@@ -11,6 +11,7 @@ use Livewire\Component;
 class Login extends Component
 {
     public LoginForm $form;
+
     public function login(): void
     {
         $this->validate();
@@ -19,8 +20,9 @@ class Login extends Component
 
         Session::regenerate();
 
-        $this->redirectIntended(default: route('welcome', absolute: false));
+        $this->redirect(route('welcome', absolute: false));
     }
+
     public function render()
     {
         return view('livewire.login');

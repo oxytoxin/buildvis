@@ -13,6 +13,9 @@ return new class extends Migration
             $table->string('name');
             $table->text('description')->nullable();
             $table->integer('status')->default(\App\Enums\ProjectTaskStatuses::PENDING->value);
+            $table->date('start_date');
+            $table->date('end_date');
+            $table->integer('sort')->default(0);
             $table->foreignId('project_id')->constrained('projects');
             $table->foreignId('parent_id')->nullable()->constrained('tasks');
             $table->timestamps();

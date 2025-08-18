@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
 use App\Models\BudgetEstimate;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class BudgetEstimateController extends Controller
@@ -31,23 +31,22 @@ class BudgetEstimateController extends Controller
         ]);
 
         $budgetEstimate = BudgetEstimate::where('id', $validated['budget_estimate_id'])
-            ->where('customer_id', Auth::user()->customer->id)
+            ->whereRelation('project', 'user_id', Auth::id())
             ->first();
 
-
-        if (!$budgetEstimate) {
+        if (! $budgetEstimate) {
             return response()->json(['error' => 'Budget estimate not found'], 404);
         }
 
         // Save house generator data to the house_data column
         $houseData = array_diff_key($validated, ['budget_estimate_id' => '']);
         $budgetEstimate->updateQuietly([
-            'house_data' => $houseData
+            'house_data' => $houseData,
         ]);
 
         return response()->json([
             'id' => $budgetEstimate->id,
-            'message' => 'House configuration saved to budget estimate successfully'
+            'message' => 'House configuration saved to budget estimate successfully',
         ]);
     }
 
@@ -57,13 +56,13 @@ class BudgetEstimateController extends Controller
             ->where('customer_id', Auth::user()->customer->id)
             ->first();
 
-        if (!$budgetEstimate) {
+        if (! $budgetEstimate) {
             return response()->json(['error' => 'Budget estimate not found'], 404);
         }
 
         $houseData = $budgetEstimate->house_data;
 
-        if (!$houseData) {
+        if (! $houseData) {
             return response()->json(['error' => 'No house generator data found'], 404);
         }
 
