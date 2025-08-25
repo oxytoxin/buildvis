@@ -41,7 +41,7 @@ class ShowProject extends Page implements HasTable
 
     public function getTitle(): string|Htmlable
     {
-        return $this->project->name;
+        return 'Project:'.$this->project->name;
     }
 
     protected static ?int $navigationSort = 3;
@@ -370,9 +370,7 @@ class ShowProject extends Page implements HasTable
                 ActionGroup::make([
                     Action::make('generateHouse')
                         ->icon('heroicon-o-home')
-                        ->url(fn (BudgetEstimate $record) => route('house-generator.index', [
-                            'budgetEstimate' => $record,
-                        ]))
+                        ->url(fn (BudgetEstimate $record) => route('filament.store.resources.projects.house-generator', ['record' => $record]))
                         ->color('success'),
                     Action::make('delete')
                         ->icon('heroicon-o-trash')

@@ -1,37 +1,32 @@
 <?php
 
-namespace App\Filament\Store\Resources\ProductResource\Pages;
+namespace App\Filament\Store\Pages;
 
-use App\Filament\Store\Resources\ProductResource;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\ProductVariation;
 use Filament\Notifications\Notification;
-use Filament\Resources\Pages\Concerns\InteractsWithRecord;
-use Filament\Resources\Pages\Page;
-use Illuminate\Database\Eloquent\Model;
+use Filament\Pages\Page;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
-class ProductView extends Page
+class Shop extends Page
 {
-    use InteractsWithRecord;
+    protected static ?string $navigationIcon = 'heroicon-o-building-storefront';
 
-    protected static string $resource = ProductResource::class;
+    protected static string $view = 'filament.store.pages.shop';
 
-    protected static string $view = 'filament.store.resources.product-resource.pages.product-view';
-
-    public Model|Product $product;
+    public array|Collection $products = [];
 
     public array $cartData = [];
 
-    public ?Media $model;
-
-    public function mount(int|string $record): void
+    public function mount(): void
     {
-        $this->record = $this->resolveRecord($record);
-        $this->product = $this->record;
+        $this->products = Product::with(['category', 'variations'])
+            ->get();
+
+        // Get cart data for current user
         $this->cartData = [];
         if (Auth::check() && Auth::user()->customer) {
             $pendingOrder = Order::where('customer_id', Auth::user()->customer->id)
@@ -45,8 +40,6 @@ class ProductView extends Page
                 }
             }
         }
-        $this->product = $this->product->load(['variations.featured_image', 'variations.images', 'featured_image']);
-        $this->model = $this->product->getFirstMedia('model');
     }
 
     public function addToCart($selected_variation, $quantity)

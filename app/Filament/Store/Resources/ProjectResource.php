@@ -72,6 +72,7 @@ class ProjectResource extends Resource
         return [
             'index' => Pages\ManageProjects::route('/'),
             'show' => Pages\ShowProject::route('/{project}'),
+            'house-generator' => Pages\HouseGenerator::route('/house-generator/{record}'),
         ];
     }
 }

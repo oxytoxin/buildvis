@@ -20,17 +20,13 @@ use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 
-class CartIndex extends Page implements HasForms, HasTable
+class Cart extends Page implements HasForms, HasTable
 {
     use InteractsWithForms, InteractsWithTable;
 
     protected static ?string $navigationIcon = 'heroicon-o-shopping-cart';
 
-    protected static string $view = 'filament.store.pages.cart-index';
-
-    protected static ?string $navigationLabel = 'Cart';
-
-    protected ?string $heading = 'Cart Details';
+    protected static string $view = 'filament.store.pages.cart';
 
     protected static ?int $navigationSort = 2;
 
@@ -50,15 +46,18 @@ class CartIndex extends Page implements HasForms, HasTable
     public function table(Table $table)
     {
         return $table
-            ->query(OrderItem::query()->whereRelation('order', 'customer_id',
-                Auth::user()->customer?->id)->whereRelation('order', 'status', 'pending'))
+            ->query(
+                OrderItem::query()
+                    ->whereRelation('order', 'customer_id', Auth::user()->customer?->id)
+                    ->whereRelation('order', 'status', 'cart')
+            )
             ->columns([
                 TextColumn::make('product_variation.product.name')->searchable()->label('Product'),
                 TextColumn::make('product_variation.name')->searchable()->label('Variation'),
                 TextColumn::make('unit_price')->money('PHP')->sortable(),
                 TextColumn::make('quantity')->size('xs')->sortable(),
                 TextColumn::make('subtotal')->money('PHP')->sortable()->summarize(Sum::make('Grand Total')->money('PHP')->label('Grand Total')),
-                ])
+            ])
             ->actions([
                 \Filament\Tables\Actions\Action::make('add')->icon('heroicon-o-plus')->label(false)
                     ->button()
@@ -101,6 +100,6 @@ class CartIndex extends Page implements HasForms, HasTable
                         $record->save();
                     }),
                 DeleteAction::make(),
-                ]);
+            ]);
     }
 }

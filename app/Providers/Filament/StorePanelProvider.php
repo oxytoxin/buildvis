@@ -7,17 +7,18 @@ use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
-use Filament\Navigation\NavigationItem;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\MaxWidth;
+use Filament\View\PanelsRenderHook;
 use Filament\Widgets;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class StorePanelProvider extends PanelProvider
@@ -26,17 +27,15 @@ class StorePanelProvider extends PanelProvider
     {
         return $panel
             ->id('store')
-            ->path('store')
+            ->path('')
             ->viteTheme('resources/css/filament/store/theme.css')
             ->colors([
                 'primary' => Color::Teal,
             ])
+            ->spa()
             ->font('Figtree')
-            ->navigationItems([
-                NavigationItem::make('Store')
-                    ->url(fn () => route('store.index'))
-                    ->icon('heroicon-o-building-storefront'),
-            ])
+            ->renderHook(PanelsRenderHook::HEAD_END, fn () => Blade::render("@viteReactRefresh
+                        @vite(['resources/js/main.jsx', 'resources/css/app.css'])"))
             ->discoverResources(in: app_path('Filament/Store/Resources'), for: 'App\\Filament\\Store\\Resources')
             ->discoverPages(in: app_path('Filament/Store/Pages'), for: 'App\\Filament\\Store\\Pages')
             ->pages([])

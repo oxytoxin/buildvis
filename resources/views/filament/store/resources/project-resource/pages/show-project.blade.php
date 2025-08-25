@@ -29,7 +29,6 @@
                 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/frappe-gantt/dist/frappe-gantt.css">
             @endpush
             <div class="" wire:ignore.self x-data x-init="
-                console.log({{ json_encode($project_tasks) }});
                 new Gantt('#gantt', {{ json_encode($gantt_tasks) }}, { readonly: true, view_mode: 'Week',infinite_padding: false, view_mode_select: true})
             ">
                 <div class="px-4 border w-full" id="gantt"></div>

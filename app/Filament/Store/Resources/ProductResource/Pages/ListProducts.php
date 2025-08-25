@@ -12,7 +12,7 @@ class ListProducts extends ListRecords
 
     public function mount(): void
     {
-        redirect()->route('filament.store.pages.store-index');
+        $this->redirect(route('filament.store.pages.shop'));
     }
 
     protected function getHeaderActions(): array

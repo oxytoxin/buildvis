@@ -9,7 +9,7 @@
                     <ul class="absolute top-1/2 gap-8 left-1/2 transform -translate-x-1/2 -translate-y-1/2 hidden md:flex">
                         <li>
                             <a class="inline-block hover:underline text-teal-900 hover:text-teal-700 font-medium"
-                               href="{{ route('store.index') }}">
+                               href="{{ route('filament.store.pages.shop') }}">
                                 Store
                             </a>
                         </li>
@@ -28,7 +28,7 @@
                     </ul>
                     <div class="flex items-center justify-end">
                         <div class="hidden md:block">
-                            <a href="{{ route('store.index') }}"
+                            <a href="{{ route('filament.store.pages.shop') }}"
                                class="inline-flex py-2.5 px-4 items-center justify-center text-sm font-medium text-teal-900 hover:text-white border border-teal-900 hover:bg-teal-900 rounded-full transition duration-200">Visit
                                 Store</a>
                         </div>
@@ -76,7 +76,7 @@
                     @endguest
                     @auth
                         <div class="flex flex-col sm:flex-row justify-center">
-                            <a href="{{ route('store.index') }}"
+                            <a href="{{ route('filament.store.pages.shop') }}"
                                class="inline-flex py-4 px-6 items-center justify-center text-lg font-medium text-black hover:text-white border border-teal-900 hover:bg-teal-900 rounded-full transition duration-200">Visit
                                 Store</a>
                         </div>
@@ -105,7 +105,7 @@
                         <img class="h-28" src="/images/logo-transparent.png" alt="logo">
                     </a>
                     <div class="flex items-center">
-                        <a href="{{ route('store.index') }}"
+                        <a href="{{ route('filament.store.pages.shop') }}"
                            class="inline-flex py-2.5 px-4 mr-6 items-center justify-center text-sm font-medium text-teal-900 hover:text-white border border-teal-900 hover:bg-teal-900 rounded-full transition duration-200">Visit
                             Store</a>
                         <button x-on:click="mobileNavOpen = !mobileNavOpen">

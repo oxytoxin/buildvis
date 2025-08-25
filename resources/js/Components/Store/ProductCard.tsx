@@ -1,9 +1,5 @@
-import { Product } from '../../types/store';
-import { view } from '@routes/product';
-import { useEffect, useState } from 'react';
-import { toast } from 'react-hot-toast';
-import { Link, useForm } from '@inertiajs/react';
-import cart from "@routes/cart";
+import {Product} from '../../types/store';
+import {useState} from 'react';
 
 interface ProductCardProps {
     product: Product;
@@ -12,60 +8,52 @@ interface ProductCardProps {
     cartData: Record<number, number>; // variation_id => quantity
 }
 
-export default function ProductCard({ product, selectedVariationId, onVariationChange, cartData }: ProductCardProps) {
+export default function ProductCard({
+                                        wire_id,
+                                        product,
+                                        selectedVariationId,
+                                        onVariationChange,
+                                        cartData
+                                    }: ProductCardProps) {
     const [quantity, setQuantity] = useState(1);
-    const [isAddingToCart, setIsAddingToCart] = useState(false);
+    const [isAddingToCart] = useState(false);
     const selectedVariation = product.variations.find(v => v.id === selectedVariationId) || product.variations[0];
     const activeVariations = product.variations.filter(v => v.is_active);
-    const form = useForm({
-        variation_id: selectedVariation?.id,
-        quantity: quantity
-    });
 
+    const wire = window.Livewire.find(wire_id);
     // Get cart quantity for selected variation
-    const cartQuantity = selectedVariation ? (cartData[selectedVariation.id] || 0) : 0;
+    const [cartQuantity, setCartQuantity] = useState(selectedVariation ? (cartData[selectedVariation.id] || 0) : 0);
 
-    useEffect(() => {
-        form.setData({
-            variation_id: selectedVariation?.id,
-            quantity: quantity
-        });
-    }, [selectedVariation, quantity]);
 
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        form.post(cart.add.url(), {
-            onSuccess: () => {
-                toast.success('Added to cart successfully!');
-                setQuantity(1);
-            },
-            onError: (errors) => {
-                Object.entries(errors).forEach(([_, message]) => {
-                    toast.error(message);
-                });
-            }
-        });
+    const addToCart = async () => {
+        const res = await wire.addToCart(selectedVariation.id, quantity);
+        if (res.status === 200) {
+            setCartQuantity(cartQuantity + quantity);
+        }
     };
 
     return (
-        <div className="bg-white overflow-hidden shadow-sm rounded-lg border border-gray-200 hover:shadow-md transition-shadow duration-200 h-full flex flex-col">
+        <div
+            className="bg-white overflow-hidden shadow-sm rounded-lg border border-gray-200 hover:shadow-md transition-shadow duration-200 h-full flex flex-col">
             <div className="p-4 flex-1 flex justify-between flex-col">
                 <div className="mb-3">
-                    <span className="px-2 py-1 text-xs font-medium text-teal-700 bg-teal-100 rounded-full whitespace-nowrap flex-shrink-0">
+                    <span
+                        className="px-2 py-1 text-xs font-medium text-teal-700 bg-teal-100 rounded-full whitespace-nowrap flex-shrink-0">
                         {product.category.name}
                     </span>
-                    <Link
-                        href={view.get(product.id).url}
+                    <a
+                        href={`/products/${product.id}`}
                         className="text-base font-semibold text-gray-900 line-clamp-2 flex-1 hover:text-teal-600 transition-colors duration-200"
                     >
                         {product.name}
-                    </Link>
+                    </a>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-3">
+                <div className="space-y-3">
                     {/* Variation Select */}
                     <div>
-                        <label htmlFor={`variation-${product.id}`} className="block text-xs font-medium text-gray-700 mb-1">
+                        <label htmlFor={`variation-${product.id}`}
+                               className="block text-xs font-medium text-gray-700 mb-1">
                             Select Variation
                         </label>
                         <select
@@ -98,7 +86,8 @@ export default function ProductCard({ product, selectedVariationId, onVariationC
 
                     {/* Quantity Input */}
                     <div>
-                        <label htmlFor={`quantity-${product.id}`} className="block text-xs font-medium text-gray-700 mb-1">
+                        <label htmlFor={`quantity-${product.id}`}
+                               className="block text-xs font-medium text-gray-700 mb-1">
                             Quantity
                         </label>
                         <input
@@ -132,13 +121,13 @@ export default function ProductCard({ product, selectedVariationId, onVariationC
 
                     {/* Add to Cart Button */}
                     <button
-                        type='submit'
+                        onClick={addToCart}
                         disabled={!selectedVariation?.is_active || isAddingToCart || selectedVariation.stock_quantity < 1}
-                        className={`w-full mt-2 px-4 py-2 rounded-lg text-sm font-medium text-white 
+                        className={`w-full mt-2 px-4 py-2 rounded-lg text-sm font-medium text-white
                             ${selectedVariation?.is_active && selectedVariation.stock_quantity > 0
-                                ? 'bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500'
-                                : 'bg-gray-300 cursor-not-allowed'
-                            } transition-colors duration-200`}
+                            ? 'bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500'
+                            : 'bg-gray-300 cursor-not-allowed'
+                        } transition-colors duration-200`}
                     >
                         {isAddingToCart ? 'Adding...' : 'Add to Cart'}
                     </button>
@@ -159,8 +148,8 @@ export default function ProductCard({ product, selectedVariationId, onVariationC
                             Only {selectedVariation.stock_quantity} left in stock
                         </div>
                     )}
-                </form>
+                </div>
             </div>
         </div>
     );
-} 
+}

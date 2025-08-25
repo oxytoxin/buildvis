@@ -17,7 +17,7 @@ class StripeController extends Controller
         if ($order->items()->count() < 1) {
             Notification::make()->title('Your order is empty.')->warning()->send();
 
-            return redirect(route('filament.store.pages.cart-index'));
+            return redirect(route('filament.store.pages.cart'));
         }
         Stripe::setApiKey(config('stripe.sk'));
         try {
@@ -43,7 +43,7 @@ class StripeController extends Controller
         } catch (\Exception $e) {
             Notification::make()->title('Something went wrong with STRIPE.')->danger()->send();
 
-            return redirect(route('filament.store.pages.cart-index'));
+            return redirect(route('filament.store.pages.cart'));
         }
     }
 

@@ -25,7 +25,6 @@ class ProductVariation extends Model implements HasMedia
         'is_active' => 'boolean',
     ];
 
-
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('images');
@@ -64,11 +63,7 @@ class ProductVariation extends Model implements HasMedia
         parent::boot();
 
         static::created(function (ProductVariation $variation) {
-            $variation->product_name = $variation->product->name;
-            $variation->saveQuietly();
-        });
-
-        static::updated(function (ProductVariation $variation) {
+            $variation->load('product');
             $variation->product_name = $variation->product->name;
             $variation->saveQuietly();
         });

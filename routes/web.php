@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\BudgetEstimateController;
-use App\Http\Controllers\CartController;
 use App\Http\Controllers\HouseGeneratorController;
 use App\Http\Controllers\StoreController;
 use App\Http\Controllers\StripeController;
@@ -59,7 +58,5 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     // Cart routes
-    Route::post('/cart/add', [CartController::class, 'add'])
-        ->name('cart.add');
     Route::get('/store', [StoreController::class, 'index'])->name('store.index');
 });

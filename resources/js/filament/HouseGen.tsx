@@ -1,11 +1,12 @@
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
-import React, { Suspense, useState, useMemo, useEffect, useRef } from 'react';
-import { calculateRoomLayout, type Room, type HouseDimensions, type Story } from '../utils/roomLayout';
+import {Canvas, useFrame, useThree} from '@react-three/fiber';
+import {OrbitControls} from '@react-three/drei';
+import React, {Suspense, useEffect, useMemo, useRef, useState} from 'react';
+import {calculateRoomLayout, type HouseDimensions, type Room, type Story} from '../utils/roomLayout';
 import * as THREE from 'three';
 
 interface HouseGenProps {
-    budgetEstimate: {
+    wire_id: string;
+    budget_estimate: {
         id: number;
         name: string;
         description?: string;
@@ -14,7 +15,21 @@ interface HouseGenProps {
     };
 }
 
-const Room = ({ position, dimensions, externalColor, internalColor, windows, outerWalls, internalWalls, floorType, tileSize, tileColor, groutColor, carpetColor, ceilingColor }: {
+const Room = ({
+                  position,
+                  dimensions,
+                  externalColor,
+                  internalColor,
+                  windows,
+                  outerWalls,
+                  internalWalls,
+                  floorType,
+                  tileSize,
+                  tileColor,
+                  groutColor,
+                  carpetColor,
+                  ceilingColor
+              }: {
     position: [number, number, number];
     dimensions: [number, number, number];
     externalColor: string;
@@ -129,25 +144,25 @@ const Room = ({ position, dimensions, externalColor, internalColor, windows, out
     // Add external walls (single color)
     if (outerWalls.front) {
         const wall = createWall('front');
-        wall.material = new THREE.MeshStandardMaterial({ color: externalColor });
+        wall.material = new THREE.MeshStandardMaterial({color: externalColor});
         wall.position.z -= 0.01; // Offset slightly outward
         group.add(wall);
     }
     if (outerWalls.back) {
         const wall = createWall('back');
-        wall.material = new THREE.MeshStandardMaterial({ color: externalColor });
+        wall.material = new THREE.MeshStandardMaterial({color: externalColor});
         wall.position.z += 0.01; // Offset slightly outward
         group.add(wall);
     }
     if (outerWalls.left) {
         const wall = createWall('left');
-        wall.material = new THREE.MeshStandardMaterial({ color: externalColor });
+        wall.material = new THREE.MeshStandardMaterial({color: externalColor});
         wall.position.x -= 0.01; // Offset slightly outward
         group.add(wall);
     }
     if (outerWalls.right) {
         const wall = createWall('right');
-        wall.material = new THREE.MeshStandardMaterial({ color: externalColor });
+        wall.material = new THREE.MeshStandardMaterial({color: externalColor});
         wall.position.x += 0.01; // Offset slightly outward
         group.add(wall);
     }
@@ -161,22 +176,22 @@ const Room = ({ position, dimensions, externalColor, internalColor, windows, out
     // Add internal walls (both sides use internal color)
     if (internalWalls.front) {
         const wall = createWall('front');
-        wall.material = new THREE.MeshStandardMaterial({ color: internalColor });
+        wall.material = new THREE.MeshStandardMaterial({color: internalColor});
         group.add(wall);
     }
     if (internalWalls.back) {
         const wall = createWall('back');
-        wall.material = new THREE.MeshStandardMaterial({ color: internalColor });
+        wall.material = new THREE.MeshStandardMaterial({color: internalColor});
         group.add(wall);
     }
     if (internalWalls.left) {
         const wall = createWall('left');
-        wall.material = new THREE.MeshStandardMaterial({ color: internalColor });
+        wall.material = new THREE.MeshStandardMaterial({color: internalColor});
         group.add(wall);
     }
     if (internalWalls.right) {
         const wall = createWall('right');
-        wall.material = new THREE.MeshStandardMaterial({ color: internalColor });
+        wall.material = new THREE.MeshStandardMaterial({color: internalColor});
         group.add(wall);
     }
 
@@ -223,7 +238,7 @@ const Room = ({ position, dimensions, externalColor, internalColor, windows, out
         // Create a black divider (positioned slightly in front to prevent z-fighting)
         const dividerWidth = 0.05;
         const dividerGeometry = new THREE.BoxGeometry(dividerWidth, windowHeight, paneThickness);
-        const dividerMaterial = new THREE.MeshStandardMaterial({ color: '#000000' });
+        const dividerMaterial = new THREE.MeshStandardMaterial({color: '#000000'});
         const divider = new THREE.Mesh(dividerGeometry, dividerMaterial);
         divider.position.set(0, 0, -gap / 2 + 0.01);
         windowGroup.add(divider);
@@ -409,11 +424,11 @@ const Room = ({ position, dimensions, externalColor, internalColor, windows, out
     createCeiling();
 
     return (
-        <primitive object={group} position={position} />
+        <primitive object={group} position={position}/>
     );
 };
 
-const GroundPlane = ({ dimensions, color }: {
+const GroundPlane = ({dimensions, color}: {
     dimensions: [number, number];
     color: string;
 }) => {
@@ -422,14 +437,14 @@ const GroundPlane = ({ dimensions, color }: {
 
     return (
         <mesh position={[0, -groundThickness / 2, 0]}>
-            <boxGeometry args={[width, groundThickness, length]} />
-            <meshStandardMaterial color={color} />
+            <boxGeometry args={[width, groundThickness, length]}/>
+            <meshStandardMaterial color={color}/>
         </mesh>
     );
 };
 
 
-const Door = ({ dimensions, yOffset, roomPosition }: {
+const Door = ({dimensions, yOffset, roomPosition}: {
     dimensions: [number, number];
     yOffset: number;
     roomPosition: [number, number, number];
@@ -441,14 +456,15 @@ const Door = ({ dimensions, yOffset, roomPosition }: {
     const doorThickness = wallThickness * 1.5; // Make the door thick enough to extend through the wall
 
     return (
-        <mesh position={[roomPosition[0], yOffset + doorHeight / 2, roomPosition[2] - roomLength / 2 + wallThickness / 2]}>
-            <boxGeometry args={[doorWidth, doorHeight, doorThickness]} />
-            <meshStandardMaterial color="#8B4513" side={THREE.DoubleSide} />
+        <mesh
+            position={[roomPosition[0], yOffset + doorHeight / 2, roomPosition[2] - roomLength / 2 + wallThickness / 2]}>
+            <boxGeometry args={[doorWidth, doorHeight, doorThickness]}/>
+            <meshStandardMaterial color="#8B4513" side={THREE.DoubleSide}/>
         </mesh>
     );
 };
 
-const FlatRoof = ({ dimensions, color, yOffset }: {
+const FlatRoof = ({dimensions, color, yOffset}: {
     dimensions: [number, number];
     color: string;
     yOffset: number;
@@ -458,13 +474,13 @@ const FlatRoof = ({ dimensions, color, yOffset }: {
 
     return (
         <mesh position={[0, yOffset + roofThickness / 2 + 0.01, 0]}>
-            <boxGeometry args={[width, roofThickness, length]} />
-            <meshStandardMaterial color={color} />
+            <boxGeometry args={[width, roofThickness, length]}/>
+            <meshStandardMaterial color={color}/>
         </mesh>
     );
 };
 
-const PointedRoof = ({ dimensions, color, yOffset }: {
+const PointedRoof = ({dimensions, color, yOffset}: {
     dimensions: [number, number];
     color: string;
     yOffset: number;
@@ -513,22 +529,22 @@ const PointedRoof = ({ dimensions, color, yOffset }: {
         <group position={[0, yOffset + 0.01, 0]}>
             {/* Solid roof */}
             <mesh geometry={geometry}>
-                <meshBasicMaterial color={color} />
+                <meshBasicMaterial color={color}/>
             </mesh>
 
             {/* Wireframe outline */}
             <lineSegments>
-                <wireframeGeometry args={[geometry]} />
-                <lineBasicMaterial color="#000000" linewidth={2} />
+                <wireframeGeometry args={[geometry]}/>
+                <lineBasicMaterial color="#000000" linewidth={2}/>
             </lineSegments>
         </group>
     );
 };
 
 // WASD Camera Controls Component
-const WASDControls = ({ moveSpeed = 0.15 }) => {
-    const { camera } = useThree();
-    const keys = useRef({ w: false, a: false, s: false, d: false, q: false, e: false });
+const WASDControls = ({moveSpeed = 0.15}) => {
+    const {camera} = useThree();
+    const keys = useRef({w: false, a: false, s: false, d: false, q: false, e: false});
 
     // Set up key listeners
     useEffect(() => {
@@ -585,16 +601,15 @@ const WASDControls = ({ moveSpeed = 0.15 }) => {
     return null; // This component doesn't render anything
 };
 
-const HouseGen: React.FC<HouseGenProps> = ({ budgetEstimate }) => {
+const HouseGen: React.FC<HouseGenProps> = ({wire_id, budget_estimate}) => {
     const [dimensions, setDimensions] = useState<HouseDimensions>({
         length: 10,
         width: 10,
         height: 3
     });
-
     const [lotDimensions, setLotDimensions] = useState<[number, number]>([15, 15]);
     const [stories, setStories] = useState<Story[]>([
-        { numRooms: 4, height: 3 }
+        {numRooms: 4, height: 3}
     ]);
     const [externalWallColor, setExternalWallColor] = useState('#D2D8E4');
     const [internalWallColor, setInternalWallColor] = useState('#E8E8E8');
@@ -617,7 +632,7 @@ const HouseGen: React.FC<HouseGenProps> = ({ budgetEstimate }) => {
     };
 
     const defaultLotDimensions: [number, number] = [15, 15];
-    const defaultStories: Story[] = [{ numRooms: 4, height: 3 }];
+    const defaultStories: Story[] = [{numRooms: 4, height: 3}];
 
     const handleDimensionChange = (dimension: 'length' | 'width' | 'height', value: number) => {
         setDimensions(prev => ({
@@ -639,13 +654,13 @@ const HouseGen: React.FC<HouseGenProps> = ({ budgetEstimate }) => {
     const handleStoryChange = (storyIndex: number, field: 'numRooms' | 'height', value: number) => {
         setStories(prev => prev.map((story, index) =>
             index === storyIndex
-                ? { ...story, [field]: value }
+                ? {...story, [field]: value}
                 : story
         ));
     };
 
     const addStory = () => {
-        setStories(prev => [...prev, { numRooms: 2, height: 3 }]);
+        setStories(prev => [...prev, {numRooms: 2, height: 3}]);
     };
 
     const removeStory = (storyIndex: number) => {
@@ -676,15 +691,15 @@ const HouseGen: React.FC<HouseGenProps> = ({ budgetEstimate }) => {
         let houseData = null;
 
         // First try to load from house_data column
-        if (budgetEstimate?.house_data) {
-            houseData = budgetEstimate.house_data;
+        if (budget_estimate?.house_data) {
+            houseData = budget_estimate.house_data;
         }
         // Fallback to structured_data for backward compatibility
         else {
             let stories = [];
-            const data = budgetEstimate.structured_data;
-            for (let index = 0; index < budgetEstimate.structured_data.number_of_stories; index++) {
-                stories.push({ numRooms: data.number_of_rooms, height: 3 });
+            const data = budget_estimate.structured_data;
+            for (let index = 0; index < budget_estimate.structured_data.number_of_stories; index++) {
+                stories.push({numRooms: data.number_of_rooms, height: 3});
             }
             setStories(stories);
         }
@@ -705,16 +720,16 @@ const HouseGen: React.FC<HouseGenProps> = ({ budgetEstimate }) => {
             setGroutColor(houseData.groutColor);
             setCarpetColor(houseData.carpetColor);
             setCeilingColor(houseData.ceilingColor);
-            setSavedHouseId(budgetEstimate.id.toString());
+            setSavedHouseId(budget_estimate.id.toString());
         }
-    }, [budgetEstimate]);
+    }, [budget_estimate]);
 
     // Save house data to budget_estimates
     const saveHouseData = async () => {
         setIsLoading(true);
         try {
             const houseData = {
-                budget_estimate_id: budgetEstimate.id,
+                budget_estimate_id: budget_estimate.id,
                 dimensions,
                 lotDimensions,
                 stories,
@@ -770,7 +785,8 @@ const HouseGen: React.FC<HouseGenProps> = ({ budgetEstimate }) => {
     return (
         <div className="w-full h-screen relative">
             {/* Control Panel - Split into two columns */}
-            <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm p-4 rounded-lg shadow-lg z-10 max-h-[90vh] overflow-y-auto">
+            <div
+                className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm p-4 rounded-lg shadow-lg z-10 max-h-[90vh] overflow-y-auto">
                 <h2 className="text-lg font-semibold mb-4 text-gray-800">House Layout (Meters)</h2>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -1096,17 +1112,17 @@ const HouseGen: React.FC<HouseGenProps> = ({ budgetEstimate }) => {
                 <div>Mouse - Rotate/Zoom</div>
             </div>
 
-            <Canvas camera={{ position: [15, 15, 15] }}>
+            <Canvas camera={{position: [15, 15, 15]}}>
                 <Suspense fallback={null}>
                     {/* WASD Controls */}
-                    <WASDControls />
+                    <WASDControls/>
 
                     {/* Lighting */}
-                    <ambientLight intensity={0.5} />
-                    <directionalLight position={[10, 10, 5]} intensity={1} />
+                    <ambientLight intensity={0.5}/>
+                    <directionalLight position={[10, 10, 5]} intensity={1}/>
 
                     {/* Ground Plane */}
-                    <GroundPlane dimensions={lotDimensions} color={groundColor} />
+                    <GroundPlane dimensions={lotDimensions} color={groundColor}/>
 
                     {/* Door */}
                     {(() => {
@@ -1160,7 +1176,7 @@ const HouseGen: React.FC<HouseGenProps> = ({ budgetEstimate }) => {
                     )}
 
                     {/* Camera Controls */}
-                    <OrbitControls />
+                    <OrbitControls/>
                 </Suspense>
             </Canvas>
         </div>

@@ -22,6 +22,7 @@ export interface Product {
 }
 
 export interface StorePageProps {
+    wire_id: string;
     products: Product[];
     cartData: Record<number, number>; // variation_id => quantity
-} 
+}

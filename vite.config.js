@@ -1,7 +1,7 @@
-import { defineConfig } from "vite";
+import {defineConfig} from "vite";
 import laravel from "laravel-vite-plugin";
 import react from "@vitejs/plugin-react";
-import { wayfinder } from "@laravel/vite-plugin-wayfinder";
+import {wayfinder} from "@laravel/vite-plugin-wayfinder";
 import path from 'path';
 
 export default defineConfig({
@@ -11,6 +11,7 @@ export default defineConfig({
             input: [
                 "resources/css/app.css",
                 "resources/js/app.jsx",
+                "resources/js/main.jsx",
                 "resources/css/filament/store/theme.css",
             ],
             refresh: true,
