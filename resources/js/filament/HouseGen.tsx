@@ -601,7 +601,7 @@ const WASDControls = ({moveSpeed = 0.15}) => {
     return null; // This component doesn't render anything
 };
 
-const HouseGen: React.FC<HouseGenProps> = ({wire_id, budget_estimate}) => {
+const HouseGen: React.FC<HouseGenProps> = ({budget_estimate}) => {
     const [dimensions, setDimensions] = useState<HouseDimensions>({
         length: 10,
         width: 10,
@@ -781,6 +781,8 @@ const HouseGen: React.FC<HouseGenProps> = ({wire_id, budget_estimate}) => {
     const totalHouseHeight = useMemo(() => {
         return stories.reduce((total, story) => total + story.height, 0);
     }, [stories]);
+
+    console.log(roomLayout);
 
     return (
         <div className="w-full h-screen relative">
@@ -1139,6 +1141,7 @@ const HouseGen: React.FC<HouseGenProps> = ({wire_id, budget_estimate}) => {
                             />
                         );
                     })()}
+
 
                     {/* Rooms */}
                     {roomLayout.map((room, index) => (

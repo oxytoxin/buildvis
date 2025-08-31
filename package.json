@@ -27,6 +27,8 @@
         "@tanstack/react-query": "^5.85.5",
         "@types/three": "^0.174.0",
         "@vitejs/plugin-react": "^4.3.4",
+        "framer-motion": "^12.23.12",
+        "lucide-react": "^0.542.0",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
         "react-error-boundary": "^5.0.0",

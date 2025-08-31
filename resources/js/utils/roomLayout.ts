@@ -113,13 +113,23 @@ const calculateWindowPositions = (
     roomDimensions: [number, number, number],
     outerWalls: { front: boolean; back: boolean; left: boolean; right: boolean },
     wallThickness: number = 0.2
-): { front?: [number, number, number]; back?: [number, number, number]; left?: [number, number, number]; right?: [number, number, number] } => {
+): {
+    front?: [number, number, number];
+    back?: [number, number, number];
+    left?: [number, number, number];
+    right?: [number, number, number]
+} => {
     const [width, height, length] = roomDimensions;
 
     // Window height position (0.5m from bottom)
     const windowY = -(height / 2) + 0.5 + 1; // 0.5m window height, positioned 0.5m from bottom
 
-    const windows: { front?: [number, number, number]; back?: [number, number, number]; left?: [number, number, number]; right?: [number, number, number] } = {};
+    const windows: {
+        front?: [number, number, number];
+        back?: [number, number, number];
+        left?: [number, number, number];
+        right?: [number, number, number]
+    } = {};
 
     if (outerWalls.front) {
         windows.front = [0, windowY, -(length / 2) + (wallThickness / 2)];
@@ -146,25 +156,25 @@ const calculateOuterWallsFor3Rooms = (
         // Two rooms on top, one on bottom
         switch (roomIndex) {
             case 0: // Top-left room
-                return { front: true, back: false, left: true, right: false };
+                return {front: true, back: false, left: true, right: false};
             case 1: // Top-right room
-                return { front: true, back: false, left: false, right: true };
+                return {front: true, back: false, left: false, right: true};
             case 2: // Bottom room
-                return { front: false, back: true, left: true, right: true };
+                return {front: false, back: true, left: true, right: true};
             default:
-                return { front: false, back: false, left: false, right: false };
+                return {front: false, back: false, left: false, right: false};
         }
     } else {
         // Two rooms on left, one on right
         switch (roomIndex) {
             case 0: // Left room
-                return { front: true, back: true, left: true, right: false };
+                return {front: true, back: true, left: true, right: false};
             case 1: // Top-right room
-                return { front: true, back: false, left: false, right: true };
+                return {front: true, back: false, left: false, right: true};
             case 2: // Bottom-right room
-                return { front: false, back: true, left: false, right: true };
+                return {front: false, back: true, left: false, right: true};
             default:
-                return { front: false, back: false, left: false, right: false };
+                return {front: false, back: false, left: false, right: false};
         }
     }
 };
@@ -783,4 +793,4 @@ function calculateSingleStoryRooms(numRooms: number, dimensions: HouseDimensions
     }
 
     return rooms;
-} 
+}

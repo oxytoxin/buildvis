@@ -58,5 +58,5 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     // Cart routes
-    Route::get('/store', [StoreController::class, 'index'])->name('store.index');
+    Route::redirect('/store', '/shop')->name('store.index');
 });

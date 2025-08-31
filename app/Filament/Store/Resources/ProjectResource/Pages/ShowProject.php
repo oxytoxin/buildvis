@@ -372,6 +372,9 @@ class ShowProject extends Page implements HasTable
                         ->icon('heroicon-o-home')
                         ->url(fn (BudgetEstimate $record) => route('filament.store.resources.projects.house-generator', ['record' => $record]))
                         ->color('success'),
+                    Action::make('floorplan')
+                        ->icon('heroicon-o-document-text')
+                        ->url(fn (BudgetEstimate $record) => route('filament.store.resources.projects.floor-plan', ['record' => $record])),
                     Action::make('delete')
                         ->icon('heroicon-o-trash')
                         ->color('danger')
