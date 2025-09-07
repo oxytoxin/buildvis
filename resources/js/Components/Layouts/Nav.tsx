@@ -16,6 +16,29 @@ export default function Nav() {
 
     const isActive = (path: string) => url.startsWith(path);
 
+    const navigation: NavItem[] = [];
+
+    const NavLink = ({item, isItemActive, className = ''}: {
+        item: NavItem;
+        isItemActive: boolean;
+        className?: string
+    }) => {
+        const LinkComponent = item.isInertia ? Link : 'a';
+        return (
+            <LinkComponent
+                href={item.href}
+                className={`flex items-center gap-x-2 rounded-lg px-3 py-2 outline-none transition duration-75 hover:bg-gray-50 focus-visible:bg-gray-50 ${isItemActive ? 'bg-gray-50' : ''} ${className}`}
+                onClick={() => setIsMobileMenuOpen(false)}
+            >
+                {React.cloneElement(item.icon as React.ReactElement, {
+                    className: `h-5 w-5 ${isItemActive ? 'text-primary-600' : 'text-gray-400'}`
+                })}
+                <span className={`text-sm font-medium ${isItemActive ? 'text-primary-600' : 'text-gray-700'}`}>
+                    {item.name}
+                </span>
+            </LinkComponent>
+        );
+    };
 
     return (
         <div className="sticky top-0 z-50">
@@ -29,6 +52,14 @@ export default function Nav() {
                     </Link>
                 </div>
 
+                {/* Desktop Navigation - Left aligned */}
+                <ul className="hidden items-center gap-x-4 lg:flex lg:flex-1 lg:ml-8">
+                    {navigation.map((item) => (
+                        <li key={item.name}>
+                            <NavLink item={item} isItemActive={isActive(item.href)}/>
+                        </li>
+                    ))}
+                </ul>
 
                 {/* Mobile menu button */}
                 <button
@@ -100,6 +131,21 @@ export default function Nav() {
                 </div>
             </nav>
 
+            {/* Mobile Navigation Menu */}
+            {isMobileMenuOpen && (
+                <div className="lg:hidden">
+                    <div className="space-y-1 px-2 pb-3 pt-2 bg-white shadow-lg">
+                        {navigation.map((item) => (
+                            <NavLink
+                                key={item.name}
+                                item={item}
+                                isItemActive={isActive(item.href)}
+                                className="block w-full"
+                            />
+                        ))}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
