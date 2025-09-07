@@ -1,12 +1,3 @@
-import React from 'react';
-
-interface NavItem {
-    name: string;
-    href: string;
-    icon: React.ReactNode;
-    isInertia?: boolean;
-}
-
 export default function Nav() {
 
     return (
