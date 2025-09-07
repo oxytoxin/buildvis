@@ -28,7 +28,6 @@ class StorePanelProvider extends PanelProvider
         return $panel
             ->id('store')
             ->path('')
-            ->viteTheme('resources/css/filament/store/theme.css')
             ->colors([
                 'primary' => Color::Teal,
             ])
