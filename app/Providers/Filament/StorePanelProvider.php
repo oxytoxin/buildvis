@@ -28,13 +28,16 @@ class StorePanelProvider extends PanelProvider
         return $panel
             ->id('store')
             ->path('')
+            ->viteTheme('resources/css/filament/store/theme.css')
             ->colors([
                 'primary' => Color::Teal,
             ])
             ->spa()
             ->font('Figtree')
-            ->renderHook(PanelsRenderHook::HEAD_START, fn () => Blade::render("@viteReactRefresh
-                        @vite(['resources/js/main.jsx', 'resources/css/app.css'])"))
+            ->renderHook(PanelsRenderHook::HEAD_END, fn () => Blade::render("
+                        @viteReactRefresh
+                        @vite(['resources/js/main.jsx', 'resources/css/app.css'])
+                "))
             ->discoverResources(in: app_path('Filament/Store/Resources'), for: 'App\\Filament\\Store\\Resources')
             ->discoverPages(in: app_path('Filament/Store/Pages'), for: 'App\\Filament\\Store\\Pages')
             ->pages([])
