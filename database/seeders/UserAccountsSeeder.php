@@ -15,6 +15,14 @@ class UserAccountsSeeder extends Seeder
         Role::create(['name' => 'project manager']);
         Role::create(['name' => 'employee']);
         $user = User::create([
+            'first_name' => 'Mark',
+            'last_name' => 'Casero',
+            'email' => 'mark@gmail.com',
+            'gender' => 'male',
+            'phone_number' => '09123456789',
+            'password' => 'password',
+        ]);
+        $user = User::createQuietly([
             'first_name' => 'Admin',
             'last_name' => 'User',
             'email' => 'admin@gmail.com',
@@ -23,7 +31,7 @@ class UserAccountsSeeder extends Seeder
             'password' => 'password',
         ]);
         $user->assignRole('admin');
-        $user = User::create([
+        $user = User::createQuietly([
             'first_name' => 'Employee',
             'last_name' => 'User',
             'email' => 'employee@gmail.com',
@@ -32,7 +40,7 @@ class UserAccountsSeeder extends Seeder
             'password' => 'password',
         ]);
         $user->assignRole('employee');
-        $user = User::create([
+        $user = User::createQuietly([
             'first_name' => 'Project Manager',
             'last_name' => 'User',
             'email' => 'projectmanager@gmail.com',

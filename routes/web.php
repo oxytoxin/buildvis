@@ -2,8 +2,6 @@
 
 use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\BudgetEstimateController;
-use App\Http\Controllers\HouseGeneratorController;
-use App\Http\Controllers\StoreController;
 use App\Http\Controllers\StripeController;
 use App\Http\Middleware\CheckIfHasValidShippingInfoMiddleware;
 use App\Livewire\Login;
@@ -37,14 +35,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Volt::route('confirm-password', 'pages.auth.confirm-password')
         ->name('password.confirm');
-
-    Route::get('product/{product}', [StoreController::class, 'product_view'])
-        ->name('product.view');
-
-    Route::get('house-generator/{budgetEstimate}', [HouseGeneratorController::class, 'index'])
-        ->name('house-generator.index');
-    // Route::get('house-generator-2', [HouseGeneratorController::class, 'index2'])
-    //     ->name('house-generator.index2');
 
     // Budget Estimate API routes
     Route::post('/api/budget-estimates', [BudgetEstimateController::class, 'store']);

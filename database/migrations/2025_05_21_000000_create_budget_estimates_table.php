@@ -14,32 +14,25 @@ return new class extends Migration
             $table->string('name');
             $table->text('description')->nullable();
             $table->json('structured_data'); // Stores the generated structured output
+            $table->decimal('budget', 12, 2)->default(0);
             $table->decimal('total_amount', 12, 2)->default(0);
-            $table->string('status')->default('draft'); // draft, submitted, approved, rejected
+            $table->integer('number_of_rooms');
+            $table->integer('number_of_stories');
+            $table->decimal('lot_length');
+            $table->decimal('lot_width');
+            $table->decimal('lot_area')->storedAs('lot_length * lot_width');
+            $table->decimal('floor_length');
+            $table->decimal('floor_width');
+            $table->decimal('floor_area')->storedAs('floor_length * floor_width');
+            $table->string('status')->default('processing'); // draft, submitted, approved, rejected
             $table->text('notes')->nullable();
             $table->timestamps();
             $table->softDeletes(); // For archiving estimates
-        });
-
-        Schema::create('budget_estimate_items', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('budget_estimate_id')->constrained()->onDelete('cascade');
-            $table->foreignId('work_category_id')->nullable()->constrained()->onDelete('restrict');
-            $table->foreignId('product_variation_id')->nullable()->constrained()->onDelete('restrict');
-            $table->string('name');
-            $table->text('description')->nullable();
-            $table->decimal('quantity', 12, 2);
-            $table->string('unit'); // e.g., pieces, kg, cubic meters, etc.
-            $table->decimal('unit_price', 12, 2);
-            $table->decimal('subtotal', 12, 2)->storedAs('quantity * unit_price');
-            $table->string('type')->default('material'); // material, labor, equipment, etc.
-            $table->timestamps();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('budget_estimate_items');
         Schema::dropIfExists('budget_estimates');
     }
 };

@@ -2,7 +2,9 @@
 
 namespace App\Filament\Store\Resources\ProjectResource\Pages;
 
+use App\Casts\BudgetEstimateData;
 use App\Filament\Store\Resources\ProjectResource;
+use App\Jobs\GenerateBudgetEstimateJob;
 use App\Models\BudgetEstimate;
 use App\Models\BudgetEstimateItem;
 use App\Models\Product;
@@ -39,14 +41,14 @@ class ShowProject extends Page implements HasTable
 
     public Project $project;
 
+    public ?BudgetEstimate $loadedEstimate;
+
     public function getTitle(): string|Htmlable
     {
         return 'Project:'.$this->project->name;
     }
 
     protected static ?int $navigationSort = 3;
-
-    public array $quotation = [];
 
     public int $budget = 2_000_000;
 
@@ -345,6 +347,9 @@ class ShowProject extends Page implements HasTable
                 TextColumn::make('description')
                     ->limit(50)
                     ->searchable(),
+                TextColumn::make('budget')
+                    ->money('PHP')
+                    ->sortable(),
                 TextColumn::make('total_amount')
                     ->money('PHP')
                     ->sortable(),
@@ -398,34 +403,15 @@ class ShowProject extends Page implements HasTable
      */
     public function loadEstimate(BudgetEstimate $estimate): void
     {
-        $this->selectedEstimateId = $estimate->id;
+        $this->loadedEstimate = $estimate;
         $this->description = $estimate->description;
-        $this->quotation = $estimate->structured_data;
-
-        // Load dimension data from structured data
-        if (isset($estimate->structured_data['budget'])) {
-            $this->budget = $estimate->structured_data['budget'];
-        } else {
-            $this->budget = $estimate->total_amount;
-        }
-        if (isset($estimate->structured_data['lot_length'])) {
-            $this->lotLength = $estimate->structured_data['lot_length'];
-        }
-        if (isset($estimate->structured_data['lot_width'])) {
-            $this->lotWidth = $estimate->structured_data['lot_width'];
-        }
-        if (isset($estimate->structured_data['floor_length'])) {
-            $this->floorLength = $estimate->structured_data['floor_length'];
-        }
-        if (isset($estimate->structured_data['floor_width'])) {
-            $this->floorWidth = $estimate->structured_data['floor_width'];
-        }
-        if (isset($estimate->structured_data['number_of_rooms'])) {
-            $this->numberOfRooms = $estimate->structured_data['number_of_rooms'];
-        }
-        if (isset($estimate->structured_data['number_of_stories'])) {
-            $this->numberOfStories = $estimate->structured_data['number_of_stories'];
-        }
+        $this->budget = $estimate->budget;
+        $this->lotLength = $estimate->structured_data['lot_length'] ?? $this->lotLength;
+        $this->lotWidth = $estimate->structured_data['lot_width'] ?? $this->lotWidth;
+        $this->floorLength = $estimate->structured_data['floor_length'] ?? $this->floorLength;
+        $this->floorWidth = $estimate->structured_data['floor_width'] ?? $this->floorWidth;
+        $this->numberOfRooms = $estimate->structured_data['number_of_rooms'] ?? $this->numberOfRooms;
+        $this->numberOfStories = $estimate->structured_data['number_of_stories'] ?? $this->numberOfStories;
 
         Notification::make()
             ->title('Estimate loaded')
@@ -446,7 +432,7 @@ class ShowProject extends Page implements HasTable
      */
     private function resetForm(): void
     {
-        $this->quotation = [];
+        $this->loadedEstimate = null;
         $this->resetMessages();
     }
 
@@ -455,38 +441,31 @@ class ShowProject extends Page implements HasTable
      */
     public function estimate(): void
     {
-        set_time_limit(180); // Set max execution time to 3 minutes
 
-        $this->validate();
-        $client = $this->createOpenAIClient();
-        $this->resetMessages();
-
-        $response = $client->chat()->create([
-            'model' => 'o4-mini',
-            'messages' => [
-                [
-                    'role' => 'user',
-                    'content' => $this->messages,
-                ],
-            ],
-            'response_format' => $this->getResponseFormat(),
+        $estimate = BudgetEstimate::create([
+            'project_id' => $this->project->id,
+            'name' => "Estimate for {$this->description}",
+            'description' => $this->description,
+            'structured_data' => [],
+            'budget' => $this->budget,
+            'lot_length' => $this->lotLength,
+            'lot_width' => $this->lotWidth,
+            'floor_length' => $this->floorLength,
+            'floor_width' => $this->floorWidth,
+            'number_of_rooms' => $this->numberOfRooms,
+            'number_of_stories' => $this->numberOfStories,
+            'total_amount' => 0,
+            'status' => 'processing',
         ]);
 
-        $quotation = json_decode($response->choices[0]->message->content, true);
-
-        if (! $quotation) {
-            throw new \Exception('Failed to parse AI response');
-        }
-
-        // Save the generated estimate
-        $this->saveEstimate($quotation);
+        GenerateBudgetEstimateJob::dispatch($estimate);
 
         // Update the quotation property with the generated data
-        $this->quotation = $quotation;
+        $this->loadedEstimate = $estimate;
 
         Notification::make()
             ->title('Success')
-            ->body('Estimate generated and saved successfully.')
+            ->body('Estimate saved successfully and is being processed.')
             ->success()
             ->send();
 
@@ -578,8 +557,8 @@ class ShowProject extends Page implements HasTable
             ->withApiKey(config('services.ai.api_key'))
             ->withBaseUri(config('services.ai.base_uri'))
             ->withHttpClient(new \GuzzleHttp\Client([
-                'timeout' => 120, // 2 minutes timeout
-                'connect_timeout' => 30, // 30 seconds connection timeout
+                'timeout' => 120,
+                'connect_timeout' => 30,
             ]))
             ->make();
     }
@@ -589,61 +568,6 @@ class ShowProject extends Page implements HasTable
      */
     private function getResponseFormat(): array
     {
-        return [
-            'type' => 'json_schema',
-            'json_schema' => [
-                'name' => 'quotation_response',
-                'strict' => true,
-                'schema' => [
-                    'type' => 'object',
-                    'properties' => [
-                        'length' => ['type' => 'integer'],
-                        'width' => ['type' => 'integer'],
-                        'total_area' => ['type' => 'integer'],
-                        'lot_length' => ['type' => 'integer'],
-                        'lot_width' => ['type' => 'integer'],
-                        'floor_length' => ['type' => 'integer'],
-                        'floor_width' => ['type' => 'integer'],
-                        'number_of_rooms' => ['type' => 'integer'],
-                        'number_of_stories' => ['type' => 'integer'],
-                        'itemized_costs' => [
-                            'type' => 'array',
-                            'items' => [
-                                'type' => 'object',
-                                'properties' => [
-                                    'name' => ['type' => 'string'],
-                                    'category_total' => ['type' => 'number'],
-                                    'labor_cost' => ['type' => 'number'],
-                                    'products' => [
-                                        'type' => 'array',
-                                        'items' => [
-                                            'type' => 'object',
-                                            'properties' => [
-                                                'product_name' => ['type' => 'string'],
-                                                'sku' => ['type' => 'string'],
-                                                'unit' => ['type' => 'string'],
-                                                'quantity' => ['type' => 'number'],
-                                                'unit_price' => ['type' => 'number'],
-                                                'total_price' => ['type' => 'number'],
-                                            ],
-                                            'required' => ['product_name', 'sku', 'unit', 'quantity', 'unit_price', 'total_price'],
-                                            'additionalProperties' => false,
-                                        ],
-                                    ],
-                                ],
-                                'required' => ['name', 'category_total', 'labor_cost', 'products'],
-                                'additionalProperties' => false,
-                            ],
-                        ],
-                        'budget' => ['type' => 'number'],
-                        'total_cost' => ['type' => 'number'],
-                        'materials_cost' => ['type' => 'number'],
-                        'labor_cost_total' => ['type' => 'number'],
-                    ],
-                    'required' => ['length', 'width', 'total_area', 'lot_length', 'lot_width', 'floor_length', 'floor_width', 'number_of_rooms', 'number_of_stories', 'itemized_costs', 'budget', 'total_cost', 'materials_cost', 'labor_cost_total'],
-                    'additionalProperties' => false,
-                ],
-            ],
-        ];
+        return BudgetEstimateData::getResponseFormat();
     }
 }
