@@ -10,12 +10,15 @@ export default defineConfig({
         laravel({
             input: [
                 "resources/css/app.css",
+                "resources/js/app.jsx",
                 "resources/js/main.jsx",
                 "resources/css/filament/store/theme.css",
             ],
             refresh: true,
         }),
-        react(),
+        react({
+            include: "**/*.{jsx,tsx}",
+        }),
     ],
     resolve: {
         extensions: ['.js', '.jsx', '.ts', '.tsx'],
