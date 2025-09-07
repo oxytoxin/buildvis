@@ -35,7 +35,7 @@ class StorePanelProvider extends PanelProvider
             ->spa()
             ->font('Figtree')
             ->renderHook(PanelsRenderHook::HEAD_END, fn () => Blade::render("@viteReactRefresh
-                        @vite(['resources/js/main.jsx', 'resources/css/app.css'])"))
+                        @vite(['resources/js/main.jsx'])"))
             ->discoverResources(in: app_path('Filament/Store/Resources'), for: 'App\\Filament\\Store\\Resources')
             ->discoverPages(in: app_path('Filament/Store/Pages'), for: 'App\\Filament\\Store\\Pages')
             ->pages([])
