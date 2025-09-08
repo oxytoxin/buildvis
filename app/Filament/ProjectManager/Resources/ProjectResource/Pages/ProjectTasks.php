@@ -3,85 +3,94 @@
 namespace App\Filament\ProjectManager\Resources\ProjectResource\Pages;
 
 use App\Enums\ProjectTaskStatuses;
-use App\Filament\ProjectManager\Resources\ProjectResource;
-use Filament\Forms;
+use App\Filament\Resources\ProjectResource;
+use App\Models\Task;
+use Filament\Actions\CreateAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Form;
-use Filament\Resources\Pages\ManageRelatedRecords;
-use Filament\Tables;
-use Filament\Tables\Table;
+use Filament\Forms\Components\TextInput;
+use Illuminate\Database\Eloquent\Builder;
+use SolutionForest\FilamentTree\Actions\DeleteAction;
+use SolutionForest\FilamentTree\Actions\EditAction;
+use SolutionForest\FilamentTree\Resources\Pages\TreePage as BasePage;
 
-class ProjectTasks extends ManageRelatedRecords
+class ProjectTasks extends BasePage
 {
     protected static string $resource = ProjectResource::class;
 
-    protected static string $relationship = 'tasks';
+    public $project_id;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
-
-    public static function getNavigationLabel(): string
+    public function mount($record): void
     {
-        return 'Tasks';
+        $this->project_id = $record;
     }
 
-    public function form(Form $form): Form
+    protected function getTreeQuery(): Builder
     {
-        return $form
-            ->schema([
-                Forms\Components\TextInput::make('name')
-                    ->required()
-                    ->maxLength(255),
-                Select::make('status')->options(ProjectTaskStatuses::class)->default(ProjectTaskStatuses::PENDING)->required(),
-                Forms\Components\Textarea::make('description')->columnSpanFull(),
-                DatePicker::make('start_date')->required()->default(today()),
-                DatePicker::make('end_date')->required()->default(today()->addDays(7)),
-            ]);
+        return Task::query();
     }
 
-    public function table(Table $table): Table
+    protected static int $maxDepth = 2;
+
+    protected function getActions(): array
     {
-        $project = $this->getRecord();
+        return [
+            CreateAction::make()->label('Create Task')
+                ->form([
+                    Select::make('parent_id')->options(Task::query()->where('project_id', $this->project_id)->pluck('title', 'id'))->label('Parent Task'),
+                    TextInput::make('title')->required(),
+                    TextInput::make('description'),
+                    DatePicker::make('start_date')->required()->default(now()),
+                    DatePicker::make('end_date')->required()->default(now()->addDays(1)),
+                ])
+                ->action(function ($data) {
+                    $data['project_id'] = $this->project_id;
+                    Task::query()->create($data);
+                }),
+        ];
+    }
 
-        return $table
-            ->recordTitleAttribute('name')
-            ->modifyQueryUsing(fn ($query) => $query->orderBy('sort'))
-            ->header(function () use ($project) {
-                $completed_tasks_count = $project->completed_tasks()->count();
-                $total_tasks_count = $project->tasks()->count();
+    public function getTreeRecordIcon(?\Illuminate\Database\Eloquent\Model $record = null): ?string
+    {
+        if ($record->parent_id == -1) {
+            return null;
+        }
 
-                return view('extras.project-tasks.project-progress-header', [
-                    'completed_tasks_count' => $completed_tasks_count,
-                    'tasks_count' => $total_tasks_count,
-                ]);
-            })
-            ->columns([
-                Tables\Columns\TextColumn::make('name'),
-                Tables\Columns\TextColumn::make('status'),
-                Tables\Columns\TextColumn::make('start_date')->date(),
-                Tables\Columns\TextColumn::make('end_date')->date(),
-            ])
-            ->filters([
-                //
-            ])
-            ->headerActions([
-                Tables\Actions\CreateAction::make(),
-            ])
-            ->reorderable('sort')
-            ->actions([
-                Tables\Actions\Action::make('complete')
-                    ->visible(fn ($record) => $record->status === ProjectTaskStatuses::PENDING)
-                    ->action(fn ($record) => $record->update(['status' => ProjectTaskStatuses::COMPLETED]))
-                    ->color('success')
-                    ->button()
-                    ->icon('heroicon-o-check'),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+        return match ($record->status) {
+            ProjectTaskStatuses::PENDING => 'heroicon-o-exclamation-circle',
+            ProjectTaskStatuses::COMPLETED => 'heroicon-o-check-circle',
+            default => null,
+        };
+    }
+
+    protected function getTreeActions(): array
+    {
+        return [
+            EditAction::make()
+                ->form([
+                    TextInput::make('title')->required(),
+                    TextInput::make('description'),
+                    Select::make('status')->options(ProjectTaskStatuses::class)->label('Status')->required(),
+                    DatePicker::make('start_date')->required(),
+                    DatePicker::make('end_date')->required(),
                 ]),
-            ]);
+            DeleteAction::make(),
+        ];
     }
+
+    protected function getHeaderWidgets(): array
+    {
+        return [];
+    }
+
+    protected function getFooterWidgets(): array
+    {
+        return [];
+    }
+
+    // CUSTOMIZE ICON OF EACH RECORD, CAN DELETE
+    // public function getTreeRecordIcon(?\Illuminate\Database\Eloquent\Model $record = null): ?string
+    // {
+    //     return null;
+    // }
 }

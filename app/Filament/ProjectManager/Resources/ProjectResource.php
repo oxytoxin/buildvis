@@ -40,6 +40,7 @@ class ProjectResource extends Resource
             ])
             ->actions([
                 Tables\Actions\Action::make('tasks')->button()->outlined()->url(fn ($record) => route('filament.project-manager.resources.projects.tasks', ['record' => $record])),
+                Tables\Actions\Action::make('documents')->button()->color('success')->outlined()->url(fn ($record) => route('filament.project-manager.resources.projects.documents', ['record' => $record])),
             ])
             ->bulkActions([
             ]);
@@ -57,6 +58,7 @@ class ProjectResource extends Resource
         return [
             'index' => Pages\ManageProjects::route('/'),
             'tasks' => Pages\ProjectTasks::route('/{record}/tasks'),
+            'documents' => Pages\ProjectDocuments::route('/{record}/documents'),
         ];
     }
 }

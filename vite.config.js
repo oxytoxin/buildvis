@@ -13,6 +13,7 @@ export default defineConfig({
                 "resources/js/app.jsx",
                 "resources/js/main.jsx",
                 "resources/css/filament/store/theme.css",
+                "resources/css/filament/project-manager/theme.css"
             ],
             refresh: true,
         }),

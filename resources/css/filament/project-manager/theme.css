@@ -1,0 +1,6 @@
+@import '../../../../vendor/filament/filament/resources/css/theme.css';
+@import '../../../../vendor/solution-forest/filament-tree/resources/css/jquery.nestable.css';
+@import '../../../../vendor/solution-forest/filament-tree/resources/css/button.css';
+
+@source '../../../../vendor/solution-forest/filament-tree/resources/**/*.blade.php';
+@config 'tailwind.config.js';

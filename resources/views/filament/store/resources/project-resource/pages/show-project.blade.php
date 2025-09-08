@@ -1,15 +1,16 @@
 <x-filament-panels::page>
     @php
-        $project_tasks = $project->tasks()->orderBy('sort')->get();
-        $gantt_tasks = $project_tasks->map(function(\App\Models\Task $task){
+        $tasks = $project->tasks()->with('children')->where('parent_id', -1)->orderBy('order')->get();
+        $project_tasks = $project->tasks()->orderBy('parent_id')->orderBy('order')->get();
+        $gantt_tasks = $project_tasks->where('parent_id', '!=', -1)->map(function(\App\Models\Task $task){
             return [
                 'id' => $task->id,
-                'name' => $task->name,
+                'name' => $task->title,
                 'start' => $task->start_date->format('Y-m-d'),
                 'end' => $task->end_date->format('Y-m-d'),
                 'progress' => $task->status === \App\Enums\ProjectTaskStatuses::COMPLETED ? 100 : 50,
             ];
-        });
+        })->values();
         $tasks_count = $project_tasks->count();
         $completed_tasks_count = $project->completed_tasks()->count();
     @endphp
@@ -28,7 +29,7 @@
                 <script src="https://cdn.jsdelivr.net/npm/frappe-gantt/dist/frappe-gantt.umd.js"></script>
                 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/frappe-gantt/dist/frappe-gantt.css">
             @endpush
-            <div class="" wire:ignore.self x-data x-init="
+            <div class="" wire:ignore x-data x-init="
                 new Gantt('#gantt', {{ json_encode($gantt_tasks) }}, { readonly: true, view_mode: 'Week',infinite_padding: false, view_mode_select: true})
             ">
                 <div class="px-4 border w-full" id="gantt"></div>

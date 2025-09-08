@@ -10,14 +10,15 @@ return new class extends Migration
     {
         Schema::create('tasks', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            $table->string('title');
             $table->text('description')->nullable();
             $table->integer('status')->default(\App\Enums\ProjectTaskStatuses::PENDING->value);
+            $table->integer('parent_id')->default(-1);
+            $table->integer('order')->default(0)->index();
+            $table->integer('weight')->default(1);
             $table->date('start_date');
             $table->date('end_date');
-            $table->integer('sort')->default(0);
             $table->foreignId('project_id')->constrained('projects');
-            $table->foreignId('parent_id')->nullable()->constrained('tasks');
             $table->timestamps();
         });
     }

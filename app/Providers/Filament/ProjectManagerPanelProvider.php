@@ -25,8 +25,9 @@ class ProjectManagerPanelProvider extends PanelProvider
         return $panel
             ->id('project-manager')
             ->path('project-manager')
+            ->viteTheme('resources/css/filament/project-manager/theme.css')
             ->colors([
-                'primary' => Color::Amber,
+                'primary' => Color::Purple,
             ])
             ->discoverResources(in: app_path('Filament/ProjectManager/Resources'), for: 'App\\Filament\\ProjectManager\\Resources')
             ->discoverPages(in: app_path('Filament/ProjectManager/Pages'), for: 'App\\Filament\\ProjectManager\\Pages')
