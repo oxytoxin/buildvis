@@ -14,6 +14,7 @@ class CreateProjectTasksObserver
         $task = Task::create([
             'project_id' => $project->id,
             'title' => 'SITE PREPARATION',
+            'weight' => 0,
             'start_date' => $today,
             'end_date' => $tomorrow,
         ]);
@@ -38,6 +39,7 @@ class CreateProjectTasksObserver
         $task = Task::create([
             'project_id' => $project->id,
             'title' => 'FOUNDATION WORK',
+            'weight' => 0,
             'start_date' => $today,
             'end_date' => $tomorrow,
         ]);
@@ -62,6 +64,7 @@ class CreateProjectTasksObserver
         $task = Task::create([
             'project_id' => $project->id,
             'title' => 'ROOFING WORKS',
+            'weight' => 0,
             'start_date' => $today,
             'end_date' => $tomorrow,
         ]);

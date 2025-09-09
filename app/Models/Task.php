@@ -16,6 +16,7 @@ class Task extends Model
         'status' => ProjectTaskStatuses::class,
         'start_date' => 'immutable_date',
         'end_date' => 'immutable_date',
+        'parent_id' => 'int',
     ];
 
     public function project(): BelongsTo

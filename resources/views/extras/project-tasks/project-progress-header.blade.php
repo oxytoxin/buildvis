@@ -1,9 +1,11 @@
-<div class="p-4 flex justify-between">
+<div class="flex justify-between">
     @include('extras.project-tasks.project-progress-details')
-    <div>
-        @foreach($this->table->getHeaderActions() as $action)
-            {{ $action->render() }}
-        @endforeach
-    </div>
+    @isset($this->table)
+        <div>
+            @foreach($this->table->getHeaderActions() as $action)
+                {{ $action->render() }}
+            @endforeach
+        </div>
+    @endisset
 
 </div>

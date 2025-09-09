@@ -3,7 +3,7 @@
         <div
             class="h-[70vh] w-full overflow-y-auto rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-4">
             <div
-                wire:poll
+                wire:poll.visible
                 class="text-sm h-full text-gray-900 dark:text-gray-200 [&_table]:my-2 [&_table]:w-full [&_td]:border [&_td]:border-gray-300 [&_td]:dark:border-gray-600 [&_td]:px-2 [&_th]:border [&_th]:border-gray-300 [&_th]:dark:border-gray-600 [&_th]:px-2 [&_th]:text-left"
                 id="content">
                 @if($loadedEstimate)

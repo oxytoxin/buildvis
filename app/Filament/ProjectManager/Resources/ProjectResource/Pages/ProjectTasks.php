@@ -4,11 +4,13 @@ namespace App\Filament\ProjectManager\Resources\ProjectResource\Pages;
 
 use App\Enums\ProjectTaskStatuses;
 use App\Filament\Resources\ProjectResource;
+use App\Models\Project;
 use App\Models\Task;
 use Filament\Actions\CreateAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Builder;
 use SolutionForest\FilamentTree\Actions\DeleteAction;
 use SolutionForest\FilamentTree\Actions\EditAction;
@@ -18,16 +20,53 @@ class ProjectTasks extends BasePage
 {
     protected static string $resource = ProjectResource::class;
 
-    public $project_id;
+    public int $project_id;
+
+    protected static ?string $breadcrumb = 'Tasks';
+
+    public function getHeading(): string|Htmlable
+    {
+        $project = Project::find($this->project_id);
+
+        $completed_tasks = $project->completed_tasks;
+        $tasks = $project->tasks;
+        $progress = $tasks->count() > 0 ? $completed_tasks->sum('weight') / $tasks->sum('weight') * 100 : 0;
+
+        return view('extras.project-tasks.project-progress-header', [
+            'project' => $project,
+            'completed_tasks_count' => $completed_tasks->count(),
+            'tasks_count' => $tasks->count(),
+            'progress' => $progress,
+        ]);
+    }
 
     public function mount($record): void
     {
         $this->project_id = $record;
     }
 
+    protected function getWithRelationQuery(): Builder
+    {
+        $query = $this->getTreeQuery();
+        if (method_exists($this->getModel(), 'children') && $this->getModel()::has('children')) {
+            if (method_exists($this->getModel(), 'scopeOrdered')) {
+                return $query->with('children', fn ($query) => $query->ordered());
+            }
+
+            return $query->with('children');
+        }
+
+        return $query;
+    }
+
+    public function getModel(): string
+    {
+        return Task::class;
+    }
+
     protected function getTreeQuery(): Builder
     {
-        return Task::query();
+        return Task::query()->where('project_id', $this->project_id);
     }
 
     protected static int $maxDepth = 2;
@@ -50,17 +89,17 @@ class ProjectTasks extends BasePage
         ];
     }
 
-    public function getTreeRecordIcon(?\Illuminate\Database\Eloquent\Model $record = null): ?string
+    public function getTreeRecordTitle(?\Illuminate\Database\Eloquent\Model $record = null): string
     {
-        if ($record->parent_id == -1) {
-            return null;
+        if (! $record) {
+            return '';
         }
 
-        return match ($record->status) {
-            ProjectTaskStatuses::PENDING => 'heroicon-o-exclamation-circle',
-            ProjectTaskStatuses::COMPLETED => 'heroicon-o-check-circle',
-            default => null,
-        };
+        if ($record->parent_id == -1) {
+            return $record->title;
+        }
+
+        return "{$record->title} \t <span class='border-2 rounded px-2 py-1 ml-6'>{$record->status->getLabel()}</span>";
     }
 
     protected function getTreeActions(): array

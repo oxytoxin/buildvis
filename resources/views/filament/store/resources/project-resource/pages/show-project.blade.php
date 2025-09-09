@@ -11,31 +11,43 @@
                 'progress' => $task->status === \App\Enums\ProjectTaskStatuses::COMPLETED ? 100 : 50,
             ];
         })->values();
-        $tasks_count = $project_tasks->count();
-        $completed_tasks_count = $project->completed_tasks()->count();
+        $completed_tasks_count = $project->completed_tasks->count();
+        $tasks_count = $project->tasks->count();
+        $progress = $project->tasks->count() > 0 ? $project->completed_tasks->sum('weight') / $project->tasks->sum('weight') * 100 : 0;
     @endphp
-    <x-filament::card>
-        <div class="flex gap-4 flex-col sm:flex-row">
-            <div class="flex-1">
-                @include('extras.project-tasks.project-progress-details')
+    <div x-data="{activeTab:'details'}">
+        <x-filament::card>
+            <x-filament::tabs class="mb-4">
+                <x-filament::tabs.item alpine-active="activeTab === 'details'" @click="activeTab = 'details'">
+                    Project Details
+                </x-filament::tabs.item>
+                <x-filament::tabs.item alpine-active="activeTab === 'tasks'" @click="activeTab = 'tasks'">
+                    Tasks
+                </x-filament::tabs.item>
+                <x-filament::tabs.item alpine-active="activeTab === 'gantt'" @click="activeTab = 'gantt'">
+                    Gantt Chart
+                </x-filament::tabs.item>
+                <x-filament::tabs.item alpine-active="activeTab === 'documents'" @click="activeTab = 'documents'">
+                    Documents
+                </x-filament::tabs.item>
+
+            </x-filament::tabs>
+            <div class="flex gap-4 flex-col sm:flex-row">
+                <div x-show="activeTab=='details'" class="flex-1 px-2">
+                    @include('extras.project-tasks.project-progress-details')
+                </div>
+                <div x-show="activeTab=='tasks'" class="flex-1 px-2">
+                    @include('extras.project-tasks.project-tasks-list')
+                </div>
             </div>
-            <div class="flex-1">
-                @include('extras.project-tasks.project-tasks-list')
+            <div x-show="activeTab=='gantt'">
+                @include('extras.project-tasks.gantt')
             </div>
-        </div>
-        <div>
-            <h3 class="mb-4">Gantt Chart</h3>
-            @push('scripts')
-                <script src="https://cdn.jsdelivr.net/npm/frappe-gantt/dist/frappe-gantt.umd.js"></script>
-                <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/frappe-gantt/dist/frappe-gantt.css">
-            @endpush
-            <div class="" wire:ignore x-data x-init="
-                new Gantt('#gantt', {{ json_encode($gantt_tasks) }}, { readonly: true, view_mode: 'Week',infinite_padding: false, view_mode_select: true})
-            ">
-                <div class="px-4 border w-full" id="gantt"></div>
+            <div x-show="activeTab=='documents'">
+                @include('extras.project-tasks.documents')
             </div>
-        </div>
-    </x-filament::card>
+        </x-filament::card>
+    </div>
     <div>
         <h3 class="mt-4 mb-2 font-semibold text-lg">Budget Estimates</h3>
         {{ $this->table }}

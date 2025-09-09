@@ -1,6 +1,5 @@
-<div class="font-semibold">
-    <p class="text-xl">Project Manager: {{ $project->project_manager?->name ?? 'Unassigned' }}</p>
-    <h4 class="text-lg">Project Progress</h4>
+<div class="font-semibold text-base">
+    <p>Project Manager: {{ $project->project_manager?->name ?? 'Unassigned' }}</p>
     <div class="flex gap-2">
         <h5>Tasks Done:</h5>
         @if($tasks_count > 0)
@@ -11,10 +10,6 @@
     </div>
     <div class="flex gap-2">
         <h5>Overall Progress:</h5>
-        @if($tasks_count > 0)
-            <h5>{{ round($completed_tasks_count/$tasks_count * 100, 2) }}%</h5>
-        @else
-            <h5>N/A</h5>
-        @endif
+        <h5>{{ round($progress, 2) }}%</h5>
     </div>
 </div>
