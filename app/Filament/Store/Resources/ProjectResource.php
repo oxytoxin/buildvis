@@ -12,6 +12,7 @@ use Filament\Tables;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Table;
 use IbrahimBougaoua\FilamentRatingStar\Forms\Components\RatingStar;
+use Illuminate\Database\Eloquent\Builder;
 
 class ProjectResource extends Resource
 {
@@ -27,6 +28,11 @@ class ProjectResource extends Resource
             ->schema([
                 Forms\Components\TextInput::make('name')->required(),
             ]);
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return Project::query()->with('project_manager')->whereBelongsTo(auth()->user(), 'customer');
     }
 
     public static function table(Table $table): Table
