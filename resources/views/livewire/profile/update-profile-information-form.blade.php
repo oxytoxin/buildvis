@@ -10,8 +10,8 @@
         public string $first_name = '';
         public ?string $middle_name = '';
         public string $last_name = '';
-        public string $gender = '';
-        public string $phone_number = '';
+        public ?string $gender = '';
+        public ?string $phone_number = '';
         public string $email = '';
 
         /**
@@ -137,7 +137,7 @@
 
         <div>
             <x-input-label for="gender" :value="__('Gender')"/>
-            <select wire:model="gender" id="gender" name="gender"
+            <select wire:model="gender" id="gender" name="gender" required
                     class="block w-full px-4 py-2 mb-2 outline-none ring-offset-0 focus:ring-2 focus:ring-lime-500 shadow rounded-lg">
                 <option value="">Select Gender</option>
                 <option value="male">Male</option>

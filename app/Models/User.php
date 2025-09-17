@@ -59,6 +59,7 @@ class User extends Authenticatable implements FilamentUser
     protected static function booted(): void
     {
         static::deleting(function (User $user) {
+            $user->customer?->shipping_information()->delete();
             $user->customer?->delete();
         });
 
