@@ -3,24 +3,30 @@
 namespace App\Livewire;
 
 use App\Models\User;
-use Livewire\Component;
-use Livewire\Attributes\Layout;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Auth\Events\Registered;
 use Illuminate\Validation\Rules\Password;
+use Livewire\Attributes\Layout;
+use Livewire\Component;
 
 #[Layout('components.layouts.guest')]
 class Register extends Component
 {
-
     public string $first_name = '';
+
     public string $middle_name = '';
+
     public string $last_name = '';
+
     public string $email = '';
+
     public string $gender = '';
+
     public string $phone_number = '';
+
     public string $password = '';
+
     public string $password_confirmation = '';
 
     /**
@@ -34,7 +40,7 @@ class Register extends Component
             'last_name' => ['required', 'string', 'max:255'],
             'gender' => ['nullable', 'string', 'in:male,female,other'],
             'phone_number' => ['nullable', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'string', 'confirmed', Password::defaults()],
         ]);
 

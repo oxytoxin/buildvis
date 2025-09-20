@@ -2,11 +2,10 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\CityMunicipality;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
 class CityMunicipalitySeeder extends Seeder
 {
@@ -17,7 +16,7 @@ class CityMunicipalitySeeder extends Seeder
     {
         DB::beginTransaction();
 
-        $provinces = collect(Http::get("https://psgc.gitlab.io/api/cities-municipalities.json")->json());
+        $provinces = collect(Http::get('https://psgc.gitlab.io/api/cities-municipalities.json')->json());
         $now = now();
         $provinces = $provinces->map(function ($r) use ($now) {
             return [

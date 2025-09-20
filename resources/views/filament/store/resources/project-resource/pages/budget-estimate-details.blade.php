@@ -21,7 +21,11 @@
                         @endphp
                         <div class="flex justify-end">
                             <x-filament::button
-                                @click="html2pdf().from(document.getElementById('estimate')).save('Budget Estimate.pdf')">
+                                @click="
+                                html2pdf().from(document.getElementById('estimate')).toPdf('Budget Estimate.pdf').get('pdf').then(function (pdf) {
+                                  window.open(pdf.output('bloburl'), '_blank');
+                                });
+                               ">
                                 Download
                             </x-filament::button>
                         </div>

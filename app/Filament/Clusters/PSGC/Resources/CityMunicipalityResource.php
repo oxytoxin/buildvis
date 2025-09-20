@@ -4,10 +4,7 @@ namespace App\Filament\Clusters\PSGC\Resources;
 
 use App\Filament\Clusters\Addresses;
 use App\Filament\Clusters\PSGC\Resources\CityMunicipalityResource\Pages\ManageCityMunicipalities;
-use App\Filament\Resources\CityMunicipalityResource\Pages;
-use App\Filament\Resources\CityMunicipalityResource\RelationManagers;
 use App\Models\CityMunicipality;
-use Filament\Forms;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -16,7 +13,6 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class CityMunicipalityResource extends Resource
 {
@@ -56,11 +52,11 @@ class CityMunicipalityResource extends Resource
             ])
             ->filters([
                 SelectFilter::make('region_code')
-                    ->relationship('region', 'name', fn(Builder $query) => $query->orderBy('id'))
+                    ->relationship('region', 'name', fn (Builder $query) => $query->orderBy('id'))
                     ->label('Region')
                     ->placeholder('All Regions'),
                 SelectFilter::make('province_code')
-                    ->relationship('province', 'name', fn(Builder $query) => $query->orderBy('id'))
+                    ->relationship('province', 'name', fn (Builder $query) => $query->orderBy('id'))
                     ->label('Province')
                     ->placeholder('All Provinces'),
             ])

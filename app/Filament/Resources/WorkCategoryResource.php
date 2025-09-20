@@ -5,8 +5,6 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\WorkCategoryResource\Pages;
 use App\Filament\Resources\WorkCategoryResource\RelationManagers;
 use App\Models\WorkCategory;
-use Filament\Forms;
-use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -14,8 +12,6 @@ use Filament\Tables;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class WorkCategoryResource extends Resource
 {
@@ -39,7 +35,7 @@ class WorkCategoryResource extends Resource
             ->columns([
                 TextColumn::make('name'),
                 IconColumn::make('requires_labor')->boolean(),
-                TextColumn::make('labor_cost_rate')->numeric()->formatStateUsing(fn($state) => number_format($state * 100) . "%")
+                TextColumn::make('labor_cost_rate')->numeric()->formatStateUsing(fn ($state) => number_format($state * 100).'%'),
             ])
             ->filters([
                 //

@@ -4,13 +4,12 @@ namespace App\Filament\Resources\OrderResource\Pages;
 
 use App\Filament\Resources\OrderResource;
 use Filament\Actions;
-use Filament\Resources\Pages\ViewRecord;
-use Filament\Infolists;
-use Filament\Infolists\Infolist;
-use Filament\Infolists\Components\Section;
-use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\Grid;
 use Filament\Infolists\Components\RepeatableEntry;
+use Filament\Infolists\Components\Section;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Infolist;
+use Filament\Resources\Pages\ViewRecord;
 
 class ViewOrder extends ViewRecord
 {
@@ -30,7 +29,7 @@ class ViewOrder extends ViewRecord
                                     ->label('Order Name'),
                                 TextEntry::make('status')
                                     ->badge()
-                                    ->color(fn(string $state): string => match ($state) {
+                                    ->color(fn (string $state): string => match ($state) {
                                         'pending' => 'warning',
                                         'processing' => 'info',
                                         'shipped' => 'primary',
@@ -45,7 +44,7 @@ class ViewOrder extends ViewRecord
                                     ->money('PHP'),
                                 TextEntry::make('payment_status')
                                     ->badge()
-                                    ->color(fn(string $state): string => match ($state) {
+                                    ->color(fn (string $state): string => match ($state) {
                                         'pending' => 'warning',
                                         'paid' => 'success',
                                         'failed' => 'danger',

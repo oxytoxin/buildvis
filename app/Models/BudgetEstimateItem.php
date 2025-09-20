@@ -16,7 +16,6 @@ class BudgetEstimateItem extends Model
         'subtotal' => 'decimal:2',
     ];
 
-
     public function budget_estimate(): BelongsTo
     {
         return $this->belongsTo(BudgetEstimate::class);

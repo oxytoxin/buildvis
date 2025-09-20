@@ -12,7 +12,6 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class SupplierResource extends Resource
 {
@@ -123,7 +122,7 @@ class SupplierResource extends Resource
                     ])
                     ->label('Verification Status'),
                 Tables\Filters\Filter::make('has_products')
-                    ->query(fn(Builder $query): Builder => $query->has('products'))
+                    ->query(fn (Builder $query): Builder => $query->has('products'))
                     ->label('Has Products')
                     ->toggle(),
                 Tables\Filters\Filter::make('created_at')
@@ -135,13 +134,13 @@ class SupplierResource extends Resource
                         return $query
                             ->when(
                                 $data['created_from'],
-                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
+                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
                             )
                             ->when(
                                 $data['created_until'],
-                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
+                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
                             );
-                    })
+                    }),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
@@ -149,14 +148,14 @@ class SupplierResource extends Resource
                     ->icon('heroicon-m-check-badge')
                     ->color('success')
                     ->requiresConfirmation()
-                    ->visible(fn(Supplier $record): bool => !$record->is_verified)
-                    ->action(fn(Supplier $record) => $record->update(['is_verified' => true])),
+                    ->visible(fn (Supplier $record): bool => ! $record->is_verified)
+                    ->action(fn (Supplier $record) => $record->update(['is_verified' => true])),
                 Tables\Actions\Action::make('unverify')
                     ->icon('heroicon-m-x-circle')
                     ->color('danger')
                     ->requiresConfirmation()
-                    ->visible(fn(Supplier $record): bool => $record->is_verified)
-                    ->action(fn(Supplier $record) => $record->update(['is_verified' => false])),
+                    ->visible(fn (Supplier $record): bool => $record->is_verified)
+                    ->action(fn (Supplier $record) => $record->update(['is_verified' => false])),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -164,11 +163,11 @@ class SupplierResource extends Resource
                     Tables\Actions\BulkAction::make('verify')
                         ->icon('heroicon-m-check-badge')
                         ->requiresConfirmation()
-                        ->action(fn(Collection $records) => $records->each->update(['is_verified' => true])),
+                        ->action(fn (Collection $records) => $records->each->update(['is_verified' => true])),
                     Tables\Actions\BulkAction::make('unverify')
                         ->icon('heroicon-m-x-circle')
                         ->requiresConfirmation()
-                        ->action(fn(Collection $records) => $records->each->update(['is_verified' => false])),
+                        ->action(fn (Collection $records) => $records->each->update(['is_verified' => false])),
                 ]),
             ]);
     }

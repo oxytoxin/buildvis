@@ -30,17 +30,17 @@ class OrderItem extends Model
     {
         static::updated(function (OrderItem $orderItem) {
             $orderItem->order->update([
-                'total_amount' => $orderItem->order->items()->sum('subtotal')
+                'total_amount' => $orderItem->order->items()->sum('subtotal'),
             ]);
         });
         static::created(function (OrderItem $orderItem) {
             $orderItem->order->update([
-                'total_amount' => $orderItem->order->items()->sum('subtotal')
+                'total_amount' => $orderItem->order->items()->sum('subtotal'),
             ]);
         });
         static::deleted(function (OrderItem $orderItem) {
             $orderItem->order->update([
-                'total_amount' => $orderItem->order->items()->sum('subtotal')
+                'total_amount' => $orderItem->order->items()->sum('subtotal'),
             ]);
         });
     }

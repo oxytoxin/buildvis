@@ -1,10 +1,10 @@
 <?php
 
-    namespace App\Filament\Clusters;
+namespace App\Filament\Clusters;
 
-    use Filament\Clusters\Cluster;
+use Filament\Clusters\Cluster;
 
-    class UserManagement extends Cluster
-    {
-        protected static ?string $navigationIcon = 'heroicon-o-users';
-    }
+class UserManagement extends Cluster
+{
+    protected static ?string $navigationIcon = 'heroicon-o-users';
+}

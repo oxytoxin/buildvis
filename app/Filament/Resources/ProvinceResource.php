@@ -4,9 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Clusters\Addresses;
 use App\Filament\Resources\ProvinceResource\Pages;
-use App\Filament\Resources\ProvinceResource\RelationManagers;
 use App\Models\Province;
-use Filament\Forms;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -15,7 +13,6 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ProvinceResource extends Resource
 {
@@ -51,7 +48,7 @@ class ProvinceResource extends Resource
             ])
             ->filters([
                 SelectFilter::make('region_code')
-                    ->relationship('region', 'name', fn(Builder $query) => $query->orderBy('id'))
+                    ->relationship('region', 'name', fn (Builder $query) => $query->orderBy('id'))
                     ->label('Region')
                     ->placeholder('All Regions'),
             ])

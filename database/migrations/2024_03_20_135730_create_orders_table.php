@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\PaymentMethods;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -17,7 +18,7 @@ return new class extends Migration
             $table->text('shipping_address')->nullable();
             $table->text('billing_address')->nullable();
             $table->string('payment_status')->default('pending'); // pending, paid, failed
-            $table->string('payment_method')->nullable();
+            $table->tinyInteger('payment_method')->default(PaymentMethods::CASH_ON_DELIVERY->value);
             $table->text('notes')->nullable();
             $table->timestamps();
         });

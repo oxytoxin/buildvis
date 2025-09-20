@@ -2,6 +2,4 @@
 
 namespace App\DTO;
 
-class TaskTemplate {
-
-}
+class TaskTemplate {}

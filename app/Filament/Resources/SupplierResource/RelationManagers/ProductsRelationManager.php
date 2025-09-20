@@ -7,7 +7,6 @@ use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 
 class ProductsRelationManager extends RelationManager
 {
@@ -124,7 +123,7 @@ class ProductsRelationManager extends RelationManager
                 Tables\Actions\CreateAction::make(),
             ])
             ->actions([
-                Tables\Actions\Action::make('edit')->url(fn($record) => route('filament.admin.resources.products.edit', ['record' => $record])),
+                Tables\Actions\Action::make('edit')->url(fn ($record) => route('filament.admin.resources.products.edit', ['record' => $record])),
                 Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([

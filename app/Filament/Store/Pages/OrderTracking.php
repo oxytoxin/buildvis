@@ -3,19 +3,16 @@
 namespace App\Filament\Store\Pages;
 
 use App\Models\Order;
+use Filament\Forms\Components\DatePicker;
 use Filament\Pages\Page;
-use Filament\Tables\Table;
+use Filament\Tables\Actions\BulkActionGroup;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Filament\Forms\Components\DatePicker;
-use Filament\Tables\Actions\Action;
-use Filament\Tables\Actions\BulkAction;
-use Filament\Tables\Actions\BulkActionGroup;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 
 class OrderTracking extends Page implements HasTable
@@ -66,7 +63,7 @@ class OrderTracking extends Page implements HasTable
                         'success' => 'delivered',
                         'danger' => 'cancelled',
                     ])
-                    ->formatStateUsing(fn(string $state): string => ucfirst($state)),
+                    ->formatStateUsing(fn (string $state): string => ucfirst($state)),
                 TextColumn::make('payment_status')
                     ->badge()
                     ->colors([
@@ -75,7 +72,7 @@ class OrderTracking extends Page implements HasTable
                         'danger' => 'failed',
                         'secondary' => 'refunded',
                     ])
-                    ->formatStateUsing(fn(string $state): string => ucfirst($state)),
+                    ->formatStateUsing(fn (string $state): string => ucfirst($state)),
                 TextColumn::make('payment_method')
                     ->label('Payment Method')
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -122,11 +119,11 @@ class OrderTracking extends Page implements HasTable
                         return $query
                             ->when(
                                 $data['created_from'],
-                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
+                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
                             )
                             ->when(
                                 $data['created_until'],
-                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
+                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
                             );
                     })
                     ->label('Order Date Range'),

@@ -6,7 +6,6 @@ use App\Models\Province;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
 class ProvinceSeeder extends Seeder
 {
@@ -17,7 +16,7 @@ class ProvinceSeeder extends Seeder
     {
         DB::beginTransaction();
 
-        $provinces = collect(Http::get("https://psgc.gitlab.io/api/provinces.json")->json());
+        $provinces = collect(Http::get('https://psgc.gitlab.io/api/provinces.json')->json());
         $now = now();
         $provinces = $provinces->map(function ($r) use ($now) {
             return [

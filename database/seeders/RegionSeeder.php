@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\Region;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -17,7 +16,7 @@ class RegionSeeder extends Seeder
     {
         DB::beginTransaction();
 
-        $regions = collect(Http::get("https://psgc.gitlab.io/api/regions.json")->json());
+        $regions = collect(Http::get('https://psgc.gitlab.io/api/regions.json')->json());
         $now = now();
         $regions = $regions->map(function ($r) use ($now) {
             return [

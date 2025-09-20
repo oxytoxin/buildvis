@@ -2,7 +2,6 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\Product;
 use App\Models\ProductVariation;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
@@ -27,7 +26,7 @@ class ProductStatsOverview extends BaseWidget
                 ->icon('heroicon-o-cube')
                 ->color('primary'),
 
-            Stat::make('Total Inventory Value', '₱' . Number::format($totalValue, 2))
+            Stat::make('Total Inventory Value', '₱'.Number::format($totalValue, 2))
                 ->description('Value of all products in stock')
                 ->icon('heroicon-o-banknotes')
                 ->color('success'),

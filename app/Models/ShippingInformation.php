@@ -10,7 +10,6 @@ use Illuminate\Database\Eloquent\Model;
  */
 class ShippingInformation extends Model
 {
-
     public function address(): Attribute
     {
         return new Attribute(get: function () {
