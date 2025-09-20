@@ -64,7 +64,6 @@ class StripeController extends Controller
             'name' => 'Default',
             'customer_id' => $customer->id,
             'shipping_address' => $customer->default_shipping_information?->address,
-            'billing_address' => $customer->default_shipping_information?->address,
         ]);
         DB::commit();
 

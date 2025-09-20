@@ -12,9 +12,11 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Pages\Page;
+use Filament\Tables\Actions\Action;
 use Filament\Tables\Actions\CreateAction;
 use Filament\Tables\Actions\DeleteAction;
 use Filament\Tables\Actions\EditAction;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
@@ -40,6 +42,7 @@ class CustomerProfile extends Page implements HasForms, HasTable
                     ->where('customer_id', Auth::user()->customer->id)
             )
             ->columns([
+                TextColumn::make('name'),
                 TextColumn::make('region.name')
                     ->label('Region'),
                 TextColumn::make('province.name')
@@ -50,10 +53,13 @@ class CustomerProfile extends Page implements HasForms, HasTable
                     ->label('Address Line 1'),
                 TextColumn::make('address_line_2')
                     ->label('Address Line 2'),
+                IconColumn::make('default')
+                    ->boolean(),
             ])
             ->actions([
                 EditAction::make('edit')
                     ->form([
+                        TextInput::make('name'),
                         Select::make('region_code')
                             ->options(Region::pluck('name', 'code'))
                             ->label('Region')
@@ -78,6 +84,18 @@ class CustomerProfile extends Page implements HasForms, HasTable
                         TextInput::make('address_line_2'),
                     ]),
                 DeleteAction::make(),
+                Action::make('default')
+                    ->action(function ($record) {
+                        $record->customer->shipping_information()->update([
+                            'default' => false,
+                        ]);
+                        $record->refresh();
+                        $record->update([
+                            'default' => true,
+                        ]);
+                    })
+                    ->button()
+                    ->outlined(),
             ])
             ->headerActions([
                 CreateAction::make('create')
@@ -85,6 +103,7 @@ class CustomerProfile extends Page implements HasForms, HasTable
                         'customer_id' => Auth::user()->customer->id,
                     ]))
                     ->form([
+                        TextInput::make('name'),
                         Select::make('region_code')
                             ->options(Region::pluck('name', 'code'))
                             ->label('Region')

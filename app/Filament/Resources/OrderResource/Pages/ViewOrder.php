@@ -76,9 +76,6 @@ class ViewOrder extends ViewRecord
                         TextEntry::make('shipping_address')
                             ->label('Shipping Address')
                             ->markdown(),
-                        TextEntry::make('billing_address')
-                            ->label('Billing Address')
-                            ->markdown(),
                     ]),
 
                 Section::make('Order Items')

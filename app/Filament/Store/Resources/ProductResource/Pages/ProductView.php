@@ -82,7 +82,6 @@ class ProductView extends Page
             [
                 'name' => 'Default',
                 'shipping_address' => Auth::user()->customer->default_shipping_information?->address,
-                'billing_address' => Auth::user()->customer->default_shipping_information?->address,
             ]
         );
 

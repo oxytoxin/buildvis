@@ -2,11 +2,15 @@
 
 namespace App\Filament\Store\Pages;
 
+use App\Enums\OrderStatuses;
+use App\Enums\PaymentMethods;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\ProductVariation;
+use App\Models\ShippingInformation;
 use Auth;
 use Filament\Actions\Action;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
@@ -35,10 +39,25 @@ class Cart extends Page implements HasForms, HasTable
         return [
             Action::make('checkout')
                 ->requiresConfirmation()
-                ->action(function () {
-                    $order = Order::query()->where('customer_id', Auth::user()->customer?->id)->where('status',
-                        'cart')->with('items')->first();
-                    redirect()->route('stripe.checkout', ['order' => $order->id]);
+                ->form([
+                    Select::make('payment_method')
+                        ->options(PaymentMethods::class)
+                        ->default(PaymentMethods::CASH_ON_DELIVERY),
+                    Select::make('shipping_information_id')
+                        ->label('Shipping Address')
+                        ->options(fn () => Auth::user()->customer->shipping_information->pluck('address', 'id'))
+                        ->required()
+                        ->default(Auth::user()->customer->default_shipping_information->id),
+                ])
+                ->action(function ($data) {
+                    $order = Order::query()->where('customer_id', Auth::user()->customer?->id)->where('status', OrderStatuses::CART)->firstOrFail();
+                    $order->status = OrderStatuses::PENDING;
+                    $order->payment_method = $data['payment_method'];
+                    $order->shipping_address = ShippingInformation::query()->findOrFail($data['shipping_information_id'])->address;
+                    $order->placed_at = now();
+                    $order->save();
+                    Notification::make()->title('Order placed successfully!')->success()->send();
+                    $this->redirect(route('filament.store.resources.orders.chat', ['record' => $order]));
                 }),
         ];
     }
@@ -49,7 +68,7 @@ class Cart extends Page implements HasForms, HasTable
             ->query(
                 OrderItem::query()
                     ->whereRelation('order', 'customer_id', Auth::user()->customer?->id)
-                    ->whereRelation('order', 'status', 'cart')
+                    ->whereRelation('order', 'status', OrderStatuses::CART)
             )
             ->columns([
                 TextColumn::make('product_variation.product.name')->searchable()->label('Product'),

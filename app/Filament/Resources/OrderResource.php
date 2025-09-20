@@ -33,7 +33,7 @@ class OrderResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->query(Order::query()->whereNot('status', 'cart'))
+            ->query(Order::query()->notInCart())
             ->columns([
                 TextColumn::make('id')
                     ->label('Order ID')

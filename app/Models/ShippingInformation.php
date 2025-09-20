@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * @mixin IdeHelperShippingInformation
@@ -36,5 +37,19 @@ class ShippingInformation extends Model
     public function city_municipality()
     {
         return $this->belongsTo(CityMunicipality::class, 'city_municipality_code', 'code');
+    }
+
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class);
+    }
+
+    protected static function booted()
+    {
+        static::creating(function ($shippingInformation) {
+            if ($shippingInformation->customer->shipping_information()->count() === 0) {
+                $shippingInformation->default = true;
+            }
+        });
     }
 }

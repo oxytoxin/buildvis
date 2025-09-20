@@ -1,6 +1,8 @@
 <?php
 
+use App\Enums\OrderStatuses;
 use App\Enums\PaymentMethods;
+use App\Enums\PaymentStatuses;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -13,12 +15,12 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->foreignId('customer_id')->nullable()->constrained('users')->nullOnDelete();
-            $table->string('status')->default('cart'); // cart, pending, processing, shipped, delivered, cancelled
+            $table->tinyInteger('status')->default(OrderStatuses::CART); // cart, pending, processing, shipped, delivered, cancelled
             $table->decimal('total_amount', 12, 2)->default(0);
             $table->text('shipping_address')->nullable();
-            $table->text('billing_address')->nullable();
-            $table->string('payment_status')->default('pending'); // pending, paid, failed
-            $table->tinyInteger('payment_method')->default(PaymentMethods::CASH_ON_DELIVERY->value);
+            $table->tinyInteger('payment_status')->default(PaymentStatuses::PENDING); // pending, paid, failed
+            $table->tinyInteger('payment_method')->default(PaymentMethods::CASH_ON_DELIVERY);
+            $table->timestamp('placed_at')->nullable();
             $table->text('notes')->nullable();
             $table->timestamps();
         });

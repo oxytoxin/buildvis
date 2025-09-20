@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Enums\OrderStatuses;
 use App\Enums\PaymentMethods;
+use App\Enums\PaymentStatuses;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -16,11 +18,13 @@ class Order extends Model
     protected $casts = [
         'total_amount' => 'decimal:2',
         'payment_method' => PaymentMethods::class,
+        'status' => OrderStatuses::class,
+        'payment_status' => PaymentStatuses::class,
     ];
 
     public function scopeNotInCart(Builder $query): Builder
     {
-        return $query->where('status', '!=', 'cart');
+        return $query->where('status', '!=', OrderStatuses::CART->value);
     }
 
     public function customer(): BelongsTo
@@ -33,11 +37,15 @@ class Order extends Model
         return $this->hasMany(OrderItem::class);
     }
 
+    public function messages(): HasMany
+    {
+        return $this->hasMany(OrderMessage::class);
+    }
+
     public static function booted(): void
     {
         static::creating(function ($order) {
             $order->name ??= 'Default';
-            $order->status ??= 'cart';
         });
     }
 }

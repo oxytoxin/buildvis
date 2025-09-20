@@ -27,7 +27,6 @@ class Customer extends Model
                 'name' => 'Default',
                 'customer_id' => $customer->id,
                 'shipping_address' => $customer->default_shipping_information?->address,
-                'billing_address' => $customer->default_shipping_information?->address,
             ]);
         });
     }
