@@ -31,6 +31,7 @@ class AdminPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Teal,
             ])
+            ->viteTheme('resources/css/filament/admin/theme.css')
             ->maxContentWidth(MaxWidth::Full)
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverClusters(in: app_path('Filament/Clusters'), for: 'App\\Filament\\Clusters')

@@ -12,6 +12,7 @@ export default defineConfig({
                 "resources/css/app.css",
                 "resources/js/app.jsx",
                 "resources/js/main.jsx",
+                "resources/css/filament/admin/theme.css",
                 "resources/css/filament/store/theme.css",
                 "resources/css/filament/project-manager/theme.css"
             ],

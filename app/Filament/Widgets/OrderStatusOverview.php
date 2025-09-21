@@ -2,10 +2,10 @@
 
 namespace App\Filament\Widgets;
 
+use App\Enums\OrderStatuses;
 use App\Models\Order;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
-use Illuminate\Support\Facades\Auth;
 
 class OrderStatusOverview extends BaseWidget
 {
@@ -13,27 +13,16 @@ class OrderStatusOverview extends BaseWidget
 
     protected function getStats(): array
     {
-        $userId = Auth::id();
 
-        $totalOrders = Order::query()->notInCart()->whereHas('customer', function ($query) use ($userId) {
-            $query->where('user_id', $userId);
-        })->count();
+        $totalOrders = Order::query()->notInCart()->count();
 
-        $pendingOrders = Order::query()->notInCart()->whereHas('customer', function ($query) use ($userId) {
-            $query->where('user_id', $userId);
-        })->where('status', 'pending')->count();
+        $pendingOrders = Order::query()->where('status', OrderStatuses::PENDING)->count();
 
-        $processingOrders = Order::query()->notInCart()->whereHas('customer', function ($query) use ($userId) {
-            $query->where('user_id', $userId);
-        })->where('status', 'processing')->count();
+        $processingOrders = Order::query()->where('status', OrderStatuses::PROCESSING)->count();
 
-        $shippedOrders = Order::query()->notInCart()->whereHas('customer', function ($query) use ($userId) {
-            $query->where('user_id', $userId);
-        })->where('status', 'shipped')->count();
+        $shippedOrders = Order::query()->where('status', OrderStatuses::SHIPPED)->count();
 
-        $deliveredOrders = Order::query()->notInCart()->whereHas('customer', function ($query) use ($userId) {
-            $query->where('user_id', $userId);
-        })->where('status', 'delivered')->count();
+        $deliveredOrders = Order::query()->where('status', OrderStatuses::DELIVERED)->count();
 
         return [
             Stat::make('Total Orders', $totalOrders)

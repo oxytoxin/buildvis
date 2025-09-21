@@ -2,9 +2,10 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\OrderStatuses;
+use App\Enums\PaymentStatuses;
 use App\Filament\Resources\OrderResource\Pages;
 use App\Models\Order;
-use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -12,10 +13,8 @@ use Filament\Tables\Actions\Action;
 use Filament\Tables\Actions\BulkAction;
 use Filament\Tables\Actions\BulkActionGroup;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
 class OrderResource extends Resource
@@ -49,85 +48,32 @@ class OrderResource extends Resource
                     ->sortable(),
                 TextColumn::make('customer.user.email')
                     ->label('Customer Email')
-                    ->searchable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->searchable(),
                 TextColumn::make('total_amount')
                     ->label('Total Amount')
                     ->money('PHP')
                     ->sortable(),
                 TextColumn::make('status')
-                    ->badge()
-                    ->colors([
-                        'warning' => 'pending',
-                        'info' => 'processing',
-                        'primary' => 'shipped',
-                        'success' => 'delivered',
-                        'danger' => 'cancelled',
-                    ])
-                    ->formatStateUsing(fn (string $state): string => ucfirst($state)),
+                    ->badge(),
                 TextColumn::make('payment_status')
-                    ->badge()
-                    ->colors([
-                        'warning' => 'pending',
-                        'success' => 'paid',
-                        'danger' => 'failed',
-                        'secondary' => 'refunded',
-                    ])
-                    ->formatStateUsing(fn (string $state): string => ucfirst($state)),
+                    ->badge(),
                 TextColumn::make('payment_method')
-                    ->label('Payment Method')
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->label('Payment Method'),
                 TextColumn::make('shipping_address')
                     ->label('Shipping Address')
-                    ->limit(50)
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('created_at')
+                    ->limit(50),
+                TextColumn::make('placed_at')
                     ->label('Order Date')
                     ->dateTime('M d, Y H:i')
                     ->sortable(),
-                TextColumn::make('updated_at')
-                    ->label('Last Updated')
-                    ->dateTime('M d, Y H:i')
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 SelectFilter::make('status')
-                    ->options([
-                        'pending' => 'Pending',
-                        'processing' => 'Processing',
-                        'shipped' => 'Shipped',
-                        'delivered' => 'Delivered',
-                        'cancelled' => 'Cancelled',
-                    ])
+                    ->options(OrderStatuses::class)
                     ->label('Order Status'),
                 SelectFilter::make('payment_status')
-                    ->options([
-                        'pending' => 'Pending',
-                        'paid' => 'Paid',
-                        'failed' => 'Failed',
-                        'refunded' => 'Refunded',
-                    ])
+                    ->options(PaymentStatuses::class)
                     ->label('Payment Status'),
-                Filter::make('created_at')
-                    ->form([
-                        DatePicker::make('created_from')
-                            ->label('Created From'),
-                        DatePicker::make('created_until')
-                            ->label('Created Until'),
-                    ])
-                    ->query(function (Builder $query, array $data): Builder {
-                        return $query
-                            ->when(
-                                $data['created_from'],
-                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
-                            )
-                            ->when(
-                                $data['created_until'],
-                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
-                            );
-                    })
-                    ->label('Order Date Range'),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
@@ -137,22 +83,11 @@ class OrderResource extends Resource
                     ->form([
                         Select::make('status')
                             ->label('New Status')
-                            ->options([
-                                'pending' => 'Pending',
-                                'processing' => 'Processing',
-                                'shipped' => 'Shipped',
-                                'delivered' => 'Delivered',
-                                'cancelled' => 'Cancelled',
-                            ])
+                            ->options(OrderStatuses::class)
                             ->required(),
                         Select::make('payment_status')
                             ->label('Payment Status')
-                            ->options([
-                                'pending' => 'Pending',
-                                'paid' => 'Paid',
-                                'failed' => 'Failed',
-                                'refunded' => 'Refunded',
-                            ])
+                            ->options(PaymentStatuses::class)
                             ->required(),
                     ])
                     ->action(function (Order $record, array $data): void {
@@ -168,13 +103,7 @@ class OrderResource extends Resource
                         ->form([
                             Select::make('status')
                                 ->label('New Status')
-                                ->options([
-                                    'pending' => 'Pending',
-                                    'processing' => 'Processing',
-                                    'shipped' => 'Shipped',
-                                    'delivered' => 'Delivered',
-                                    'cancelled' => 'Cancelled',
-                                ])
+                                ->options(OrderStatuses::class)
                                 ->required(),
                         ])
                         ->action(function (Collection $records, array $data): void {
@@ -207,11 +136,11 @@ class OrderResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return static::getModel()::where('status', 'pending')->count();
+        return static::getModel()::where('status', OrderStatuses::PENDING)->count();
     }
 
     public static function getNavigationBadgeColor(): ?string
     {
-        return static::getModel()::where('status', 'pending')->count() > 0 ? 'warning' : null;
+        return static::getModel()::where('status', OrderStatuses::PENDING)->count() > 0 ? 'warning' : null;
     }
 }

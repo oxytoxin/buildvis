@@ -2,6 +2,7 @@
 
 namespace App\Filament\Store\Resources\ProductResource\Pages;
 
+use App\Enums\OrderStatuses;
 use App\Filament\Store\Resources\ProductResource;
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -35,7 +36,7 @@ class ProductView extends Page
         $this->cartData = [];
         if (Auth::check() && Auth::user()->customer) {
             $pendingOrder = Order::where('customer_id', Auth::user()->customer->id)
-                ->where('status', 'pending')
+                ->where('status', OrderStatuses::PENDING)
                 ->with('items.product_variation')
                 ->first();
 
@@ -77,7 +78,7 @@ class ProductView extends Page
         $order = Order::firstOrCreate(
             [
                 'customer_id' => Auth::user()->customer->id,
-                'status' => 'cart',
+                'status' => OrderStatuses::CART,
             ],
             [
                 'name' => 'Default',

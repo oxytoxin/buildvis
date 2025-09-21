@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\OrderStatuses;
 use App\Models\Order;
 use App\Models\OrderItem;
 use DB;
@@ -52,7 +53,7 @@ class StripeController extends Controller
         DB::beginTransaction();
 
         $order->update([
-            'status' => 'pending',
+            'status' => OrderStatuses::PENDING,
         ]);
         $order->items()->with('product_variation')->each(function (OrderItem $orderItem) {
             $orderItem->product_variation->update([
