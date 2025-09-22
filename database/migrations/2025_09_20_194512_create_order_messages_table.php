@@ -13,8 +13,8 @@ return new class extends Migration
             $table->id();
             $table->text('content')->nullable();
             $table->tinyInteger('type')->default(MessageTypes::TEXT);
-            $table->foreignId('order_id')->constrained('orders');
-            $table->foreignId('user_id')->constrained('users');
+            $table->foreignId('order_id')->constrained('orders')->cascadeOnDelete();
+            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->timestamps();
         });
     }

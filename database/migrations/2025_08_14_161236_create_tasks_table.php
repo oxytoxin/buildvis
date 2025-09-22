@@ -18,7 +18,7 @@ return new class extends Migration
             $table->integer('weight')->default(1);
             $table->date('start_date');
             $table->date('end_date');
-            $table->foreignId('project_id')->constrained('projects');
+            $table->foreignId('project_id')->constrained('projects')->cascadeOnDelete();
             $table->timestamps();
         });
     }

@@ -35,13 +35,13 @@ class ProductView extends Page
         $this->product = $this->record;
         $this->cartData = [];
         if (Auth::check() && Auth::user()->customer) {
-            $pendingOrder = Order::where('customer_id', Auth::user()->customer->id)
-                ->where('status', OrderStatuses::PENDING)
+            $cartOrder = Order::where('customer_id', Auth::user()->customer->id)
+                ->where('status', OrderStatuses::CART)
                 ->with('items.product_variation')
                 ->first();
 
-            if ($pendingOrder) {
-                foreach ($pendingOrder->items as $item) {
+            if ($cartOrder) {
+                foreach ($cartOrder->items as $item) {
                     $this->cartData[$item->product_variation_id] = $item->quantity;
                 }
             }

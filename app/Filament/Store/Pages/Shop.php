@@ -30,13 +30,13 @@ class Shop extends Page
         // Get cart data for current user
         $this->cartData = [];
         if (Auth::check() && Auth::user()->customer) {
-            $pendingOrder = Order::where('customer_id', Auth::user()->customer->id)
+            $cartOrders = Order::where('customer_id', Auth::user()->customer->id)
                 ->where('status', OrderStatuses::CART)
                 ->with('items.product_variation')
                 ->first();
 
-            if ($pendingOrder) {
-                foreach ($pendingOrder->items as $item) {
+            if ($cartOrders) {
+                foreach ($cartOrders->items as $item) {
                     $this->cartData[$item->product_variation_id] = $item->quantity;
                 }
             }

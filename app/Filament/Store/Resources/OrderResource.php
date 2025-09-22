@@ -9,6 +9,7 @@ use App\Models\Order;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables\Actions\Action;
+use Filament\Tables\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -71,6 +72,7 @@ class OrderResource extends Resource
                     ->options(PaymentStatuses::class),
             ])
             ->actions([
+                ViewAction::make()->modalContent(fn ($record) => view('filament.store.resources.order-resource.order-items', ['order' => $record])),
                 Action::make('Contact Seller')
                     ->url(fn ($record) => route('filament.store.resources.orders.chat', ['record' => $record])),
             ])
@@ -89,9 +91,7 @@ class OrderResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListOrders::route('/'),
-            'create' => Pages\CreateOrder::route('/create'),
-            'edit' => Pages\EditOrder::route('/{record}/edit'),
+            'index' => Pages\ManageOrders::route('/'),
             'chat' => Pages\OrderChat::route('/{record}/chat'),
         ];
     }

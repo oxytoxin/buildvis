@@ -42,7 +42,7 @@
                     @endguest
                     @auth
                         <div class="flex flex-col sm:flex-row justify-center">
-                            @switch(auth()->user()->roles()->first()->name)
+                            @switch(auth()->user()->roles()->first()?->name)
                                 @case('admin')
                                     <a href="{{ route('filament.admin.pages.dashboard') }}"
                                        class="inline-flex py-4 px-6 items-center justify-center text-lg font-medium text-black hover:text-white border border-teal-900 hover:bg-teal-900 rounded-full transition duration-200">

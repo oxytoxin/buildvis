@@ -3,17 +3,15 @@
 namespace App\Filament\Store\Resources\OrderResource\Pages;
 
 use App\Filament\Store\Resources\OrderResource;
-use Filament\Actions;
-use Filament\Resources\Pages\ListRecords;
+use Filament\Resources\Pages\ManageRecords;
 
-class ListOrders extends ListRecords
+class ManageOrders extends ManageRecords
 {
     protected static string $resource = OrderResource::class;
 
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
         ];
     }
 }
