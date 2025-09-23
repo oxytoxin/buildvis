@@ -65,7 +65,13 @@ class User extends Authenticatable implements FilamentUser
 
         static::created(function (User $user) {
             $user->assignRole('customer');
-            $user->customer()->create([]);
+            $customer = $user->customer()->create([]);
+
+            Order::create([
+                'name' => 'Default',
+                'customer_id' => $customer->id,
+                'shipping_address' => $customer->default_shipping_information?->address,
+            ]);
         });
     }
 

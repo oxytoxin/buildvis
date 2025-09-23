@@ -19,18 +19,6 @@ class Customer extends Model
         return $this->hasMany(ShippingInformation::class);
     }
 
-    protected static function booted(): void
-    {
-
-        static::created(function (Customer $customer) {
-            Order::create([
-                'name' => 'Default',
-                'customer_id' => $customer->id,
-                'shipping_address' => $customer->default_shipping_information?->address,
-            ]);
-        });
-    }
-
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
