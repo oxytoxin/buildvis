@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\User;
+use Filament\Forms\Contracts\HasForms;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -11,7 +12,7 @@ use Livewire\Attributes\Layout;
 use Livewire\Component;
 
 #[Layout('components.layouts.guest')]
-class Register extends Component
+class Register extends Component implements HasForms
 {
     public string $first_name = '';
 

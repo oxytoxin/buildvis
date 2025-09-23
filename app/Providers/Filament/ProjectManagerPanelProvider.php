@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Http\Middleware\CheckIfProjectManagerMiddleware;
+use Filament\Enums\ThemeMode;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -26,6 +27,8 @@ class ProjectManagerPanelProvider extends PanelProvider
             ->id('project-manager')
             ->path('project-manager')
             ->viteTheme('resources/css/filament/project-manager/theme.css')
+            ->darkMode(false)
+            ->defaultThemeMode(ThemeMode::Light)
             ->colors([
                 'primary' => Color::Purple,
             ])

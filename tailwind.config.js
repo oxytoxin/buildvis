@@ -10,7 +10,7 @@ export default {
         "./resources/js/**/*.{js,jsx,ts,tsx}",
         './vendor/filament/**/*.blade.php'
     ],
-
+    darkMode: 'class',
     theme: {
         extend: {
             fontFamily: {
