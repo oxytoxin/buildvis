@@ -31,7 +31,6 @@ class Login extends Component implements HasForms
         $this->validate();
 
         $this->loginForm->authenticate();
-
         Session::regenerate();
 
         $this->redirect(route('welcome', absolute: false));

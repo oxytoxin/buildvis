@@ -3,17 +3,36 @@
 namespace App\Livewire;
 
 use App\Models\User;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
+use Filament\Forms\Form;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rules\Password;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
 #[Layout('components.layouts.guest')]
 class Register extends Component implements HasForms
 {
+    use InteractsWithForms;
+
+    public function form(Form $form): Form
+    {
+        return $form->schema([
+            TextInput::make('first_name')->required(),
+            TextInput::make('middle_name'),
+            TextInput::make('last_name')->required(),
+            TextInput::make('email')->required()->email()->unique(User::class),
+            TextInput::make('password')->required()->password()->revealable(),
+            TextInput::make('password_confirmation')->required()->password()->revealable(),
+            Select::make('gender')->required()->options(['male' => 'Male', 'female' => 'Female', 'other' => 'Other']),
+            TextInput::make('phone_number')->required()->minLength(11)->maxLength(11)->regex('/^09[0-9]{9}$/'),
+        ]);
+    }
+
     public string $first_name = '';
 
     public string $middle_name = '';
@@ -35,17 +54,9 @@ class Register extends Component implements HasForms
      */
     public function register(): void
     {
-        $validated = $this->validate([
-            'first_name' => ['required', 'string', 'max:255'],
-            'middle_name' => ['nullable', 'string', 'max:255'],
-            'last_name' => ['required', 'string', 'max:255'],
-            'gender' => ['nullable', 'string', 'in:male,female,other'],
-            'phone_number' => ['nullable', 'string', 'max:11', 'min:11', 'starts_with:09'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
-            'password' => ['required', 'string', 'confirmed', Password::defaults()],
-        ]);
-
+        $validated = $this->form->getState();
         $validated['password'] = Hash::make($validated['password']);
+        unset($validated['password_confirmation']);
 
         event(new Registered($user = User::query()->create($validated)));
 

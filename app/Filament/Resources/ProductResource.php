@@ -9,6 +9,7 @@ use Filament\Forms;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\Tabs;
 use Filament\Forms\Components\Tabs\Tab;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -40,6 +41,7 @@ class ProductResource extends Resource
                             Forms\Components\Select::make('supplier_id')
                                 ->relationship('supplier', 'name')
                                 ->required(),
+                            TextInput::make('unit')->required(),
                             Forms\Components\Textarea::make('description')
                                 ->maxLength(65535)
                                 ->columnSpanFull(),
