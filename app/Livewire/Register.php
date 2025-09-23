@@ -39,7 +39,7 @@ class Register extends Component
             'middle_name' => ['nullable', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
             'gender' => ['nullable', 'string', 'in:male,female,other'],
-            'phone_number' => ['nullable', 'string', 'max:255'],
+            'phone_number' => ['nullable', 'string', 'max:11', 'min:11', 'starts_with:09'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'string', 'confirmed', Password::defaults()],
         ]);

@@ -13,6 +13,7 @@ use Filament\Infolists\Components\Tabs;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\ViewEntry;
 use Filament\Infolists\Infolist;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 use Illuminate\Support\Facades\Storage;
 
@@ -59,6 +60,8 @@ class ViewOrder extends ViewRecord
                                                     ->label('Customer Name'),
                                                 TextEntry::make('customer.user.email')
                                                     ->label('Customer Email'),
+                                                TextEntry::make('customer.user.phone_number')
+                                                    ->label('Contact Number'),
                                             ]),
                                         TextEntry::make('shipping_address')
                                             ->label('Shipping Address')
@@ -102,7 +105,9 @@ class ViewOrder extends ViewRecord
             Actions\Action::make('confirm_payment')
                 ->requiresConfirmation()
                 ->action(function ($record) {
-                    dd($record);
+                    $record->payment_status = PaymentStatuses::PAID;
+                    $record->save();
+                    Notification::make()->title('Payment Confirmed')->success()->send();
                 })
                 ->visible(fn ($record) => $record->payment_status === PaymentStatuses::PENDING),
         ];
@@ -113,7 +118,7 @@ class ViewOrder extends ViewRecord
         if ($this->file) {
             $path = $this->file->store('orders', 's3');
             $url = Storage::disk('s3')->url($path);
-            $this->order->messages()->create([
+            $this->record->messages()->create([
                 'type' => MessageTypes::IMAGE,
                 'content' => $url,
                 'user_id' => auth()->id(),

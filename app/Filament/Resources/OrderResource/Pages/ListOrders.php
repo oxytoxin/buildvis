@@ -23,8 +23,7 @@ class ListOrders extends ListRecords
                     FileUpload::make('qr_code')->storeFiles(false),
                 ])
                 ->action(function ($data) {
-                    Storage::disk('s3')->delete('configs/gcash_qr.jpg');
-                    $path = $data['qr_code']->storeAs('configs', 'gcash_qr.jpg', 's3');
+                    $path = $data['qr_code']->store('configs', 's3');
                     $url = Storage::disk('s3')->url($path);
                     SystemConfig::setGcashQrUrl($url);
                     Notification::make()->title('GCash QR Updated')->success()->send();
