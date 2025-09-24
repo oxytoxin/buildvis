@@ -24,9 +24,7 @@ class Shop extends Page
 
     public function mount(): void
     {
-        $this->products = Product::with(['category', 'variations'])
-            ->get();
-
+        $this->products = Product::with(['category', 'variations' => fn ($query) => $query->orderBy('id')])->get();
         // Get cart data for current user
         $this->cartData = [];
         if (Auth::check() && Auth::user()->customer) {

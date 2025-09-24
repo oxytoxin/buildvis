@@ -34,7 +34,6 @@ export default function HouseGenerator({
                                        }) {
     const controlsRef = useRef();
 
-
     return (
         <div className="rounded overflow-hidden h-[75vh]">
             <Canvas

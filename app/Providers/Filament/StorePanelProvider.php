@@ -39,6 +39,12 @@ class StorePanelProvider extends PanelProvider
             ->font('Figtree')
             ->renderHook(PanelsRenderHook::HEAD_END, fn () => Blade::render("@viteReactRefresh
                         @vite(['resources/js/main.jsx'])"))
+            ->renderHook(PanelsRenderHook::HEAD_END, fn () => Blade::render(
+                '
+                    <script src="https://cdn.jsdelivr.net/npm/frappe-gantt/dist/frappe-gantt.umd.js"></script>
+                    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/frappe-gantt/dist/frappe-gantt.css">
+                    '
+            ))
             ->discoverResources(in: app_path('Filament/Store/Resources'), for: 'App\\Filament\\Store\\Resources')
             ->discoverPages(in: app_path('Filament/Store/Pages'), for: 'App\\Filament\\Store\\Pages')
             ->pages([])

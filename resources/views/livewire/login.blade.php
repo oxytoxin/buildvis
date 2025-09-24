@@ -4,8 +4,7 @@
             <h3 class="text-4xl text-center font-medium mb-10">Login</h3>
             {{ $this->form }}
             <div class="text-right mb-10">
-                <a href="{{ route('password.request') }}" class="inline-block text-sm underline font-medium">Forgot
-                    password?</a>
+                {{-- <a href="{{ route('password.request') }}" class="inline-block text-sm underline font-medium">Forgot password?</a>--}}
             </div>
             <button type="submit"
                     class="inline-flex w-full py-3 px-6 items-center justify-center text-lg font-medium text-white hover:text-teal-900 border border-teal-900 hover:border-lime-500 bg-teal-900 hover:bg-lime-500 rounded-full transition duration-200">

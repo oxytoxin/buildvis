@@ -55,15 +55,16 @@ const App = ({componentName, props}) => {
     return <ComponentToRender {...props} />;
 };
 const queryClient = new QueryClient();
+
 document.addEventListener('livewire:navigated', () => {
     const rootElement = document.getElementById('filament');
+
     if (!rootElement) return;
 
     const root = ReactDOM.createRoot(rootElement);
 
     const componentName = rootElement.getAttribute('data-component') ?? '';
     const propsAttr = rootElement.getAttribute('data-props') ?? '{}';
-
     let parsedProps;
     try {
         parsedProps = JSON.parse(propsAttr);
@@ -77,3 +78,4 @@ document.addEventListener('livewire:navigated', () => {
         </QueryClientProvider>,
     );
 });
+

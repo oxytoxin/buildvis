@@ -27,6 +27,11 @@ class BudgetEstimate extends Model
         return $this->belongsTo(Project::class);
     }
 
+    public function house_model(): BelongsTo
+    {
+        return $this->belongsTo(HouseModel::class);
+    }
+
     public function items(): HasMany
     {
         return $this->hasMany(BudgetEstimateItem::class);

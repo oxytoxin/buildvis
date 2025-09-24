@@ -50,7 +50,7 @@ class ShowProject extends Page implements HasTable
 
     protected static ?int $navigationSort = 3;
 
-    public int $budget = 2_000_000;
+    public int $budget = 5_000_000;
 
     public string $description = 'two-story residential building';
 
@@ -70,7 +70,7 @@ class ShowProject extends Page implements HasTable
 
     public int $numberOfRooms = 3;
 
-    public int $numberOfStories = 1;
+    public int $numberOfStories = 2;
 
     /**
      * Parse project description and extract building specifications using AI
