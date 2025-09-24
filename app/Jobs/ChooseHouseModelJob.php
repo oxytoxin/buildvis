@@ -57,7 +57,7 @@ class ChooseHouseModelJob implements ShouldQueue
         $house_model_id = $response->choices[0]->message->content;
         $house_model = HouseModel::find($house_model_id);
         if ($house_model) {
-            $this->budgetEstimate->update(['house_model_id' => $house_model_id]);
+            $this->budgetEstimate->update(['house_model_id' => $house_model_id, 'house_model_status' => 'generated']);
         }
     }
 }

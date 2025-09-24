@@ -28,7 +28,10 @@ class HouseGenerator extends Page
             $this->model_url = Storage::disk('s3')->url($this->budget_estimate->house_model->model_url);
             $this->model = $this->budget_estimate->house_model;
         } else {
-            ChooseHouseModelJob::dispatch($this->budget_estimate);
+            if ($this->budget_estimate->house_model_status === 'none') {
+                ChooseHouseModelJob::dispatch($this->budget_estimate);
+                $this->budget_estimate->update(['house_model_status' => 'generating']);
+            }
         }
     }
 }
