@@ -114,9 +114,26 @@ export default function ProductView({wire_id, product, model, cartData}: Product
                     {/* Tab Content */}
                     <div className="h-[300px] md:h-[400px] lg:h-[500px] border-2 border-black">
                         {activeTab === '3d' ? (
-                            <Canvas>
-                                <color attach="background" args={["#f5efe6"]}/>
-                                <ambientLight intensity={0.5} color="white"/>
+                            <Canvas
+                                shadows
+                                camera={{position: [2, 2, 3], fov: 45}}
+                                gl={{toneMappingExposure: 1}}
+                            >
+                                <color attach="background" args={["#fff"]}/>
+                                <ambientLight intensity={0.6}/>
+                                <directionalLight
+                                    position={[5, 5, 5]}
+                                    intensity={1.5}
+                                    castShadow
+                                    shadow-mapSize-width={1024}
+                                    shadow-mapSize-height={1024}
+                                    shadow-radius={8}
+                                />
+                                <directionalLight
+                                    position={[-3, 2, -3]}
+                                    intensity={0.4}
+                                />
+                                <pointLight position={[0, 5, 0]} intensity={0.3} color="#ffefd5"/>
                                 {model && gltf && <primitive object={gltf.scene}/>}
                                 <OrbitControls/>
                             </Canvas>
