@@ -6,7 +6,9 @@ use App\Enums\OrderStatuses;
 use App\Enums\PaymentStatuses;
 use App\Filament\Resources\OrderResource\Pages;
 use App\Models\Order;
+use DB;
 use Filament\Forms\Components\Select;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Actions\Action;
@@ -34,14 +36,6 @@ class OrderResource extends Resource
         return $table
             ->query(Order::query()->notInCart())
             ->columns([
-                TextColumn::make('id')
-                    ->label('Order ID')
-                    ->sortable()
-                    ->searchable(),
-                TextColumn::make('name')
-                    ->label('Order Name')
-                    ->searchable()
-                    ->sortable(),
                 TextColumn::make('customer.user.name')
                     ->label('Customer')
                     ->searchable()
@@ -91,7 +85,22 @@ class OrderResource extends Resource
                             ->required(),
                     ])
                     ->action(function (Order $record, array $data): void {
+                        DB::beginTransaction();
+                        if ($record->status === OrderStatuses::PENDING && $data['status'] === OrderStatuses::PROCESSING) {
+                            foreach ($record->items as $item) {
+                                $new_quantity = $item->product_variation->stock_quantity - $item->quantity;
+                                if ($new_quantity < 0) {
+                                    Notification::make()->title('Not enough stock available for '.$item->product_variation->slug)->warning()->send();
+
+                                    return;
+                                }
+                                $item->product_variation->update([
+                                    'stock_quantity' => $new_quantity,
+                                ]);
+                            }
+                        }
                         $record->update($data);
+                        DB::commit();
                     })
                     ->color('primary'),
             ])

@@ -7,6 +7,7 @@ use App\Enums\PaymentStatuses;
 use App\Filament\Store\Resources\OrderResource\Pages;
 use App\Models\Order;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Actions\ViewAction;
@@ -40,14 +41,6 @@ class OrderResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('id')
-                    ->label('Order ID')
-                    ->sortable()
-                    ->searchable(),
-                TextColumn::make('name')
-                    ->label('Order Name')
-                    ->searchable()
-                    ->sortable(),
                 TextColumn::make('total_amount')
                     ->label('Total Amount')
                     ->money('PHP')
@@ -75,6 +68,17 @@ class OrderResource extends Resource
                 ViewAction::make()->modalContent(fn ($record) => view('filament.store.resources.order-resource.order-items', ['order' => $record])),
                 Action::make('Contact Seller')
                     ->url(fn ($record) => route('filament.store.resources.orders.chat', ['record' => $record])),
+                Action::make('cancel')
+                    ->requiresConfirmation()
+                    ->button()
+                    ->color('danger')
+                    ->visible(fn ($record) => $record->status === OrderStatuses::PENDING)
+                    ->action(function ($record) {
+                        $record->status = OrderStatuses::CANCELLED;
+                        $record->payment_status = PaymentStatuses::CANCELLED;
+                        $record->save();
+                        Notification::make()->title('Order cancelled')->success()->send();
+                    }),
             ])
             ->bulkActions([
             ])

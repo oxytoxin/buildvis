@@ -24,14 +24,15 @@ Route::middleware('guest')->group(function () {
     Volt::route('reset-password/{token}', 'pages.auth.reset-password')
         ->name('password.reset');
 });
-
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth'])->group(function () {
     Volt::route('verify-email', 'pages.auth.verify-email')
         ->name('verification.notice');
 
     Route::get('verify-email/{id}/{hash}', VerifyEmailController::class)
         ->middleware(['signed', 'throttle:6,1'])
         ->name('verification.verify');
+});
+Route::middleware(['auth', 'verified'])->group(function () {
 
     Volt::route('confirm-password', 'pages.auth.confirm-password')
         ->name('password.confirm');
@@ -46,7 +47,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/stripe-success/{order}', [StripeController::class, 'success'])->name('stripe.success');
 
     });
-
-    // Cart routes
     Route::redirect('/store', '/shop')->name('store.index');
+
 });

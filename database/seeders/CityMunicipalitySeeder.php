@@ -16,9 +16,9 @@ class CityMunicipalitySeeder extends Seeder
     {
         DB::beginTransaction();
 
-        $provinces = collect(Http::get('https://psgc.gitlab.io/api/cities-municipalities.json')->json());
+        $cities = collect(Http::get('https://psgc.gitlab.io/api/cities-municipalities.json')->json());
         $now = now();
-        $provinces = $provinces->map(function ($r) use ($now) {
+        $cities = $cities->map(function ($r) use ($now) {
             return [
                 'region_code' => $r['regionCode'],
                 'province_code' => $r['provinceCode'],
@@ -28,8 +28,8 @@ class CityMunicipalitySeeder extends Seeder
                 'updated_at' => $now,
             ];
         });
-        $provinces->chunk(300)->each(function ($provinces_chunk) {
-            CityMunicipality::query()->insert($provinces_chunk->toArray());
+        $cities->chunk(300)->each(function ($chunk) {
+            CityMunicipality::query()->insert($chunk->toArray());
         });
 
         DB::commit();

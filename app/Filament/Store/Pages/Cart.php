@@ -9,7 +9,6 @@ use App\Models\OrderItem;
 use App\Models\ProductVariation;
 use App\Models\ShippingInformation;
 use Auth;
-use DB;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -50,31 +49,18 @@ class Cart extends Page implements HasForms, HasTable
                         ->required()
                         ->default(Auth::user()->customer->default_shipping_information->id),
                 ])
+                ->disabled(fn () => ! Order::query()->where('customer_id', Auth::user()->customer?->id)->where('status', OrderStatuses::CART)->first()?->items()->count())
                 ->action(function ($data) {
-                    DB::beginTransaction();
-
-                    $order = Order::query()->where('customer_id', Auth::user()->customer?->id)->where('status', OrderStatuses::CART)->firstOrFail();
+                    $order = Order::query()->where('customer_id', Auth::user()->customer?->id)->where('status', OrderStatuses::CART)->first();
                     $order->status = OrderStatuses::PENDING;
                     $order->payment_method = $data['payment_method'];
                     $order->shipping_address = ShippingInformation::query()->findOrFail($data['shipping_information_id'])->address;
                     $order->placed_at = now();
-                    foreach ($order->items as $item) {
-                        $new_quantity = $item->product_variation->stock_quantity - $item->quantity;
-                        if ($new_quantity < 0) {
-                            DB::rollBack();
-                            Notification::make()->title('Not enough stock available for '.$item->product_variation->slug)->warning()->send();
 
-                            return;
-                        }
-                        $item->product_variation->update([
-                            'stock_quantity' => $new_quantity,
-                        ]);
-                    }
                     $order->save();
 
-                    DB::commit();
                     Notification::make()->title('Order placed successfully!')->success()->send();
-                    $this->redirect(route('filament.store.resources.orders.chat', ['record' => $order]));
+                    //                    $this->redirect(route('filament.store.resources.orders.chat', ['record' => $order]));
                 }),
         ];
     }

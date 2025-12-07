@@ -1,5 +1,6 @@
-<div class="font-semibold text-base">
+<div class="font-semibold text-sm px-3">
     <p>Project Manager: {{ $project->project_manager?->name ?? 'Unassigned' }}</p>
+    <p>Contact #: {{ $project->project_manager?->phone_number ?? 'N/A' }}</p>
     <div class="flex gap-2">
         <h5>Tasks Done:</h5>
         @if($tasks_count > 0)

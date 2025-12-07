@@ -26,11 +26,12 @@
 
         @endforeach
     </div>
+    <div>
+    </div>
     <form wire:submit.prevent="sendMessage"
           class="mt-4 bg-primary-700 md:max-w-5xl w-full mx-auto rounded-lg px-8 py-4 sticky bottom-8 flex-col md:flex-row flex gap-2">
-        <input type="file" class="border p-2 bg-white border-black " wire:model="file" wire:loading.attr="disabled">
+        <div class="w-full">{{ $this->form }}</div>
         <div class="flex gap-2 flex-1">
-            <input class="text-xs flex-1 !border !border-black rounded" wire:model="message" type="text"/>
             <x-filament::button wire:target="sendMessage" class="px-8" type="submit">Send</x-filament::button>
         </div>
     </form>

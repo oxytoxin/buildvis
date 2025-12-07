@@ -2,6 +2,7 @@
 
 namespace App\Filament\Store\Pages;
 
+use App\Models\Barangay;
 use App\Models\CityMunicipality;
 use App\Models\Province;
 use App\Models\Region;
@@ -49,6 +50,8 @@ class CustomerProfile extends Page implements HasForms, HasTable
                     ->label('Province'),
                 TextColumn::make('city_municipality.name')
                     ->label('City/Municipality'),
+                TextColumn::make('barangay.name')
+                    ->label('Barangay'),
                 TextColumn::make('address_line_1')
                     ->label('Address Line 1'),
                 TextColumn::make('address_line_2')
@@ -77,6 +80,12 @@ class CustomerProfile extends Page implements HasForms, HasTable
                             ->options(fn ($get) => CityMunicipality::where('province_code', $get('province_code'))->pluck('name', 'code'))
                             ->label('City/Municipality')
                             ->disabled(fn ($get) => ! $get('province_code'))
+                            ->reactive()
+                            ->required(),
+                        Select::make('barangay_code')
+                            ->options(fn ($get) => Barangay::where('city_municipality_code', $get('city_municipality_code'))->pluck('name', 'code'))
+                            ->label('Barangay')
+                            ->disabled(fn ($get) => ! $get('city_municipality_code'))
                             ->reactive()
                             ->required(),
                         TextInput::make('address_line_1')
@@ -119,6 +128,12 @@ class CustomerProfile extends Page implements HasForms, HasTable
                             ->options(fn ($get) => CityMunicipality::where('province_code', $get('province_code'))->pluck('name', 'code'))
                             ->label('City/Municipality')
                             ->disabled(fn ($get) => ! $get('province_code'))
+                            ->reactive()
+                            ->required(),
+                        Select::make('barangay_code')
+                            ->options(fn ($get) => Barangay::where('city_municipality_code', $get('city_municipality_code'))->pluck('name', 'code'))
+                            ->label('Barangay')
+                            ->disabled(fn ($get) => ! $get('city_municipality_code'))
                             ->reactive()
                             ->required(),
                         TextInput::make('address_line_1')

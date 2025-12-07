@@ -6,6 +6,9 @@ use App\Enums\MessageTypes;
 use App\Enums\PaymentStatuses;
 use App\Filament\Resources\OrderResource;
 use Filament\Actions;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Form;
 use Filament\Infolists\Components\Grid;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\Section;
@@ -21,9 +24,13 @@ class ViewOrder extends ViewRecord
 {
     protected static string $resource = OrderResource::class;
 
-    public $message;
-
-    public $file;
+    public function form(Form $form): Form
+    {
+        return $form->schema([
+            FileUpload::make('file')->acceptedFileTypes(['image/jpeg', 'image/png'])->hiddenLabel()->previewable(false)->storeFiles(false)->maxFiles(1),
+            Textarea::make('message')->hiddenLabel()->rows(3)->maxLength(255)->columnSpan(2),
+        ])->columns(3)->disabled(false);
+    }
 
     public function infolist(Infolist $infolist): Infolist
     {
@@ -115,8 +122,11 @@ class ViewOrder extends ViewRecord
 
     public function sendMessage(): void
     {
-        if ($this->file) {
-            $path = $this->file->store('orders', 's3');
+        $data = $this->form->getState();
+        $file = $data['file'] ?? null;
+        $message = $data['message'] ?? null;
+        if ($file) {
+            $path = $file->store('orders', 's3');
             $url = Storage::disk('s3')->url($path);
             $this->record->messages()->create([
                 'type' => MessageTypes::IMAGE,
@@ -124,12 +134,13 @@ class ViewOrder extends ViewRecord
                 'user_id' => auth()->id(),
             ]);
         }
-        if ($this->message) {
+        if ($message) {
             $this->record->messages()->create([
-                'content' => $this->message,
+                'content' => $message,
                 'user_id' => auth()->id(),
             ]);
         }
-        $this->reset(['message', 'file']);
+
+        $this->form->fill();
     }
 }

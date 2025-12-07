@@ -18,6 +18,7 @@ class ShippingInformation extends Model
                 $this->region->name,
                 $this->province->name,
                 $this->city_municipality->name,
+                $this->barangay?->name,
                 $this->address_line_1,
                 $this->address_line_2,
             ]))->trim(',')->toString();
@@ -37,6 +38,11 @@ class ShippingInformation extends Model
     public function city_municipality()
     {
         return $this->belongsTo(CityMunicipality::class, 'city_municipality_code', 'code');
+    }
+
+    public function barangay()
+    {
+        return $this->belongsTo(Barangay::class, 'barangay_code', 'code');
     }
 
     public function customer(): BelongsTo
