@@ -113,6 +113,17 @@ class ViewOrder extends ViewRecord
                 ->requiresConfirmation()
                 ->action(function ($record) {
                     $record->payment_status = PaymentStatuses::PAID;
+                    foreach ($record->items as $item) {
+                        $new_quantity = $item->product_variation->stock_quantity - $item->quantity;
+                        if ($new_quantity < 0) {
+                            Notification::make()->title('Not enough stock available for '.$item->product_variation->slug)->warning()->send();
+
+                            return;
+                        }
+                        $item->product_variation->update([
+                            'stock_quantity' => $new_quantity,
+                        ]);
+                    }
                     $record->save();
                     Notification::make()->title('Payment Confirmed')->success()->send();
                 })

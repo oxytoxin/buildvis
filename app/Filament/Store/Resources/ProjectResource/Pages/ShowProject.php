@@ -140,8 +140,7 @@ class ShowProject extends Page implements HasTable
                 ],
             ],
         ]);
-
-        $specifications = json_decode($response->choices[-1]->message->content, true);
+        $specifications = json_decode($response->choices[0]->message->content, true);
 
         if (! $specifications) {
             throw new \Exception('Failed to parse AI response');
