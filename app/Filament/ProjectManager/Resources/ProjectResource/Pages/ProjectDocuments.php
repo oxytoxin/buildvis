@@ -48,10 +48,10 @@ class ProjectDocuments extends ManageRelatedRecords
                 Action::make('upload')
                     ->form([
                         TextInput::make('name')->required(),
-                        FileUpload::make('file')->required(),
+                        FileUpload::make('file')->required()->storeFiles(false),
                     ])
                     ->action(function ($data) {
-                        $this->getRecord()->addMedia(storage_path('app/public/').$data['file'])->setName($data['name'])->toMediaCollection('documents');
+                        $this->getRecord()->addMedia($data['file'])->setName($data['name'])->toMediaCollection('documents', 's3');
                         Notification::make()->title('Document uploaded')->success()->send();
                     }),
             ])
